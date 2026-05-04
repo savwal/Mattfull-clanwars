@@ -6,9 +6,16 @@ Profil:
 
 Namn, vikt, kön. 
 
+Registrering:
+
+ - 
+
 Logging: 
 
  - Snabbvals meny. 
+ - change name: psykoszone till sangriagränsen
+ - change name: lokal krigare till Namn
+ - change name: Utrustning till profil. 
  - 
 
 Alkolholintags funktion:
@@ -18,6 +25,7 @@ Alkolholintags funktion:
  - 
 
 Yearly and monthly wrapped:
+
  - Shows how many you have drunk
 
 Cloud och databas:
@@ -28,6 +36,11 @@ Cloud och databas:
  - Rankings betwwen users, clans
  - Event based clan wars: Valborg, Midsommar, Nyår, WayoutWest (dylikt), Mottagningsveckor, efter-tenta-helg, 
  - Reset rankings every "Löning". 
+
+Battles:
+
+ - Custom battle between friends
+ - 
 
 ELO system:
 

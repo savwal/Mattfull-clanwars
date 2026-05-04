@@ -12,13 +12,14 @@ nav a { flex: 0 0 auto; text-align: center; padding: 12px 20px; background: #fff
 nav a:last-child { border-right: none; }
 nav a:hover, nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
-h2 { font-family: 'Arial Black', Impact, sans-serif; text-transform: uppercase; color: #FFF; background: #2A8CFF; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; letter-spacing: 1px; text-shadow: 2px 2px 0px #2C3E50; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #2A8CFF; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; }
 input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 0; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
 input:focus, select:focus { background: #f1f2f6; }
 button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
 button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
 .profile-pic-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
 #picPreview { width: 120px; height: 120px; border-radius: 0; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; display: none; object-fit: cover; }
+.hash-text { display: inline-block; background: #2C3E50; color: #FFF; padding: 5px 10px; font-family: monospace; font-size: 1.2em; margin: 10px 0; letter-spacing: 2px; }
 </style>
 </head>
 <body>
@@ -28,6 +29,7 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   <a href="battles.html">Battles</a>
   <a href="clans.html">Klan</a>
   <a href="friends.html">Vänner</a>
+  <a href="wrapped.html">Wrapped</a>
   <a href="profile.html" class="active">Profil</a>
   <a href="rankings.html">Ranked</a>
 </nav>
@@ -35,7 +37,12 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 <div class="card">
   <h2>Lokal Krigare</h2>
   <select id="profileSelect" onchange="loadSelectedProfile()"></select>
-  <button onclick="createNewProfile()" style="background: #2ECC71;">Ny Krigare</button>
+  <button onclick="window.location.href='register.html'" style="background: #2ECC71;">Ny Krigare</button>
+</div>
+
+<div class="card" style="text-align:center;">
+  <h2>Din Hash</h2>
+  <div class="hash-text" id="myHashDisplay"></div>
 </div>
 
 <div class="card">
@@ -55,6 +62,7 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   <button onclick="saveCurrentProfile()" style="margin-top: 15px;">Spara Lokalt</button>
 </div>
 
+<script src="hash.js"></script>
 <script src="shared.js"></script>
 <script>
 let currentProfile = getActiveProfile();
@@ -78,14 +86,9 @@ function loadSelectedProfile() {
   populateForm();
 }
 
-function createNewProfile() {
-  const newProfile = { id: Date.now().toString(), name: 'Ny Krigare', weight: 70, gender: 'man', funzone: 1.0, pic: '' };
-  saveProfile(newProfile);
-  renderProfileSelect();
-  loadSelectedProfile();
-}
-
 function populateForm() {
+  if(!currentProfile) return;
+  document.getElementById('myHashDisplay').innerText = currentProfile.id;
   document.getElementById('profileName').value = currentProfile.name;
   document.getElementById('profileWeight').value = currentProfile.weight;
   document.getElementById('profileGender').value = currentProfile.gender;
@@ -120,7 +123,6 @@ function saveCurrentProfile() {
   currentProfile.funzone = parseFloat(document.getElementById('profileFunzone').value);
   saveProfile(currentProfile);
   renderProfileSelect();
-  alert("Sparad lokalt!");
 }
 
 renderProfileSelect();

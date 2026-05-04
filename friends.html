@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vänner - Måttfull</title>
 <style>
-/* CLASH ROYALE CSS */
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
 nav { display: flex; gap: 0; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
 nav::-webkit-scrollbar { display: none; }
@@ -13,8 +12,8 @@ nav a { flex: 0 0 auto; text-align: center; padding: 12px 20px; background: #fff
 nav a:last-child { border-right: none; }
 nav a:hover, nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
-h2 { font-family: 'Arial Black', Impact, sans-serif; text-transform: uppercase; color: #FFF; background: #2ECC71; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; letter-spacing: 1px; text-shadow: 2px 2px 0px #2C3E50; }
-input, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 0; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #2ECC71; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; }
+input, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
 input:focus { background: #f1f2f6; }
 button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
 button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
@@ -24,7 +23,6 @@ li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-c
 li:last-child { border-bottom: none; }
 .profile-img { width: 50px; height: 50px; border-radius: 0; object-fit: cover; border: 3px solid #2C3E50; background: #fff; }
 .friend-info { flex: 1; margin-left: 15px; }
-.friend-stats { text-align: right; color: #E74C3C; font-size: 1.2em; font-family: 'Arial Black'; }
 </style>
 </head>
 <body>
@@ -34,16 +32,16 @@ li:last-child { border-bottom: none; }
   <a href="battles.html">Battles</a>
   <a href="clans.html">Klan</a>
   <a href="friends.html" class="active">Vänner</a>
+  <a href="wrapped.html">Wrapped</a>
   <a href="profile.html">Profil</a>
   <a href="rankings.html">Ranked</a>
 </nav>
 
 <div class="card">
   <h2 style="background: #2A8CFF;">Lägg till Vän</h2>
-  <p style="font-weight: bold; color: #2C3E50; margin-top:0;">Ange din väns Vän-kod (Testa att skriva vad som helst)</p>
   <div style="display: flex; gap: 10px;">
-    <input type="text" id="friendCode" placeholder="#VÄNKOD">
-    <button onclick="addRandomFriend()" class="magic" style="width: auto; margin: 8px 0;">SÖK</button>
+    <input type="text" id="friendHash" placeholder="#HASHKOD">
+    <button onclick="addFriend()" class="magic" style="width: auto; margin: 8px 0;">SÖK</button>
   </div>
 </div>
 
@@ -52,70 +50,66 @@ li:last-child { border-bottom: none; }
   <ul id="friendsList"></ul>
 </div>
 
+<script src="hash.js"></script>
 <script src="shared.js"></script>
 <script>
-// Lokal databas för vänner (mockup)
-let myFriends = JSON.parse(localStorage.getItem('myFriends')) || [
-  { name: "Bosse", grams: 45.2, promille: 0.8 },
-  { name: "Anna", grams: 12.0, promille: 0.2 }
-];
+let myFriends = JSON.parse(localStorage.getItem('myFriendsHashes')) || [];
 
 function updateFriendsUI() {
   const list = document.getElementById('friendsList');
   list.innerHTML = '';
   
   if (myFriends.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Du har inga vänner än. Lägg till en ovan!</p>';
+    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga vänner tillagda. Sök på deras Hashkod!</p>';
     return;
   }
 
-  myFriends.sort((a, b) => b.grams - a.grams).forEach((friend, index) => {
+  let globalData = getGlobalData();
+
+  myFriends.forEach((hash, index) => {
+    let friend = globalData.persons[hash];
+    if(!friend) return;
+    
     const li = document.createElement('li');
     
     const img = document.createElement('img');
     img.className = 'profile-img';
-    img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+    img.src = friend.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
     
     const info = document.createElement('div');
     info.className = 'friend-info';
-    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${friend.name}</span><br><span style="font-size:0.8em; color:#7f8c8d;">Promille: ${friend.promille.toFixed(2)}‰</span>`;
-    
-    const stats = document.createElement('div');
-    stats.className = 'friend-stats';
-    stats.innerText = `${friend.grams.toFixed(1)}g`;
+    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${friend.name}</span><br><span style="font-size:0.8em; color:#7f8c8d;">Hash: ${hash}</span>`;
 
     const delBtn = document.createElement('button');
     delBtn.innerText = "X";
-    delBtn.style.cssText = "background: #E74C3C; color: white; width: auto; padding: 5px 10px; margin-left: 15px; font-size: 12px; box-shadow: 2px 2px 0px #2C3E50;";
+    delBtn.style.cssText = "background: #E74C3C; color: white; width: auto; padding: 5px 10px; font-size: 12px; box-shadow: 2px 2px 0px #2C3E50;";
     delBtn.onclick = () => {
       myFriends.splice(index, 1);
-      localStorage.setItem('myFriends', JSON.stringify(myFriends));
+      localStorage.setItem('myFriendsHashes', JSON.stringify(myFriends));
       updateFriendsUI();
     };
 
     li.appendChild(img);
     li.appendChild(info);
-    li.appendChild(stats);
     li.appendChild(delBtn);
     list.appendChild(li);
   });
 }
 
-function addRandomFriend() {
-  const code = document.getElementById('friendCode').value;
-  if(!code) return;
+function addFriend() {
+  const hash = document.getElementById('friendHash').value.trim();
+  if(!hash) return;
   
-  const randomNames = ["Göran", "Kalle", "Stina", "Lisa", "Pelle"];
-  const newFriend = {
-    name: randomNames[Math.floor(Math.random() * randomNames.length)] + " (" + code + ")",
-    grams: parseFloat((Math.random() * 80).toFixed(1)),
-    promille: parseFloat((Math.random() * 1.5).toFixed(2))
-  };
+  let globalData = getGlobalData();
   
-  myFriends.push(newFriend);
-  localStorage.setItem('myFriends', JSON.stringify(myFriends));
-  document.getElementById('friendCode').value = '';
-  updateFriendsUI();
+  if(globalData.persons[hash] && !myFriends.includes(hash)) {
+    myFriends.push(hash);
+    localStorage.setItem('myFriendsHashes', JSON.stringify(myFriends));
+    document.getElementById('friendHash').value = '';
+    updateFriendsUI();
+  } else {
+    alert("Kunde inte hitta en krigare med den hashen!");
+  }
 }
 
 updateFriendsUI();
