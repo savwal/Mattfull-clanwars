@@ -26,7 +26,7 @@ Cloud och databas:
  - Daily and monthly rankings
  - Join other users and create clans and see clan rank
  - Rankings betwwen users, clans
- - Event based clan wars: Valborg, Midsommar, Nyår, WayoutWest, Mottagningsveckor, efter tenta helg, 
+ - Event based clan wars: Valborg, Midsommar, Nyår, WayoutWest (dylikt), Mottagningsveckor, efter-tenta-helg, 
  - Reset rankings every "Löning". 
 
 ELO system:
@@ -37,4 +37,6 @@ ELO system:
 Framtida förändringar:
 
  - Challenging other clans:
- - Duos gaming: 
+ - Duos gaming: Send challenge to others
+ - Clan wars: skicka challenge till andra
+ - Solo queue: Challenge ngn annan som är långt bort??
