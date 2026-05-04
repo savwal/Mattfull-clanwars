@@ -1,12 +1,13 @@
 function initProfiles() {
   let profiles = JSON.parse(localStorage.getItem('profiles')) || [];
   if (profiles.length === 0) {
-    const defaultProfile = { id: Date.now().toString(), name: 'Gäst', weight: 70, gender: 'man', funzone: 1.0, pic: '' };
+    const defaultProfile = { id: Date.now().toString(), name: 'Ny Spelare', weight: 70, gender: 'man', funzone: 1.0, pic: '' };
     profiles.push(defaultProfile);
     localStorage.setItem('profiles', JSON.stringify(profiles));
     localStorage.setItem('activeProfileId', defaultProfile.id);
   }
 }
+
 initProfiles();
 
 function getProfiles() {
@@ -32,9 +33,8 @@ function switchProfile(id) {
   localStorage.setItem('activeProfileId', id);
 }
 
-function getZones() {
-  const profile = getActiveProfile();
-  return { redMax: profile.funzone, greenMax: 3.0 };
+function getZones(profile) {
+  return { redMax: profile.funzone || 1.0, greenMax: 3.0 };
 }
 
 function getDrinkHistory() {

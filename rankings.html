@@ -4,80 +4,79 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rankings - Måttfull</title>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 <style>
-body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 15px; background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); color: #2d3436; min-height: 100vh; }
-nav { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
-nav a { padding: 12px 20px; background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(5px); text-decoration: none; color: #2d3436; border-radius: 12px; font-weight: bold; transition: background 0.3s; }
-nav a:hover { background: rgba(255, 255, 255, 0.6); }
-.card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); }
+/* Samma CSS som i de andra filerna... */
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
+nav { display: flex; gap: 0; margin-bottom: 20px; justify-content: center; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+nav a { flex: 1; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; }
+nav a:last-child { border-right: none; }
+nav a:hover, nav a.active { background: #FFCC00; }
+.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; }
+h2 { font-family: 'Arial Black', Impact, sans-serif; text-transform: uppercase; color: #FFF; background: #E74C3C; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; letter-spacing: 1px; text-shadow: 2px 2px 0px #2C3E50; }
 ol { padding-left: 0; list-style: none; margin: 0; }
-li { padding: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 18px; display: flex; align-items: center; gap: 15px; }
+li { padding: 15px; border-bottom: 4px solid #E5E9F0; font-size: 18px; display: flex; align-items: center; gap: 15px; }
 li:last-child { border-bottom: none; }
-.highlight { font-weight: bold; background: rgba(9, 132, 227, 0.1); border-radius: 10px; }
-.rank-num { font-weight: 800; color: #0984e3; width: 25px; }
-.profile-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #0984e3; }
+.highlight { background: #FFCC00; border: 4px solid #2C3E50; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; margin: 10px 0; }
+.rank-num { font-weight: 900; color: #2C3E50; width: 30px; font-size: 24px; font-family: 'Arial Black'; }
+.profile-img { width: 50px; height: 50px; border-radius: 0; object-fit: cover; border: 3px solid #2C3E50; background: #fff; }
 </style>
 </head>
 <body>
 
 <nav>
-  <a href="index.html">Main</a>
+  <a href="index.html">Krog</a>
   <a href="profile.html">Profil</a>
-  <a href="rankings.html">Rankings</a>
+  <a href="rankings.html" class="active">Arena</a>
 </nav>
 
 <div class="card">
-  <h2>Leaderboard (Gram ren alkohol)</h2>
+  <h2>Global Arena</h2>
+  <p style="text-align: center; font-weight: bold; color: #7f8c8d;" id="loadingText">Hämtar data från molnet...</p>
   <ol id="leaderboard"></ol>
 </div>
 
 <script src="shared.js"></script>
 <script>
-const profiles = getProfiles();
-const allHistory = JSON.parse(localStorage.getItem('drinkHistory_all')) || {};
-const activeProfileId = getActiveProfile().id;
-let rankings = [];
-
-profiles.forEach(p => {
-  let total = 0;
-  if (allHistory[p.id]) {
-    allHistory[p.id].forEach(item => total += item.grams);
-  }
-  if (total < 0) total = 0;
-  rankings.push({ 
-    name: p.name, 
-    score: parseFloat(total.toFixed(1)), 
-    pic: p.pic, 
-    isUser: p.id === activeProfileId 
-  });
-});
-
-rankings.sort((a, b) => b.score - a.score);
-
-const list = document.getElementById('leaderboard');
-rankings.forEach((player, index) => {
-  const li = document.createElement('li');
-  if (player.isUser) li.classList.add('highlight');
-  
-  const rankNum = document.createElement('span');
-  rankNum.className = 'rank-num';
-  rankNum.textContent = `${index + 1}.`;
-  
-  const img = document.createElement('img');
-  img.className = 'profile-img';
-  if (player.pic) {
-    img.src = player.pic;
-  } else {
-    img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ccc"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-  }
-  
-  const text = document.createElement('span');
-  text.innerHTML = `<strong>${player.name}</strong><br><span style="font-size:0.85em;color:#636e72;">${player.score}g</span>`;
-  
-  li.appendChild(rankNum);
-  li.appendChild(img);
-  li.appendChild(text);
-  list.appendChild(li);
+// Lyssna på ändringar i molnet i realtid (Live uppdatering!)
+db.collection("users")
+  .orderBy("totalGrams", "desc")
+  .onSnapshot((snapshot) => {
+    document.getElementById('loadingText').style.display = 'none';
+    const list = document.getElementById('leaderboard');
+    list.innerHTML = '';
+    
+    let index = 1;
+    snapshot.forEach((doc) => {
+      const player = doc.data();
+      const isUser = doc.id === deviceId;
+      
+      const li = document.createElement('li');
+      if (isUser) li.classList.add('highlight');
+      
+      const rankNum = document.createElement('span');
+      rankNum.className = 'rank-num';
+      rankNum.textContent = `#${index}`;
+      
+      const img = document.createElement('img');
+      img.className = 'profile-img';
+      if (player.pic) {
+        img.src = player.pic;
+      } else {
+        img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+      }
+      
+      const text = document.createElement('span');
+      text.innerHTML = `<strong>${player.name || 'Gäst'}</strong><br><span style="font-size:0.85em;color:#E74C3C;font-weight:900;">${(player.totalGrams || 0).toFixed(1)}g</span>`;
+      
+      li.appendChild(rankNum);
+      li.appendChild(img);
+      li.appendChild(text);
+      list.appendChild(li);
+      
+      index++;
+    });
 });
 </script>
 </body>

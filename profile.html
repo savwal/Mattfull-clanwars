@@ -5,37 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Profil - Måttfull</title>
 <style>
-body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 15px; background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); color: #2d3436; min-height: 100vh; }
-nav { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
-nav a { padding: 12px 20px; background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(5px); text-decoration: none; color: #2d3436; border-radius: 12px; font-weight: bold; transition: background 0.3s; }
-nav a:hover { background: rgba(255, 255, 255, 0.6); }
-.card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); }
-input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid #dcdde1; font-size: 16px; outline: none; }
-button { background: linear-gradient(135deg, #0984e3, #74b9ff); color: white; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(9, 132, 227, 0.3); }
-.profile-pic-container { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 15px; }
-#picPreview { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid #0984e3; display: none; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
+nav { display: flex; gap: 0; margin-bottom: 20px; justify-content: center; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+nav a { flex: 1; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; }
+nav a:last-child { border-right: none; }
+nav a:hover, nav a.active { background: #FFCC00; }
+.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
+h2 { font-family: 'Arial Black', Impact, sans-serif; text-transform: uppercase; color: #FFF; background: #2A8CFF; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; letter-spacing: 1px; text-shadow: 2px 2px 0px #2C3E50; }
+input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 0; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
+input:focus, select:focus { background: #f1f2f6; }
+button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
+button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+.profile-pic-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
+#picPreview { width: 120px; height: 120px; border-radius: 0; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; display: none; object-fit: cover; }
 </style>
 </head>
 <body>
 
 <nav>
-  <a href="index.html">Main</a>
-  <a href="profile.html">Profil</a>
-  <a href="rankings.html">Rankings</a>
+  <a href="index.html">Krog</a>
+  <a href="profile.html" class="active">Profil</a>
+  <a href="rankings.html">Arena</a>
 </nav>
 
 <div class="card">
-  <h2>Välj eller Skapa Profil</h2>
+  <h2>Lokal Krigare</h2>
   <select id="profileSelect" onchange="loadSelectedProfile()"></select>
-  <button onclick="createNewProfile()" style="background: linear-gradient(135deg, #00b894, #55efc4);">Skapa Ny Profil</button>
+  <button onclick="createNewProfile()" style="background: #2ECC71;">Ny Krigare</button>
 </div>
 
 <div class="card">
-  <h2>Redigera Profil</h2>
+  <h2>Utrustning</h2>
   
   <div class="profile-pic-container">
     <img id="picPreview" src="">
-    <input type="file" id="picInput" accept="image/*">
+    <input type="file" id="picInput" accept="image/*" style="font-size: 12px; padding: 8px;">
   </div>
 
   <input type="text" id="profileName" placeholder="Namn">
@@ -45,10 +49,10 @@ button { background: linear-gradient(135deg, #0984e3, #74b9ff); color: white; bo
     <option value="kvinna">Kvinna</option>
   </select>
   
-  <h3>Dina Zoner</h3>
-  <input type="number" step="0.1" id="profileFunzone" placeholder="Funzone gräns (‰, t.ex. 1.0)">
+  <h3 style="margin-top:20px; font-family:'Arial Black';">Dina Zoner</h3>
+  <input type="number" step="0.1" id="profileFunzone" placeholder="Funzone gräns (‰)">
   
-  <button onclick="saveCurrentProfile()">Spara Profil</button>
+  <button onclick="saveCurrentProfile()" style="margin-top: 15px;">Spara Lokalt</button>
 </div>
 
 <script src="shared.js"></script>
@@ -75,7 +79,7 @@ function loadSelectedProfile() {
 }
 
 function createNewProfile() {
-  const newProfile = { id: Date.now().toString(), name: 'Ny Profil', weight: 70, gender: 'man', funzone: 1.0, pic: '' };
+  const newProfile = { id: Date.now().toString(), name: 'Ny Krigare', weight: 70, gender: 'man', funzone: 1.0, pic: '' };
   saveProfile(newProfile);
   renderProfileSelect();
   loadSelectedProfile();
@@ -118,7 +122,7 @@ function saveCurrentProfile() {
   
   saveProfile(currentProfile);
   renderProfileSelect();
-  alert("Profil sparad!");
+  alert("Sparad lokalt!");
 }
 
 renderProfileSelect();

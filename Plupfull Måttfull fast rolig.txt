@@ -22,7 +22,12 @@ Yearly and monthly wrapped:
 
 Cloud och databas:
 
- - 
+ - See other profiles and their ELO
+ - Daily and monthly rankings
+ - Join other users and create clans and see clan rank
+ - Rankings betwwen users, clans
+ - Event based clan wars: Valborg, Midsommar, Nyår, WayoutWest, Mottagningsveckor, efter tenta helg, 
+ - Reset rankings every "Löning". 
 
 ELO system:
 

@@ -7,31 +7,44 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
 <style>
-body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 15px; background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); color: #2d3436; min-height: 100vh; overscroll-behavior-y: contain; transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
-#pullIndicator { text-align: center; font-weight: bold; color: #fff; opacity: 0; transition: opacity 0.2s; height: 0; overflow: hidden; }
-nav { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
-nav a { padding: 12px 20px; background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(5px); text-decoration: none; color: #2d3436; border-radius: 12px; font-weight: bold; transition: background 0.3s; }
-nav a:hover { background: rgba(255, 255, 255, 0.6); }
-.card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); }
-h2 { margin-top: 0; font-weight: 800; color: #1e272e; }
-input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid #dcdde1; font-size: 16px; outline: none; transition: border 0.3s; }
-input:focus, select:focus { border-color: #0984e3; box-shadow: 0 0 0 3px rgba(9, 132, 227, 0.2); }
-button { background: linear-gradient(135deg, #0984e3, #74b9ff); color: white; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(9, 132, 227, 0.3); transition: transform 0.1s; }
-button:active { transform: scale(0.98); }
-button.danger { background: #ff7675; width: auto; padding: 8px 16px; font-size: 14px; margin-left: 10px; box-shadow: 0 4px 10px rgba(255, 118, 117, 0.3); }
-button.magic { background: linear-gradient(135deg, #6c5ce7, #a29bfe); margin-top: 15px; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3); }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
+nav { display: flex; gap: 0; margin-bottom: 20px; justify-content: center; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+nav a { flex: 1; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; }
+nav a:last-child { border-right: none; }
+nav a:hover, nav a.active { background: #FFCC00; }
+.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
+h2 { font-family: 'Arial Black', Impact, sans-serif; text-transform: uppercase; color: #FFF; background: #2A8CFF; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; letter-spacing: 1px; text-shadow: 2px 2px 0px #2C3E50; }
+input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 0; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
+input:focus, select:focus { background: #f1f2f6; }
+button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
+button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+button.danger { background: #E74C3C; width: auto; color: white; padding: 8px 16px; font-size: 14px; margin-left: 10px; box-shadow: 3px 3px 0px #2C3E50; border: 3px solid #2C3E50; }
+button.magic { background: #9B59B6; color: white; margin-top: 15px; }
 ul { list-style: none; padding: 0; margin: 0; }
-li { border-bottom: 1px solid rgba(0,0,0,0.05); padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
-li:last-child { border-bottom: none; }
+li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
 canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
-.legend { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; font-size: 14px; font-weight: bold; justify-content: center; }
-.legend-item { display: flex; align-items: center; gap: 6px; }
-.dot { width: 14px; height: 14px; border-radius: 50%; }
-.dot.red { background: rgba(255, 118, 117, 0.6); }
-.dot.green { background: rgba(85, 239, 196, 0.6); }
-.dot.purple { background: rgba(162, 155, 254, 0.6); }
-.dot.line { background: #0984e3; border-radius: 2px; width: 20px; height: 4px; }
-.highlight-text { font-size: 1.2em; color: #0984e3; }
+.highlight-text { font-size: 1.3em; color: #2A8CFF; font-family: 'Arial Black', sans-serif; text-shadow: 1px 1px 0px #2C3E50; }
+
+/* Modal styles - straight edge Clash Royale style */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
+.modal-content { background-color: #2A8CFF; color: white; margin: 10% auto; padding: 25px; border: 6px solid #2C3E50; box-shadow: 8px 8px 0px #2C3E50; border-radius: 0; width: 90%; max-width: 600px; text-align: center; }
+.close-modal { color: #E74C3C; font-size: 32px; font-weight: bold; cursor: pointer; position: absolute; right: 15px; top: 10px; }
+.close-modal:hover { color: #FFF; }
+.logger-tile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; background-color: #D1EAFE; padding: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; }
+.logger-tile { border: 4px solid #2C3E50; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-around; cursor: pointer; transition: transform 0.1s; color: #2C3E50; font-weight: bold; text-align: center; box-shadow: 4px 4px 0px #2C3E50; }
+.logger-tile:hover { background-color: #FFCC00; }
+.logger-tile:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+.logger-icon { max-height: 80px; width: auto; margin-bottom: 10px; }
+.logger-text { font-size: 1.1em; font-weight: 800; text-transform: uppercase; }
+
+/* List styles */
+.logger-back-btn { background: #FFCC00; color: #2C3E50; padding: 10px 15px; border: 4px solid #2C3E50; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; box-shadow: 4px 4px 0px #2C3E50; width: auto; font-size: 14px; }
+.logger-list { list-style: none; padding: 0; text-align: left; background-color: #fff; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; }
+.logger-list-item { padding: 15px; border-bottom: 4px solid #D1EAFE; cursor: pointer; color: #2C3E50; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+.logger-list-item:last-child { border-bottom: none; }
+.logger-list-item:hover { background-color: #FFCC00; }
+.logger-drink-info { font-size: 0.9em; color: #636e72; font-weight: bold; }
+.logger-drink-stats { text-align: right; }
 </style>
 </head>
 <body>
@@ -39,49 +52,38 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
 <div id="pullIndicator">Släpp för att ladda om...</div>
 
 <nav>
-  <a href="index.html">Main</a>
+  <a href="index.html" class="active">Krog</a>
   <a href="profile.html">Profil</a>
-  <a href="rankings.html">Rankings</a>
+  <a href="rankings.html">Arena</a>
 </nav>
 
 <div class="card">
-  <h2>Registrera Dryck</h2>
-  <select id="presetDrink" onchange="loadPreset()">
-    <option value="">-- Snabbval från lista --</option>
-    <option value="lattol">Lättöl 33cl (2.2%)</option>
-    <option value="folk28">Folköl 50cl (2.8%)</option>
-    <option value="folk35_33">Folköl 33cl (3.5%)</option>
-    <option value="folk35_50">Folköl 50cl (3.5%)</option>
-    <option value="stark33">Starköl 33cl (5%)</option>
-    <option value="stark50">Starköl 50cl (5%)</option>
-    <option value="wine12">Vin 12.5cl (12%)</option>
-    <option value="wine13">Vin 12.5cl (13%)</option>
-    <option value="wineBottle">Vinflaska 75cl (13%)</option>
-    <option value="spirit4">Sprit 4cl (40%)</option>
-    <option value="spiritHalf">Halvrör 35cl (40%)</option>
-  </select>
+  <h2>Lägret</h2>
+  <button onclick="openDrinkModal()" style="background: linear-gradient(135deg, #FFCC00, #FFD700); margin-bottom: 15px; ">Registrera Dryck (Snabbval)</button>
+  <p style="text-align: center; font-weight: bold; color: #2C3E50; margin: 10px 0;">Eller manuellt:</p>
   <input type="text" id="name" placeholder="Dryck (t.ex. Öl, Vin)">
   <input type="number" id="volume" placeholder="Volym (ml, t.ex. 330)">
   <input type="number" id="abv" placeholder="Alkoholhalt (%, t.ex. 5.0)">
-  <button onclick="addDrink()">Lägg till i historik</button>
+  <button onclick="addDrink()">Manuellt registrera</button>
   <button class="magic" onclick="gragasUlt()">Gragas Ult (-5g alkohol)</button>
 </div>
 
 <div class="card" style="display: flex; align-items: center; gap: 15px;">
-  <img id="userPic" style="width: 70px; height: 70px; border-radius: 50%; display: none; object-fit: cover;">
+  <img id="userPic" style="width: 70px; height: 70px; border-radius: 0; border: 4px solid #2C3E50; display: none; object-fit: cover;">
   <div>
-    <h2 style="margin: 0;">Din Historik</h2>
-    <p style="margin: 5px 0 0 0;">Totalt intag: <strong class="highlight-text"><span id="totalGrams">0</span> g</strong> ren alkohol</p>
-    <p style="margin: 5px 0 0 0;">Uppskattad promille: <strong class="highlight-text"><span id="promille">0.00</span> ‰</strong></p>
+    <h3 style="margin:0; background:none; color:#2C3E50; text-shadow:none; padding:0; border:none;">STATS</h3>
+    <p style="margin: 5px 0 0 0; font-weight:bold;">Totalt intag: <strong class="highlight-text"><span id="totalGrams">0</span> g</strong> ren alkohol</p>
+    <p style="margin: 5px 0 0 0; font-weight:bold;">Uppskattad promille: <strong class="highlight-text"><span id="promille">0.00</span> ‰</strong></p>
   </div>
 </div>
 
 <div class="card">
+  <h2>Stridslogg</h2>
   <ul id="history"></ul>
 </div>
 
 <div class="card">
-  <h2>Promilleutveckling</h2>
+  <h2>Blodflöde</h2>
   <canvas id="promilleChart"></canvas>
   <div class="legend">
     <div class="legend-item"><span class="dot line"></span> Promille</div>
@@ -91,31 +93,24 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
   </div>
 </div>
 
+<!-- Modal for listed drinks registration -->
+<div id="drinkModal" class="modal">
+  <div class="modal-content card" style="position: relative; text-align: left; ">
+    <span class="close-modal" onclick="closeDrinkModal()">&times;</span>
+    <h2 style="font-family: 'Arial Black'; color: #FFF; background: #2C3E50; margin: -25px -25px 20px -25px; padding: 15px; border-bottom: 4px solid #0984E3;">Snabbvals-Registrering</h2>
+    <div id="modalContentContainer" class="logger-tile-grid"></div>
+  </div>
+</div>
+
 <script src="shared.js"></script>
 <script src="calculator.js"></script>
 <script src="graph.js"></script>
+<script src="drinkLogger.js"></script>
 <script>
-const presetData = {
-  lattol: {name: 'Lättöl', vol: 330, abv: 2.2},
-  folk28: {name: 'Folköl', vol: 500, abv: 2.8},
-  folk35_33: {name: 'Folköl', vol: 330, abv: 3.5},
-  folk35_50: {name: 'Folköl', vol: 500, abv: 3.5},
-  stark33: {name: 'Starköl', vol: 330, abv: 5.0},
-  stark50: {name: 'Starköl', vol: 500, abv: 5.0},
-  wine12: {name: 'Vin', vol: 125, abv: 12.0},
-  wine13: {name: 'Vin', vol: 125, abv: 13.0},
-  wineBottle: {name: 'Vinflaska', vol: 750, abv: 13.0},
-  spirit4: {name: 'Sprit', vol: 40, abv: 40.0},
-  spiritHalf: {name: 'Halvrör', vol: 350, abv: 40.0}
-};
-
-function loadPreset() {
-  const val = document.getElementById('presetDrink').value;
-  if(presetData[val]) {
-    document.getElementById('name').value = presetData[val].name;
-    document.getElementById('volume').value = presetData[val].vol;
-    document.getElementById('abv').value = presetData[val].abv;
-  }
+// Modal functionality
+function openDrinkModal() {
+  document.getElementById('drinkModal').style.display = 'block';
+  renderCategoryTiles('modalContentContainer'); // Initial load with tiles
 }
 
 let startY = 0;
@@ -174,10 +169,11 @@ function saveEntry(name, volume, abv, grams) {
   const time = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
   historyData.push({ name, volume, abv, grams, time, timestamp: now.getTime() });
   saveDrinkHistory(historyData);
+  
+  // Clear manual inputs
   document.getElementById('name').value = '';
   document.getElementById('volume').value = '';
   document.getElementById('abv').value = '';
-  document.getElementById('presetDrink').value = '';
   updateUI();
 }
 
@@ -196,11 +192,11 @@ function updateUI() {
     if (item.grams > 0) total += item.grams;
     
     const li = document.createElement('li');
-    li.innerHTML = `<div><strong>${item.time}</strong>: ${item.name} <br><span style="color:#636e72; font-size: 0.9em;">${item.grams > 0 ? '+' : ''}${item.grams}g alkohol</span></div>`;
+    li.innerHTML = `<div><strong>${item.time}</strong>: ${item.name} <br><span style="color:#2C3E50;">${item.grams > 0 ? '+' : ''}${item.grams}g alkohol</span></div>`;
     
     const btn = document.createElement('button');
     btn.className = 'danger';
-    btn.textContent = "Radera";
+    btn.textContent = "X";
     btn.onclick = () => removeDrink(index);
     
     li.appendChild(btn);
@@ -208,7 +204,6 @@ function updateUI() {
   });
   
   const currentBAC = calculateBACAtTime(historyData, profile, Date.now()).toFixed(2);
-  
   document.getElementById('totalGrams').textContent = total.toFixed(1);
   document.getElementById('promille').textContent = currentBAC;
 
@@ -218,15 +213,13 @@ function updateUI() {
   if (historyData.length > 0) {
     const firstTime = new Date(historyData[0].timestamp).getTime();
     const endTime = Date.now() + (3600000 * 2); 
-    
     for (let t = firstTime; t <= endTime; t += 900000) {
-      const date = new Date(t);
-      labels.push(date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+      labels.push(new Date(t).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
       dataPoints.push(calculateBACAtTime(historyData, profile, t).toFixed(2));
     }
   }
 
-  renderChart('promilleChart', labels, dataPoints, getZones());
+  renderChart('promilleChart', labels, dataPoints, getZones(profile));
 }
 
 function removeDrink(index) {
