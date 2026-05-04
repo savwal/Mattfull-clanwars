@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Main - Måttfull</title>
+<title>Plupfull - Main</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
 <style>
@@ -55,7 +55,6 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
 </style>
 </head>
 <body>
-
 <nav>
   <a href="index.html" class="active">Krog</a>
   <a href="battles.html">Battles</a>
@@ -65,7 +64,6 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
   <a href="profile.html">Profil</a>
   <a href="rankings.html">Ranked</a>
 </nav>
-
 <div class="card">
   <h2>Lägret</h2>
   <button onclick="openDrinkModal()" style="background: linear-gradient(135deg, #FFCC00, #FFD700); margin-bottom: 15px;">Registrera Dryck (Snabbval)</button>
@@ -76,7 +74,6 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
   <button onclick="addDrink()">Manuellt registrera</button>
   <button class="magic" onclick="gragasUlt()">GRAGAS ULT (SPY)</button>
 </div>
-
 <div class="card" style="display: flex; align-items: center; gap: 15px;">
   <img id="userPic" style="width: 70px; height: 70px; border-radius: 0; border: 4px solid #2C3E50; display: none; object-fit: cover;">
   <div>
@@ -85,24 +82,21 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
     <p style="margin: 5px 0 0 0; font-weight:bold;">Uppskattad promille: <strong class="highlight-text"><span id="promille">0.00</span> ‰</strong></p>
   </div>
 </div>
-
 <div class="card">
   <h2>Stridslogg</h2>
   <ul id="history"></ul>
 </div>
-
 <div class="card">
   <h2>Blodflöde</h2>
   <canvas id="promilleChart"></canvas>
   <div class="legend">
     <div class="legend-item"><span class="dot line"></span> Promille</div>
-    <div class="legend-item"><span class="dot blue"></span> Legal Zone</div>
+    <div class="legend-item"><span class="dot blue"></span> Tiger Woods zone</div>
     <div class="legend-item"><span class="dot red"></span> Under Funzone</div>
     <div class="legend-item"><span class="dot green"></span> Funzone</div>
-    <div class="legend-item"><span class="dot purple"></span> Psykoszonen</div>
+    <div class="legend-item"><span class="dot purple"></span> Sangriagränsen</div>
   </div>
 </div>
-
 <div id="drinkModal" class="modal">
   <div class="modal-content card" style="position: relative; text-align: left;">
     <span class="close-modal" onclick="closeDrinkModal()">&times;</span>
@@ -110,7 +104,6 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
     <div id="modalContentContainer" class="logger-tile-grid"></div>
   </div>
 </div>
-
 <script src="gdpr.js"></script>
 <script src="shared.js"></script>
 <script src="calculator.js"></script>

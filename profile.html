@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Profil - Måttfull</title>
+<title>Plupfull - Profil</title>
 <style>
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
 nav { display: flex; gap: 0; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
@@ -23,7 +23,6 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 </style>
 </head>
 <body>
-
 <nav>
   <a href="index.html">Krog</a>
   <a href="battles.html">Battles</a>
@@ -33,20 +32,17 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   <a href="profile.html" class="active">Profil</a>
   <a href="rankings.html">Ranked</a>
 </nav>
-
 <div class="card">
-  <h2>Lokal Krigare</h2>
+  <h2>Namn</h2>
   <select id="profileSelect" onchange="loadSelectedProfile()"></select>
   <button onclick="window.location.href='register.html'" style="background: #2ECC71;">Ny Krigare</button>
 </div>
-
 <div class="card" style="text-align:center;">
   <h2>Din Hash</h2>
   <div class="hash-text" id="myHashDisplay"></div>
 </div>
-
 <div class="card">
-  <h2>Utrustning</h2>
+  <h2>Profil</h2>
   <div class="profile-pic-container">
     <img id="picPreview" src="">
     <input type="file" id="picInput" accept="image/*" style="font-size: 12px; padding: 8px;">
@@ -57,16 +53,14 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
     <option value="man">Man</option>
     <option value="kvinna">Kvinna</option>
   </select>
-  <h3 style="margin-top:20px; font-family:'Arial Black';">Dina Zoner</h3>
+  <h3 style="margin-top:20px; font-family:'Arial Black';">Funzone gräns</h3>
   <input type="number" step="0.1" id="profileFunzone" placeholder="Funzone gräns (‰)">
   <button onclick="saveCurrentProfile()" style="margin-top: 15px;">Spara Lokalt</button>
 </div>
-
 <script src="hash.js"></script>
 <script src="shared.js"></script>
 <script>
 let currentProfile = getActiveProfile();
-
 function renderProfileSelect() {
   const select = document.getElementById('profileSelect');
   select.innerHTML = '';
@@ -78,14 +72,12 @@ function renderProfileSelect() {
     select.appendChild(opt);
   });
 }
-
 function loadSelectedProfile() {
   const id = document.getElementById('profileSelect').value;
   switchProfile(id);
   currentProfile = getActiveProfile();
   populateForm();
 }
-
 function populateForm() {
   if(!currentProfile) return;
   document.getElementById('myHashDisplay').innerText = currentProfile.id;
@@ -102,7 +94,6 @@ function populateForm() {
     picPreview.src = '';
   }
 }
-
 document.getElementById('picInput').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (file) {
@@ -115,7 +106,6 @@ document.getElementById('picInput').addEventListener('change', function(e) {
     reader.readAsDataURL(file);
   }
 });
-
 function saveCurrentProfile() {
   currentProfile.name = document.getElementById('profileName').value;
   currentProfile.weight = parseFloat(document.getElementById('profileWeight').value);
@@ -124,7 +114,6 @@ function saveCurrentProfile() {
   saveProfile(currentProfile);
   renderProfileSelect();
 }
-
 renderProfileSelect();
 populateForm();
 </script>

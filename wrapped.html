@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wrapped - Måttfull</title>
+<title>Plupfull - Wrapped</title>
 <style>
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
 nav { display: flex; gap: 0; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
@@ -22,7 +22,6 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 </style>
 </head>
 <body>
-
 <nav>
   <a href="index.html">Krog</a>
   <a href="battles.html">Battles</a>
@@ -32,68 +31,33 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   <a href="profile.html">Profil</a>
   <a href="rankings.html">Ranked</a>
 </nav>
-
 <div class="card">
-  <h2>Måttfull Wrapped</h2>
+  <h2>Plupfull Wrapped</h2>
   <p style="font-weight: bold; color: #2C3E50;">Släpps den 24:e varje månad!</p>
   <button onclick="openWrapped('monthly')">Se Månadens Wrapped</button>
   <button onclick="openWrapped('yearly')" style="background: #E74C3C; color: #FFF;">Se Årets Wrapped</button>
 </div>
-
 <div id="wrappedModal" class="modal">
   <div class="modal-content">
     <span class="close-modal" onclick="closeWrapped()">&times;</span>
     <h1 id="wrappedTitle" style="font-family: 'Arial Black'; text-transform: uppercase; margin-top: 0;"></h1>
-    
     <div class="stat-box">
       Total Konsumtion:<br>
-      <span id="wrappedGrams" style="color: #E74C3C; font-size: 1.5em;">0g</span>
+      <span id="wrappedGrams" style="color: #E74C3C; font-size: 1.5em;">0cl</span>
     </div>
-    
     <div class="stat-box">
-      Din Snitt-ELO:<br>
-      <span id="wrappedElo" style="color: #2ECC71; font-size: 1.5em;">0.00</span>
+      Klan Poäng:<br>
+      <span id="wrappedElo" style="color: #2ECC71; font-size: 1.5em;">0.00 ‰</span>
     </div>
-    
+    <div class="stat-box">
+      Öl/Cider: <span id="wrappedBeer" style="color: #F39C12;">0</span> st<br>
+      Vin: <span id="wrappedWine" style="color: #8E44AD;">0</span> st<br>
+      Sprit/Drinkar: <span id="wrappedSprit" style="color: #3498DB;">0</span> st
+    </div>
     <button onclick="closeWrapped()" style="background: #FFCC00; color: #2C3E50;">Dela Resultat</button>
   </div>
 </div>
-
 <script src="shared.js"></script>
-<script>
-function openWrapped(type) {
-  const today = new Date();
-  const currentDay = today.getDate();
-  const currentMonth = today.getMonth();
-
-  if (currentDay < 24) {
-    alert("Wrapped är inte tillgängligt ännu! Det släpps den 24:e.");
-    return;
-  }
-
-  if (type === 'yearly' && currentMonth !== 11) {
-    alert("Årets Wrapped släpps den 24:e December!");
-    return;
-  }
-
-  // Beräkna mockup stats
-  const history = getDrinkHistory();
-  let totalGrams = 0;
-  history.forEach(item => { if(item.grams > 0) totalGrams += item.grams; });
-  
-  const profile = getActiveProfile();
-  const elo = calculateElo(totalGrams, profile.weight);
-
-  document.getElementById('wrappedTitle').innerText = type === 'yearly' ? 'Årets Wrapped 🥂' : 'Månadens Wrapped 🔥';
-  document.getElementById('wrappedGrams').innerText = totalGrams.toFixed(1) + 'g ren alkohol';
-  document.getElementById('wrappedElo').innerText = elo.toFixed(2) + ' ELO';
-  
-  document.getElementById('wrappedModal').style.display = 'block';
-}
-
-function closeWrapped() {
-  document.getElementById('wrappedModal').style.display = 'none';
-}
-</script>
+<script src="wrappedLogic.js"></script>
 </body>
 </html>

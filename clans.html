@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Klan - Måttfull</title>
+<title>Plupfull - Klan</title>
 <style>
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
 nav { display: flex; gap: 0; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
@@ -29,7 +29,6 @@ li:last-child { border-bottom: none; }
 </style>
 </head>
 <body>
-
 <nav>
   <a href="index.html">Krog</a>
   <a href="battles.html">Battles</a>
@@ -39,7 +38,6 @@ li:last-child { border-bottom: none; }
   <a href="profile.html">Profil</a>
   <a href="rankings.html">Ranked</a>
 </nav>
-
 <div id="noClanView" class="card" style="display: none;">
   <h2>Hitta din Klan</h2>
   <input type="text" id="newClanName" placeholder="Ny Klan Namn">
@@ -48,97 +46,76 @@ li:last-child { border-bottom: none; }
   <input type="text" id="joinClanHash" placeholder="Klan Hash (4 tecken)">
   <button onclick="joinClan()" style="background: #2A8CFF; color: #FFF;">Gå med i Klan</button>
 </div>
-
 <div id="hasClanView" style="display: none;">
   <div class="card" style="text-align: center;">
     <h2 style="background: #E74C3C;">Klanens Läger</h2>
     <div class="clan-shield"></div>
     <h1 id="clanTitle" style="margin: 0 0 5px 0; color: #2C3E50; font-family: 'Arial Black'; text-transform: uppercase;"></h1>
     <div class="hash-text" id="clanHashDisplay"></div>
-    <p style="margin: 10px 0 0 0; font-weight: bold;">Klanens Totala ELO:</p>
-    <div class="highlight-text" id="clanTotalElo">0.00 ELO</div>
+    <p style="margin: 10px 0 0 0; font-weight: bold;">Klanens Totala Poäng:</p>
+    <div class="highlight-text" id="clanTotalElo">0.00 ‰</div>
     <button onclick="leaveClan()" style="background: #E74C3C; color: #FFF; margin-top: 20px; width: auto; font-size: 12px; padding: 10px;">Lämna Klan</button>
   </div>
-
   <div class="card">
     <h2 style="background: #FFCC00; color: #2C3E50;">Medlemmar</h2>
     <ul id="clanMembers"></ul>
   </div>
 </div>
-
 <script src="hash.js"></script>
 <script src="shared.js"></script>
 <script>
 let myClanHash = localStorage.getItem('myClanHash') || null;
 const activeProfile = getActiveProfile();
-
 function updateClanUI() {
   const noClanView = document.getElementById('noClanView');
   const hasClanView = document.getElementById('hasClanView');
   let globalData = getGlobalData();
-
   if (!myClanHash || !globalData.clans[myClanHash]) {
     noClanView.style.display = 'block';
     hasClanView.style.display = 'none';
   } else {
     noClanView.style.display = 'none';
     hasClanView.style.display = 'block';
-    
     let clanData = globalData.clans[myClanHash];
     document.getElementById('clanTitle').innerText = clanData.name;
     document.getElementById('clanHashDisplay').innerText = myClanHash;
-    
     let totalElo = 0;
     const list = document.getElementById('clanMembers');
     list.innerHTML = '';
-
     clanData.members.forEach(member => {
-      let person = globalData.persons[member.id];
-      let weight = person ? person.weight : 70;
-      let memberElo = calculateElo(member.grams, weight);
-      member.elo = memberElo; // spara temporärt för sortering
+      let cl = calculateCl(member.grams);
+      member.elo = cl;
     });
-
     clanData.members.sort((a, b) => b.elo - a.elo).forEach(member => {
       totalElo += member.elo;
-      
       const li = document.createElement('li');
       if (member.id === activeProfile.id) li.style.background = 'rgba(46, 204, 113, 0.1)';
-      
       const img = document.createElement('img');
       img.className = 'profile-img';
       img.src = member.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-      
       const info = document.createElement('div');
       info.className = 'member-info';
       info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${member.name}</span><br><span style="font-size:0.8em; color:#7f8c8d;">${member.role}</span>`;
-      
       const stats = document.createElement('div');
       stats.className = 'member-stats';
-      stats.innerHTML = `${member.elo.toFixed(2)} <span style="font-size:12px; color:#2C3E50;">ELO</span>`;
-
+      stats.innerHTML = `${member.elo.toFixed(1)} <span style="font-size:12px; color:#2C3E50;">‰</span>`;
       li.appendChild(img);
       li.appendChild(info);
       li.appendChild(stats);
       list.appendChild(li);
     });
-
-    document.getElementById('clanTotalElo').innerText = totalElo.toFixed(2) + " ELO";
+    document.getElementById('clanTotalElo').innerText = totalElo.toFixed(1) + " ‰";
   }
 }
-
 function getMyCurrentGrams() {
   const history = getDrinkHistory();
   return history.reduce((sum, item) => sum + item.grams, 0);
 }
-
 function createClan() {
   const name = document.getElementById('newClanName').value;
   if (!name) return;
-  
   const newHash = generateUniqueHash();
   let globalData = getGlobalData();
-  
   globalData.clans[newHash] = {
     name: name,
     members: [
@@ -149,11 +126,9 @@ function createClan() {
   localStorage.setItem('myClanHash', newHash);
   updateClanUI();
 }
-
 function joinClan() {
   const hash = document.getElementById('joinClanHash').value.trim();
   if(!hash) return;
-  
   let globalData = getGlobalData();
   if(globalData.clans[hash]) {
     const exists = globalData.clans[hash].members.find(m => m.id === activeProfile.id);
@@ -165,7 +140,6 @@ function joinClan() {
     updateClanUI();
   }
 }
-
 function leaveClan() {
   let globalData = getGlobalData();
   if(globalData.clans[myClanHash]) {
@@ -176,7 +150,6 @@ function leaveClan() {
   myClanHash = null;
   updateClanUI();
 }
-
 updateClanUI();
 </script>
 </body>

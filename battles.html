@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Battles - Måttfull</title>
+<title>Plupfull - Battles</title>
 <style>
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
 nav { display: flex; gap: 0; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
@@ -26,7 +26,6 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 </style>
 </head>
 <body>
-
 <nav>
   <a href="index.html">Krog</a>
   <a href="battles.html" class="active">Battles</a>
@@ -36,7 +35,6 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   <a href="profile.html">Profil</a>
   <a href="rankings.html">Ranked</a>
 </nav>
-
 <div class="card">
   <h2>Välj Strid</h2>
   <div class="logger-tile-grid">
@@ -55,9 +53,11 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
     <div class="logger-tile" onclick="openBattleModal('Single Player')">
       <span class="logger-text">Single Player</span>
     </div>
+    <div class="logger-tile" onclick="openBattleModal('Custom Battle Royale')">
+      <span class="logger-text">Custom Battle Royale</span>
+    </div>
   </div>
 </div>
-
 <div id="battleModal" class="modal">
   <div class="modal-content card">
     <span class="close-modal" onclick="closeBattleModal()">&times;</span>
@@ -66,12 +66,10 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
     <button onclick="startBattle()">Starta</button>
   </div>
 </div>
-
 <script src="hash.js"></script>
 <script src="shared.js"></script>
 <script>
 let currentMode = '';
-
 function openBattleModal(title) {
   currentMode = title;
   document.getElementById('modalTitle').innerText = title;
@@ -79,23 +77,19 @@ function openBattleModal(title) {
   document.getElementById('battleHash').placeholder = ph;
   document.getElementById('battleModal').style.display = 'block';
 }
-
 function closeBattleModal() {
   document.getElementById('battleModal').style.display = 'none';
 }
-
 function startBattle() {
   const hash = document.getElementById('battleHash').value.trim();
   let globalData = getGlobalData();
   let found = false;
-  
   if(currentMode === 'Clan War') {
     if(globalData.clans[hash]) found = true;
   } else {
     if(globalData.persons[hash]) found = true;
   }
-  
-  if(found || currentMode === 'Single Player') {
+  if(found || currentMode === 'Single Player' || currentMode === 'Custom Battle Royale') {
     closeBattleModal();
   }
 }

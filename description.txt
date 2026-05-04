@@ -16,40 +16,27 @@ Logging:
  - change name: psykoszone till sangriagränsen
  - change name: lokal krigare till Namn
  - change name: Utrustning till profil. 
- - 
+ - change name: Dina Zoner till Funzone gräns
+ - change name: legal zone till Tiger Woods zone
+ - change name: under funzone till 
 
 Alkolholintags funktion:
 
- - Funzone: En gräns man sätter själv för att klassas som full för en själv.
- - En tidsberoende formel som anger hur mycket promille man har i kroppen.
  - 
 
 Yearly and monthly wrapped:
 
- - Shows how many you have drunk
+ - Shows how many you have beers, wine, sprit you have drank
 
-Cloud och databas:
-
- - See other profiles and their ELO
- - Daily and monthly rankings
- - Join other users and create clans and see clan rank
- - Rankings betwwen users, clans
- - Event based clan wars: Valborg, Midsommar, Nyår, WayoutWest (dylikt), Mottagningsveckor, efter-tenta-helg, 
- - Reset rankings every "Löning". 
 
 Battles:
 
- - Custom battle between friends
+ - Custom battle which is a battle royale between friends
  - 
 
 ELO system:
 
  - Ranking baseras på cl ren alkohol konsumerad. Man kan gå med i andras clans där totalen av alla i klanens konsumerad alkohol intag är dess ELO. 
    Det finns två system.
+ - Change ELO name to promille symbol
 
-Framtida förändringar:
-
- - Challenging other clans:
- - Duos gaming: Send challenge to others
- - Clan wars: skicka challenge till andra
- - Solo queue: Challenge ngn annan som är långt bort??
