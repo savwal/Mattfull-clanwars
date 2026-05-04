@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klan - Måttfull</title>
+<style>
+/* CLASH ROYALE CSS */
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
+nav { display: flex; gap: 0; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+nav::-webkit-scrollbar { display: none; }
+nav a { flex: 0 0 auto; text-align: center; padding: 12px 20px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
+nav a:last-child { border-right: none; }
+nav a:hover, nav a.active { background: #FFCC00; }
+.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
+h2 { font-family: 'Arial Black', Impact, sans-serif; text-transform: uppercase; color: #FFF; background: #9B59B6; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; letter-spacing: 1px; text-shadow: 2px 2px 0px #2C3E50; }
+input, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 0; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
+input:focus { background: #f1f2f6; }
+button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
+button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+ul { list-style: none; padding: 0; margin: 0; }
+li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+li:last-child { border-bottom: none; }
+.profile-img { width: 50px; height: 50px; border-radius: 0; object-fit: cover; border: 3px solid #2C3E50; background: #fff; }
+.member-info { flex: 1; margin-left: 15px; }
+.member-stats { text-align: right; color: #9B59B6; font-size: 1.2em; font-family: 'Arial Black'; }
+.clan-shield { display: block; margin: 0 auto 15px auto; width: 100px; height: 110px; background: #9B59B6; border: 6px solid #2C3E50; border-radius: 10px 10px 50px 50px; box-shadow: inset -10px -10px 0px rgba(0,0,0,0.2), 6px 6px 0px #2C3E50; }
+.highlight-text { font-size: 1.5em; color: #E74C3C; font-family: 'Arial Black', sans-serif; text-shadow: 1px 1px 0px #2C3E50; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Krog</a>
+  <a href="battles.html">Battles</a>
+  <a href="clans.html" class="active">Klan</a>
+  <a href="friends.html">Vänner</a>
+  <a href="profile.html">Profil</a>
+  <a href="rankings.html">Ranked</a>
+</nav>
+
+<div id="noClanView" class="card" style="display: none;">
+  <h2>Hitta din Klan</h2>
+  <p style="text-align: center; font-weight: bold;">Du är inte med i en klan. Gå med i en klan för att delta i Clan Wars!</p>
+  <input type="text" id="newClanName" placeholder="Klanens Namn">
+  <button onclick="createClan()" style="background: #2ECC71; color: #FFF;">Skapa Ny Klan</button>
+  <button onclick="joinRandomClan()" style="background: #2A8CFF; color: #FFF; margin-top: 15px;">Gå med i slumpmässig Klan</button>
+</div>
+
+<div id="hasClanView" style="display: none;">
+  <div class="card" style="text-align: center;">
+    <h2 style="background: #E74C3C;">Klanens Läger</h2>
+    <div class="clan-shield"></div>
+    <h1 id="clanTitle" style="margin: 0 0 10px 0; color: #2C3E50; font-family: 'Arial Black'; text-transform: uppercase;"></h1>
+    <p style="margin: 0; font-weight: bold;">Klanens Totala Intag:</p>
+    <div class="highlight-text" id="clanTotalGrams">0 g</div>
+    <button onclick="leaveClan()" style="background: #E74C3C; color: #FFF; margin-top: 20px; width: auto; font-size: 12px; padding: 10px;">Lämna Klan</button>
+  </div>
+
+  <div class="card">
+    <h2 style="background: #FFCC00; color: #2C3E50;">Medlemmar</h2>
+    <ul id="clanMembers"></ul>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+let myClan = JSON.parse(localStorage.getItem('myClan')) || null;
+const activeProfile = getActiveProfile();
+
+function updateClanUI() {
+  const noClanView = document.getElementById('noClanView');
+  const hasClanView = document.getElementById('hasClanView');
+
+  if (!myClan) {
+    noClanView.style.display = 'block';
+    hasClanView.style.display = 'none';
+  } else {
+    noClanView.style.display = 'none';
+    hasClanView.style.display = 'block';
+    
+    document.getElementById('clanTitle').innerText = myClan.name;
+    
+    // Räkna ut totala gram
+    let totalScore = 0;
+    const list = document.getElementById('clanMembers');
+    list.innerHTML = '';
+
+    myClan.members.sort((a, b) => b.grams - a.grams).forEach(member => {
+      totalScore += member.grams;
+      
+      const li = document.createElement('li');
+      if (member.id === activeProfile.id) li.style.background = 'rgba(46, 204, 113, 0.1)';
+      
+      const img = document.createElement('img');
+      img.className = 'profile-img';
+      img.src = member.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+      
+      const info = document.createElement('div');
+      info.className = 'member-info';
+      info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${member.name}</span><br><span style="font-size:0.8em; color:#7f8c8d;">${member.role}</span>`;
+      
+      const stats = document.createElement('div');
+      stats.className = 'member-stats';
+      stats.innerText = `${member.grams.toFixed(1)}g`;
+
+      li.appendChild(img);
+      li.appendChild(info);
+      li.appendChild(stats);
+      list.appendChild(li);
+    });
+
+    document.getElementById('clanTotalGrams').innerText = totalScore.toFixed(1) + " g";
+  }
+}
+
+function getMyCurrentGrams() {
+  const history = getDrinkHistory();
+  return history.reduce((sum, item) => sum + item.grams, 0);
+}
+
+function createClan() {
+  const name = document.getElementById('newClanName').value;
+  if (!name) return;
+  
+  myClan = {
+    name: name,
+    members: [
+      { id: activeProfile.id, name: activeProfile.name, role: 'Ledare', pic: activeProfile.pic, grams: getMyCurrentGrams() }
+    ]
+  };
+  localStorage.setItem('myClan', JSON.stringify(myClan));
+  updateClanUI();
+}
+
+function joinRandomClan() {
+  myClan = {
+    name: "Sprit-Ninjas",
+    members: [
+      { id: 'bot1', name: 'Snaps-Mästaren', role: 'Ledare', pic: '', grams: 120.5 },
+      { id: 'bot2', name: 'Öl-Hävaren', role: 'Äldste', pic: '', grams: 55.0 },
+      { id: activeProfile.id, name: activeProfile.name, role: 'Medlem', pic: activeProfile.pic, grams: getMyCurrentGrams() }
+    ]
+  };
+  localStorage.setItem('myClan', JSON.stringify(myClan));
+  updateClanUI();
+}
+
+function leaveClan() {
+  if(confirm("Är du säker på att du vill lämna klanen?")) {
+    myClan = null;
+    localStorage.removeItem('myClan');
+    updateClanUI();
+  }
+}
+
+updateClanUI();
+</script>
+</body>
+</html>

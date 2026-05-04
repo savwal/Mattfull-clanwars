@@ -8,8 +8,9 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
 <style>
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
-nav { display: flex; gap: 0; margin-bottom: 20px; justify-content: center; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
-nav a { flex: 1; text-align: center; padding: 12px 5px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
+nav { display: flex; gap: 0; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+nav::-webkit-scrollbar { display: none; }
+nav a { flex: 0 0 auto; text-align: center; padding: 12px 20px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
 nav a:last-child { border-right: none; }
 nav a:hover, nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
@@ -27,6 +28,7 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
 .legend { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 20px; justify-content: center; }
 .legend-item { display: flex; align-items: center; gap: 8px; font-weight: 900; color: #2C3E50; text-transform: uppercase; font-size: 11px; }
 .dot { width: 16px; height: 16px; border: 3px solid #2C3E50; box-shadow: 2px 2px 0px #2C3E50; }
+.dot.blue { background: #3498DB; }
 .dot.red { background: #E74C3C; }
 .dot.green { background: #2ECC71; }
 .dot.purple { background: #9B59B6; }
@@ -49,6 +51,7 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
 .logger-list-item:hover { background-color: #FFCC00; }
 .logger-drink-info { font-size: 0.9em; color: #636e72; font-weight: bold; }
 .logger-drink-stats { text-align: right; }
+.gdpr-list li { border: none; padding: 5px 0; }
 </style>
 </head>
 <body>
@@ -56,19 +59,21 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
 <nav>
   <a href="index.html" class="active">Krog</a>
   <a href="battles.html">Battles</a>
+  <a href="clans.html">Klan</a>
+  <a href="friends.html">Vänner</a>
   <a href="profile.html">Profil</a>
   <a href="rankings.html">Ranked</a>
 </nav>
 
 <div class="card">
   <h2>Lägret</h2>
-  <button onclick="openDrinkModal()" style="background: linear-gradient(135deg, #FFCC00, #FFD700); margin-bottom: 15px; ">Registrera Dryck (Snabbval)</button>
+  <button onclick="openDrinkModal()" style="background: linear-gradient(135deg, #FFCC00, #FFD700); margin-bottom: 15px;">Registrera Dryck (Snabbval)</button>
   <p style="text-align: center; font-weight: bold; color: #2C3E50; margin: 10px 0;">Eller manuellt:</p>
   <input type="text" id="name" placeholder="Dryck (t.ex. Öl, Vin)">
   <input type="number" id="volume" placeholder="Volym (ml, t.ex. 330)">
   <input type="number" id="abv" placeholder="Alkoholhalt (%, t.ex. 5.0)">
   <button onclick="addDrink()">Manuellt registrera</button>
-  <button class="magic" onclick="gragasUlt()">Gragas Ult (Ångra senaste 30 min)</button>
+  <button class="magic" onclick="gragasUlt()">GRAGAS ULT (SPY)</button>
 </div>
 
 <div class="card" style="display: flex; align-items: center; gap: 15px;">
@@ -90,6 +95,7 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
   <canvas id="promilleChart"></canvas>
   <div class="legend">
     <div class="legend-item"><span class="dot line"></span> Promille</div>
+    <div class="legend-item"><span class="dot blue"></span> Legal Zone</div>
     <div class="legend-item"><span class="dot red"></span> Under Funzone</div>
     <div class="legend-item"><span class="dot green"></span> Funzone</div>
     <div class="legend-item"><span class="dot purple"></span> Psykoszonen</div>
@@ -97,111 +103,18 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
 </div>
 
 <div id="drinkModal" class="modal">
-  <div class="modal-content card" style="position: relative; text-align: left; ">
+  <div class="modal-content card" style="position: relative; text-align: left;">
     <span class="close-modal" onclick="closeDrinkModal()">&times;</span>
     <h2 style="font-family: 'Arial Black'; color: #FFF; background: #2C3E50; margin: -25px -25px 20px -25px; padding: 15px; border-bottom: 4px solid #0984E3;">Snabbvals-Registrering</h2>
     <div id="modalContentContainer" class="logger-tile-grid"></div>
   </div>
 </div>
 
+<script src="gdpr.js"></script>
 <script src="shared.js"></script>
 <script src="calculator.js"></script>
 <script src="graph.js"></script>
 <script src="drinkLogger.js"></script>
-<script>
-function openDrinkModal() {
-  document.getElementById('drinkModal').style.display = 'block';
-  renderCategoryTiles('modalContentContainer'); 
-}
-
-let historyData = getDrinkHistory();
-
-function addDrink() {
-  const name = document.getElementById('name').value;
-  const volume = parseFloat(document.getElementById('volume').value);
-  const abv = parseFloat(document.getElementById('abv').value);
-  if (!name || isNaN(volume) || isNaN(abv)) return;
-  const grams = parseFloat((volume * (abv / 100) * 0.789).toFixed(1));
-  saveEntry(name, volume, abv, grams);
-}
-
-function gragasUlt() {
-  const now = Date.now();
-  const limit = now - 30 * 60000;
-  let sum = 0;
-  historyData.forEach(item => {
-    if (item.timestamp >= limit && item.grams > 0) {
-      sum += item.grams;
-    }
-  });
-  if (sum > 0) {
-    saveEntry("Gragas Ult", 0, 0, -parseFloat(sum.toFixed(1)));
-  }
-}
-
-function saveEntry(name, volume, abv, grams) {
-  const now = new Date();
-  const time = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-  historyData.push({ name, volume, abv, grams, time, timestamp: now.getTime() });
-  saveDrinkHistory(historyData);
-  document.getElementById('name').value = '';
-  document.getElementById('volume').value = '';
-  document.getElementById('abv').value = '';
-  updateUI();
-}
-
-function updateUI() {
-  const list = document.getElementById('history');
-  list.innerHTML = '';
-  let total = 0;
-  const profile = getActiveProfile();
-  
-  if (profile.pic) {
-    document.getElementById('userPic').src = profile.pic;
-    document.getElementById('userPic').style.display = 'block';
-  }
-
-  historyData.forEach((item, index) => {
-    total += item.grams;
-    const li = document.createElement('li');
-    li.innerHTML = `<div><strong>${item.time}</strong>: ${item.name} <br><span style="color:#2C3E50;">${item.grams > 0 ? '+' : ''}${item.grams.toFixed(1)}g alkohol</span></div>`;
-    const btn = document.createElement('button');
-    btn.className = 'danger';
-    btn.textContent = "X";
-    btn.onclick = () => removeDrink(index);
-    li.appendChild(btn);
-    list.appendChild(li);
-  });
-  
-  if (total < 0) total = 0;
-  
-  const currentBAC = calculateBACAtTime(historyData, profile, Date.now()).toFixed(2);
-  document.getElementById('totalGrams').textContent = total.toFixed(1);
-  document.getElementById('promille').textContent = currentBAC;
-
-  const labels = [];
-  const dataPoints = [];
-  
-  if (historyData.length > 0) {
-    const firstTime = new Date(historyData[0].timestamp).getTime();
-    const endTime = Date.now() + (3600000 * 2); 
-    for (let t = firstTime; t <= endTime; t += 900000) {
-      labels.push(new Date(t).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
-      dataPoints.push(calculateBACAtTime(historyData, profile, t).toFixed(2));
-    }
-  }
-
-  renderChart('promilleChart', labels, dataPoints, getZones(profile));
-}
-
-function removeDrink(index) {
-  historyData.splice(index, 1);
-  saveDrinkHistory(historyData);
-  updateUI();
-}
-
-updateUI();
-setInterval(updateUI, 60000);
-</script>
+<script src="main.js"></script>
 </body>
 </html>

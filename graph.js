@@ -39,7 +39,8 @@ function renderChart(canvasId, labels, dataPoints, zones) {
         legend: { display: false },
         annotation: {
           annotations: {
-            redZone: { type: 'box', yMin: 0, yMax: zones.redMax, backgroundColor: 'rgba(231, 76, 60, 0.15)', borderWidth: 0 },
+            legalZone: { type: 'box', yMin: 0, yMax: zones.legalMax, backgroundColor: 'rgba(52, 152, 219, 0.15)', borderWidth: 0 },
+            redZone: { type: 'box', yMin: zones.legalMax, yMax: zones.redMax, backgroundColor: 'rgba(231, 76, 60, 0.15)', borderWidth: 0 },
             funZone: { type: 'box', yMin: zones.redMax, yMax: zones.greenMax, backgroundColor: 'rgba(46, 204, 113, 0.15)', borderWidth: 0 },
             psykosZone: { type: 'box', yMin: zones.greenMax, yMax: 10, backgroundColor: 'rgba(155, 89, 182, 0.15)', borderWidth: 0 }
           }

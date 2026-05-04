@@ -34,7 +34,8 @@ function switchProfile(id) {
 }
 
 function getZones(profile) {
-  return { redMax: profile.funzone || 1.0, greenMax: 3.0 };
+  // Ny zon: legalMax = 0.2
+  return { legalMax: 0.2, redMax: profile.funzone || 1.0, greenMax: 3.0 };
 }
 
 function getDrinkHistory() {

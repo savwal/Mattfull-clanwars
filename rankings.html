@@ -6,8 +6,9 @@
 <title>Ranked - Måttfull</title>
 <style>
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
-nav { display: flex; gap: 0; margin-bottom: 20px; justify-content: center; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
-nav a { flex: 1; text-align: center; padding: 12px 5px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
+nav { display: flex; gap: 0; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+nav::-webkit-scrollbar { display: none; }
+nav a { flex: 0 0 auto; text-align: center; padding: 12px 20px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
 nav a:last-child { border-right: none; }
 nav a:hover, nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; }
@@ -25,6 +26,8 @@ li:last-child { border-bottom: none; }
 <nav>
   <a href="index.html">Krog</a>
   <a href="battles.html">Battles</a>
+  <a href="clans.html">Klan</a>
+  <a href="friends.html">Vänner</a>
   <a href="profile.html">Profil</a>
   <a href="rankings.html" class="active">Ranked</a>
 </nav>

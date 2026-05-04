@@ -1,6 +1,9 @@
-// Data structure for listed drinks
 const listedDrinks = {
   beer_cider_33: [
+    { name: 'Norrlands Guld', type: 'Lager', abv: 5.3, vol: 330 },
+    { name: 'Pripps Blå', type: 'Lager', abv: 5.0, vol: 330 },
+    { name: 'Falcon', type: 'Lager', abv: 5.2, vol: 330 },
+    { name: 'Mariestads', type: 'Strong lager', abv: 5.3, vol: 330 },
     { name: 'Carlsberg Hof', type: 'Lager', abv: 4.2, vol: 330 },
     { name: 'Heineken', type: 'Lager', abv: 5.0, vol: 330 },
     { name: 'Briska', type: 'Cider', abv: 4.5, vol: 330 },
@@ -14,6 +17,13 @@ const listedDrinks = {
     { name: 'Pripps Blå', type: 'Lager', abv: 5.0, vol: 500 },
     { name: 'Falcon', type: 'Lager', abv: 5.2, vol: 500 },
     { name: 'Mariestads', type: 'Strong lager', abv: 5.3, vol: 500 },
+    { name: 'Carlsberg Hof', type: 'Lager', abv: 4.2, vol: 500 },
+    { name: 'Heineken', type: 'Lager', abv: 5.0, vol: 500 },
+    { name: 'Briska', type: 'Cider', abv: 4.5, vol: 500 },
+    { name: 'Somersby', type: 'Cider', abv: 4.6, vol: 500 },
+    { name: 'Xider', type: 'Cider', abv: 4.5, vol: 500 },
+    { name: 'Kopparberg', type: 'Cider', abv: 4.5, vol: 500 },
+    { name: 'Ey Bro', type: 'Hard seltzer', abv: 4.5, vol: 500 }
   ],
   wine: [
     { name: 'Ett Glas Vin', type: 'Rött/Vitt/Rosé', abv: 12.5, vol: 150 },
@@ -34,11 +44,9 @@ const listedDrinks = {
   ]
 };
 
-// Functions for managing the modal content
 function renderCategoryTiles(containerId) {
   const container = document.getElementById(containerId);
-  container.innerHTML = ''; // Clear previous content
-
+  container.innerHTML = ''; 
   const categories = [
     { id: 'beer_cider_33', text: 'Öl/cider 33 cl', icon: 'beer-33.svg' },
     { id: 'beer_cider_50', text: 'Öl/cider 50 cl', icon: 'beer-50.svg' },
@@ -51,18 +59,14 @@ function renderCategoryTiles(containerId) {
     const tile = document.createElement('div');
     tile.className = 'logger-tile';
     tile.onclick = () => renderDrinkList(containerId, category.id);
-
     const img = document.createElement('img');
-    // Använd en fallback om ikonen saknas så appen inte ser trasig ut
     img.src = `icons/${category.icon}`;
     img.onerror = () => { img.style.display = 'none'; }; 
     img.alt = category.text;
     img.className = 'logger-icon';
-
     const textSpan = document.createElement('span');
     textSpan.innerText = category.text;
     textSpan.className = 'logger-text';
-
     tile.appendChild(img);
     tile.appendChild(textSpan);
     container.appendChild(tile);
@@ -72,7 +76,6 @@ function renderCategoryTiles(containerId) {
 function renderDrinkList(containerId, categoryId) {
   const container = document.getElementById(containerId);
   container.innerHTML = ''; 
-
   const backBtn = document.createElement('button');
   backBtn.innerText = '< Gå tillbaka';
   backBtn.className = 'logger-back-btn';
@@ -80,12 +83,7 @@ function renderDrinkList(containerId, categoryId) {
   container.appendChild(backBtn);
 
   const drinks = listedDrinks[categoryId];
-  if (!drinks) {
-    const noDrinksText = document.createElement('p');
-    noDrinksText.innerText = "Inga fördefinierade drycker hittades för denna kategori.";
-    container.appendChild(noDrinksText);
-    return;
-  }
+  if (!drinks) return;
 
   const drinkList = document.createElement('ul');
   drinkList.className = 'logger-list';
@@ -94,14 +92,11 @@ function renderDrinkList(containerId, categoryId) {
     const li = document.createElement('li');
     li.className = 'logger-list-item';
     li.onclick = () => selectDrinkAndAdd(drink);
-
     const drinkTitle = document.createElement('div');
     drinkTitle.innerHTML = `<strong>${drink.name}</strong><br><span class="logger-drink-info">${drink.type}</span>`;
-    
     const drinkStats = document.createElement('div');
     drinkStats.className = 'logger-drink-stats';
     drinkStats.innerHTML = `<span class="logger-drink-info">${drink.abv}% abv, ${drink.vol} ml</span>`;
-
     li.appendChild(drinkTitle);
     li.appendChild(drinkStats);
     drinkList.appendChild(li);
