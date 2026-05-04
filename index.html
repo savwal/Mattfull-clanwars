@@ -2,25 +2,41 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Main - Måttfull</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
 <style>
-body { font-family: system-ui, sans-serif; padding: 20px; max-width: 500px; margin: auto; background-color: #f9f9f9; color: #333; }
-nav { display: flex; gap: 10px; margin-bottom: 20px; }
-nav a { padding: 10px; background: #ddd; text-decoration: none; color: black; border-radius: 6px; }
-.card { background: white; border: 1px solid #ddd; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-input, button { padding: 12px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
-button { background-color: #2c3e50; color: white; border: none; cursor: pointer; font-weight: bold; }
-button.danger { background-color: #e74c3c; width: auto; padding: 6px 12px; font-size: 14px; margin-left: 10px; }
-button.magic { background-color: #9b59b6; margin-top: 15px; }
-ul { list-style-type: none; padding: 0; }
-li { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
-canvas { width: 100% !important; max-height: 300px; }
+body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 15px; background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); color: #2d3436; min-height: 100vh; overscroll-behavior-y: contain; transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+#pullIndicator { text-align: center; font-weight: bold; color: #fff; opacity: 0; transition: opacity 0.2s; height: 0; overflow: hidden; }
+nav { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+nav a { padding: 12px 20px; background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(5px); text-decoration: none; color: #2d3436; border-radius: 12px; font-weight: bold; transition: background 0.3s; }
+nav a:hover { background: rgba(255, 255, 255, 0.6); }
+.card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); }
+h2 { margin-top: 0; font-weight: 800; color: #1e272e; }
+input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid #dcdde1; font-size: 16px; outline: none; transition: border 0.3s; }
+input:focus, select:focus { border-color: #0984e3; box-shadow: 0 0 0 3px rgba(9, 132, 227, 0.2); }
+button { background: linear-gradient(135deg, #0984e3, #74b9ff); color: white; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(9, 132, 227, 0.3); transition: transform 0.1s; }
+button:active { transform: scale(0.98); }
+button.danger { background: #ff7675; width: auto; padding: 8px 16px; font-size: 14px; margin-left: 10px; box-shadow: 0 4px 10px rgba(255, 118, 117, 0.3); }
+button.magic { background: linear-gradient(135deg, #6c5ce7, #a29bfe); margin-top: 15px; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3); }
+ul { list-style: none; padding: 0; margin: 0; }
+li { border-bottom: 1px solid rgba(0,0,0,0.05); padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
+li:last-child { border-bottom: none; }
+canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
+.legend { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; font-size: 14px; font-weight: bold; justify-content: center; }
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.dot { width: 14px; height: 14px; border-radius: 50%; }
+.dot.red { background: rgba(255, 118, 117, 0.6); }
+.dot.green { background: rgba(85, 239, 196, 0.6); }
+.dot.purple { background: rgba(162, 155, 254, 0.6); }
+.dot.line { background: #0984e3; border-radius: 2px; width: 20px; height: 4px; }
+.highlight-text { font-size: 1.2em; color: #0984e3; }
 </style>
 </head>
 <body>
+
+<div id="pullIndicator">Släpp för att ladda om...</div>
 
 <nav>
   <a href="index.html">Main</a>
@@ -30,6 +46,20 @@ canvas { width: 100% !important; max-height: 300px; }
 
 <div class="card">
   <h2>Registrera Dryck</h2>
+  <select id="presetDrink" onchange="loadPreset()">
+    <option value="">-- Snabbval från lista --</option>
+    <option value="lattol">Lättöl 33cl (2.2%)</option>
+    <option value="folk28">Folköl 50cl (2.8%)</option>
+    <option value="folk35_33">Folköl 33cl (3.5%)</option>
+    <option value="folk35_50">Folköl 50cl (3.5%)</option>
+    <option value="stark33">Starköl 33cl (5%)</option>
+    <option value="stark50">Starköl 50cl (5%)</option>
+    <option value="wine12">Vin 12.5cl (12%)</option>
+    <option value="wine13">Vin 12.5cl (13%)</option>
+    <option value="wineBottle">Vinflaska 75cl (13%)</option>
+    <option value="spirit4">Sprit 4cl (40%)</option>
+    <option value="spiritHalf">Halvrör 35cl (40%)</option>
+  </select>
   <input type="text" id="name" placeholder="Dryck (t.ex. Öl, Vin)">
   <input type="number" id="volume" placeholder="Volym (ml, t.ex. 330)">
   <input type="number" id="abv" placeholder="Alkoholhalt (%, t.ex. 5.0)">
@@ -37,29 +67,94 @@ canvas { width: 100% !important; max-height: 300px; }
   <button class="magic" onclick="gragasUlt()">Gragas Ult (-5g alkohol)</button>
 </div>
 
+<div class="card" style="display: flex; align-items: center; gap: 15px;">
+  <img id="userPic" style="width: 70px; height: 70px; border-radius: 50%; display: none; object-fit: cover;">
+  <div>
+    <h2 style="margin: 0;">Din Historik</h2>
+    <p style="margin: 5px 0 0 0;">Totalt intag: <strong class="highlight-text"><span id="totalGrams">0</span> g</strong> ren alkohol</p>
+    <p style="margin: 5px 0 0 0;">Uppskattad promille: <strong class="highlight-text"><span id="promille">0.00</span> ‰</strong></p>
+  </div>
+</div>
+
 <div class="card">
-  <h2>Din Historik</h2>
-  <p>Totalt intag: <strong><span id="totalGrams">0</span> g</strong> ren alkohol</p>
-  <p>Uppskattad promille: <strong><span id="promille">0.00</span> ‰</strong></p>
   <ul id="history"></ul>
 </div>
 
 <div class="card">
   <h2>Promilleutveckling</h2>
   <canvas id="promilleChart"></canvas>
+  <div class="legend">
+    <div class="legend-item"><span class="dot line"></span> Promille</div>
+    <div class="legend-item"><span class="dot red"></span> Under Funzone</div>
+    <div class="legend-item"><span class="dot green"></span> Funzone</div>
+    <div class="legend-item"><span class="dot purple"></span> Psykoszonen</div>
+  </div>
 </div>
 
 <script src="shared.js"></script>
+<script src="calculator.js"></script>
+<script src="graph.js"></script>
 <script>
-let historyData = JSON.parse(localStorage.getItem('drinkHistory')) || [];
-let chartInstance = null;
+const presetData = {
+  lattol: {name: 'Lättöl', vol: 330, abv: 2.2},
+  folk28: {name: 'Folköl', vol: 500, abv: 2.8},
+  folk35_33: {name: 'Folköl', vol: 330, abv: 3.5},
+  folk35_50: {name: 'Folköl', vol: 500, abv: 3.5},
+  stark33: {name: 'Starköl', vol: 330, abv: 5.0},
+  stark50: {name: 'Starköl', vol: 500, abv: 5.0},
+  wine12: {name: 'Vin', vol: 125, abv: 12.0},
+  wine13: {name: 'Vin', vol: 125, abv: 13.0},
+  wineBottle: {name: 'Vinflaska', vol: 750, abv: 13.0},
+  spirit4: {name: 'Sprit', vol: 40, abv: 40.0},
+  spiritHalf: {name: 'Halvrör', vol: 350, abv: 40.0}
+};
 
-function calculatePromille(grams) {
-  const profile = getProfile();
-  if (!profile.weight || profile.weight <= 0 || grams <= 0) return 0.00;
-  const factor = profile.gender === 'kvinna' ? 0.6 : 0.7;
-  return (grams / (profile.weight * factor)).toFixed(2);
+function loadPreset() {
+  const val = document.getElementById('presetDrink').value;
+  if(presetData[val]) {
+    document.getElementById('name').value = presetData[val].name;
+    document.getElementById('volume').value = presetData[val].vol;
+    document.getElementById('abv').value = presetData[val].abv;
+  }
 }
+
+let startY = 0;
+let isPulling = false;
+const body = document.body;
+const indicator = document.getElementById('pullIndicator');
+
+window.addEventListener('touchstart', e => {
+  if (window.scrollY === 0) startY = e.touches[0].clientY;
+}, {passive: true});
+
+window.addEventListener('touchmove', e => {
+  if (window.scrollY === 0 && startY > 0) {
+    const y = e.touches[0].clientY;
+    const delta = y - startY;
+    if (delta > 0) {
+      isPulling = true;
+      body.style.transform = `translateY(${Math.min(delta * 0.4, 100)}px)`;
+      if (delta > 80) {
+        indicator.style.opacity = '1';
+        indicator.style.height = '30px';
+      }
+    }
+  }
+}, {passive: false});
+
+window.addEventListener('touchend', e => {
+  if (isPulling) {
+    const delta = e.changedTouches[0].clientY - startY;
+    body.style.transform = 'translateY(0)';
+    indicator.style.opacity = '0';
+    indicator.style.height = '0';
+    if (delta > 100) location.reload();
+    isPulling = false;
+    startY = 0;
+  }
+});
+
+let historyData = getDrinkHistory();
 
 function addDrink() {
   const name = document.getElementById('name').value;
@@ -75,12 +170,14 @@ function gragasUlt() {
 }
 
 function saveEntry(name, volume, abv, grams) {
-  const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-  historyData.push({ name, volume, abv, grams, time });
-  localStorage.setItem('drinkHistory', JSON.stringify(historyData));
+  const now = new Date();
+  const time = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  historyData.push({ name, volume, abv, grams, time, timestamp: now.getTime() });
+  saveDrinkHistory(historyData);
   document.getElementById('name').value = '';
   document.getElementById('volume').value = '';
   document.getElementById('abv').value = '';
+  document.getElementById('presetDrink').value = '';
   updateUI();
 }
 
@@ -88,100 +185,58 @@ function updateUI() {
   const list = document.getElementById('history');
   list.innerHTML = '';
   let total = 0;
-  const labels = [];
-  const dataPoints = [];
+  const profile = getActiveProfile();
   
+  if (profile.pic) {
+    document.getElementById('userPic').src = profile.pic;
+    document.getElementById('userPic').style.display = 'block';
+  }
+
   historyData.forEach((item, index) => {
-    total += item.grams;
-    if (total < 0) total = 0;
-    labels.push(item.time);
-    dataPoints.push(calculatePromille(total));
+    if (item.grams > 0) total += item.grams;
     
     const li = document.createElement('li');
-    const textSpan = document.createElement('span');
-    textSpan.innerHTML = `<strong>${item.time}</strong>: ${item.name} <br><small>${item.grams}g</small>`;
+    li.innerHTML = `<div><strong>${item.time}</strong>: ${item.name} <br><span style="color:#636e72; font-size: 0.9em;">${item.grams > 0 ? '+' : ''}${item.grams}g alkohol</span></div>`;
     
     const btn = document.createElement('button');
     btn.className = 'danger';
     btn.textContent = "Radera";
     btn.onclick = () => removeDrink(index);
     
-    li.appendChild(textSpan);
     li.appendChild(btn);
     list.appendChild(li);
   });
   
+  const currentBAC = calculateBACAtTime(historyData, profile, Date.now()).toFixed(2);
+  
   document.getElementById('totalGrams').textContent = total.toFixed(1);
-  document.getElementById('promille').textContent = calculatePromille(total);
-  updateChart(labels, dataPoints);
+  document.getElementById('promille').textContent = currentBAC;
+
+  const labels = [];
+  const dataPoints = [];
+  
+  if (historyData.length > 0) {
+    const firstTime = new Date(historyData[0].timestamp).getTime();
+    const endTime = Date.now() + (3600000 * 2); 
+    
+    for (let t = firstTime; t <= endTime; t += 900000) {
+      const date = new Date(t);
+      labels.push(date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+      dataPoints.push(calculateBACAtTime(historyData, profile, t).toFixed(2));
+    }
+  }
+
+  renderChart('promilleChart', labels, dataPoints, getZones());
 }
 
 function removeDrink(index) {
   historyData.splice(index, 1);
-  localStorage.setItem('drinkHistory', JSON.stringify(historyData));
+  saveDrinkHistory(historyData);
   updateUI();
 }
 
-function updateChart(labels, dataPoints) {
-  const ctx = document.getElementById('promilleChart').getContext('2d');
-  const zones = getZones();
-  
-  if (chartInstance) chartInstance.destroy();
-  
-  chartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Promille',
-        data: dataPoints,
-        borderColor: '#0000FF', 
-        borderWidth: 3,
-        fill: false,
-        tension: 0.1,
-        stepped: true
-      }]
-    },
-    options: { 
-      responsive: true, 
-      scales: { 
-        y: { 
-          beginAtZero: true,
-          suggestedMax: zones.greenMax + 0.5 
-        } 
-      },
-      plugins: {
-        annotation: {
-          annotations: {
-            redZone: {
-              type: 'box',
-              yMin: 0,
-              yMax: zones.redMax,
-              backgroundColor: 'rgba(255, 0, 0, 0.2)',
-              borderWidth: 0
-            },
-            funZone: {
-              type: 'box',
-              yMin: zones.redMax,
-              yMax: zones.greenMax,
-              backgroundColor: 'rgba(0, 255, 0, 0.2)',
-              borderWidth: 0
-            },
-            psykosZone: {
-              type: 'box',
-              yMin: zones.greenMax,
-              yMax: 10,
-              backgroundColor: 'rgba(128, 0, 128, 0.3)',
-              borderWidth: 0
-            }
-          }
-        }
-      }
-    }
-  });
-}
-
 updateUI();
+setInterval(updateUI, 60000);
 </script>
 </body>
 </html>
