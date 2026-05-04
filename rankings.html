@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rankings - Måttfull</title>
+<style>
+body { font-family: system-ui, sans-serif; padding: 20px; max-width: 500px; margin: auto; background-color: #f9f9f9; color: #333; }
+nav { display: flex; gap: 10px; margin-bottom: 20px; }
+nav a { padding: 10px; background: #ddd; text-decoration: none; color: black; border-radius: 6px; }
+.card { background: white; border: 1px solid #ddd; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+ol { padding-left: 20px; }
+li { padding: 10px 0; border-bottom: 1px solid #eee; font-size: 18px; }
+.highlight { font-weight: bold; color: #2c3e50; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Main</a>
+  <a href="profile.html">Profil</a>
+  <a href="rankings.html">Rankings</a>
+</nav>
+
+<div class="card">
+  <h2>Leaderboard (Gram ren alkohol)</h2>
+  <ol id="leaderboard"></ol>
+</div>
+
+<script>
+let historyData = JSON.parse(localStorage.getItem('drinkHistory')) || [];
+let profile = JSON.parse(localStorage.getItem('userProfile')) || { name: 'Du' };
+
+let userTotal = 0;
+historyData.forEach(item => {
+  userTotal += item.grams;
+});
+if (userTotal < 0) userTotal = 0;
+
+let rankings = [
+  { name: "Bosse", score: 120.5 },
+  { name: "Anna", score: 85.2 },
+  { name: "Sven", score: 45.0 },
+  { name: profile.name || "Du", score: parseFloat(userTotal.toFixed(1)), isUser: true }
+];
+
+rankings.sort((a, b) => b.score - a.score);
+
+const list = document.getElementById('leaderboard');
+rankings.forEach(player => {
+  const li = document.createElement('li');
+  li.textContent = `${player.name}: ${player.score}g`;
+  if (player.isUser) {
+    li.classList.add('highlight');
+  }
+  list.appendChild(li);
+});
+</script>
+</body>
+</html>

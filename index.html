@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Main - Måttfull</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
+<style>
+body { font-family: system-ui, sans-serif; padding: 20px; max-width: 500px; margin: auto; background-color: #f9f9f9; color: #333; }
+nav { display: flex; gap: 10px; margin-bottom: 20px; }
+nav a { padding: 10px; background: #ddd; text-decoration: none; color: black; border-radius: 6px; }
+.card { background: white; border: 1px solid #ddd; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+input, button { padding: 12px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
+button { background-color: #2c3e50; color: white; border: none; cursor: pointer; font-weight: bold; }
+button.danger { background-color: #e74c3c; width: auto; padding: 6px 12px; font-size: 14px; margin-left: 10px; }
+button.magic { background-color: #9b59b6; margin-top: 15px; }
+ul { list-style-type: none; padding: 0; }
+li { border-bottom: 1px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
+canvas { width: 100% !important; max-height: 300px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Main</a>
+  <a href="profile.html">Profil</a>
+  <a href="rankings.html">Rankings</a>
+</nav>
+
+<div class="card">
+  <h2>Registrera Dryck</h2>
+  <input type="text" id="name" placeholder="Dryck (t.ex. Öl, Vin)">
+  <input type="number" id="volume" placeholder="Volym (ml, t.ex. 330)">
+  <input type="number" id="abv" placeholder="Alkoholhalt (%, t.ex. 5.0)">
+  <button onclick="addDrink()">Lägg till i historik</button>
+  <button class="magic" onclick="gragasUlt()">Gragas Ult (-5g alkohol)</button>
+</div>
+
+<div class="card">
+  <h2>Din Historik</h2>
+  <p>Totalt intag: <strong><span id="totalGrams">0</span> g</strong> ren alkohol</p>
+  <p>Uppskattad promille: <strong><span id="promille">0.00</span> ‰</strong></p>
+  <ul id="history"></ul>
+</div>
+
+<div class="card">
+  <h2>Promilleutveckling</h2>
+  <canvas id="promilleChart"></canvas>
+</div>
+
+<script src="shared.js"></script>
+<script>
+let historyData = JSON.parse(localStorage.getItem('drinkHistory')) || [];
+let chartInstance = null;
+
+function calculatePromille(grams) {
+  const profile = getProfile();
+  if (!profile.weight || profile.weight <= 0 || grams <= 0) return 0.00;
+  const factor = profile.gender === 'kvinna' ? 0.6 : 0.7;
+  return (grams / (profile.weight * factor)).toFixed(2);
+}
+
+function addDrink() {
+  const name = document.getElementById('name').value;
+  const volume = parseFloat(document.getElementById('volume').value);
+  const abv = parseFloat(document.getElementById('abv').value);
+  if (!name || isNaN(volume) || isNaN(abv)) return;
+  const grams = parseFloat((volume * (abv / 100) * 0.789).toFixed(1));
+  saveEntry(name, volume, abv, grams);
+}
+
+function gragasUlt() {
+  saveEntry("Gragas Ult", 0, 0, -5.0);
+}
+
+function saveEntry(name, volume, abv, grams) {
+  const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  historyData.push({ name, volume, abv, grams, time });
+  localStorage.setItem('drinkHistory', JSON.stringify(historyData));
+  document.getElementById('name').value = '';
+  document.getElementById('volume').value = '';
+  document.getElementById('abv').value = '';
+  updateUI();
+}
+
+function updateUI() {
+  const list = document.getElementById('history');
+  list.innerHTML = '';
+  let total = 0;
+  const labels = [];
+  const dataPoints = [];
+  
+  historyData.forEach((item, index) => {
+    total += item.grams;
+    if (total < 0) total = 0;
+    labels.push(item.time);
+    dataPoints.push(calculatePromille(total));
+    
+    const li = document.createElement('li');
+    const textSpan = document.createElement('span');
+    textSpan.innerHTML = `<strong>${item.time}</strong>: ${item.name} <br><small>${item.grams}g</small>`;
+    
+    const btn = document.createElement('button');
+    btn.className = 'danger';
+    btn.textContent = "Radera";
+    btn.onclick = () => removeDrink(index);
+    
+    li.appendChild(textSpan);
+    li.appendChild(btn);
+    list.appendChild(li);
+  });
+  
+  document.getElementById('totalGrams').textContent = total.toFixed(1);
+  document.getElementById('promille').textContent = calculatePromille(total);
+  updateChart(labels, dataPoints);
+}
+
+function removeDrink(index) {
+  historyData.splice(index, 1);
+  localStorage.setItem('drinkHistory', JSON.stringify(historyData));
+  updateUI();
+}
+
+function updateChart(labels, dataPoints) {
+  const ctx = document.getElementById('promilleChart').getContext('2d');
+  const zones = getZones();
+  
+  if (chartInstance) chartInstance.destroy();
+  
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Promille',
+        data: dataPoints,
+        borderColor: '#0000FF', 
+        borderWidth: 3,
+        fill: false,
+        tension: 0.1,
+        stepped: true
+      }]
+    },
+    options: { 
+      responsive: true, 
+      scales: { 
+        y: { 
+          beginAtZero: true,
+          suggestedMax: zones.greenMax + 0.5 
+        } 
+      },
+      plugins: {
+        annotation: {
+          annotations: {
+            redZone: {
+              type: 'box',
+              yMin: 0,
+              yMax: zones.redMax,
+              backgroundColor: 'rgba(255, 0, 0, 0.2)',
+              borderWidth: 0
+            },
+            funZone: {
+              type: 'box',
+              yMin: zones.redMax,
+              yMax: zones.greenMax,
+              backgroundColor: 'rgba(0, 255, 0, 0.2)',
+              borderWidth: 0
+            },
+            psykosZone: {
+              type: 'box',
+              yMin: zones.greenMax,
+              yMax: 10,
+              backgroundColor: 'rgba(128, 0, 128, 0.3)',
+              borderWidth: 0
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+updateUI();
+</script>
+</body>
+</html>
