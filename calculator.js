@@ -7,12 +7,14 @@ function getAbsorptionTime(abv) {
 
 function calculateBACAtTime(history, profile, targetTime) {
   if (!profile.weight || profile.weight <= 0 || history.length === 0) return 0.00;
+  
   const r = profile.gender === 'kvinna' ? 0.55 : 0.68;
-  const betaPerMinute = 0.015 / 60;
-  let bac = 0;
+  const elimGramsPerMinute = (0.1 * profile.weight) / 60;
+  let currentGrams = 0;
   
   const firstTime = new Date(history[0].timestamp).getTime();
   const totalMinutes = Math.floor((targetTime - firstTime) / 60000);
+  
   if (totalMinutes < 0) return 0;
 
   for (let m = 0; m <= totalMinutes; m++) {
@@ -23,6 +25,7 @@ function calculateBACAtTime(history, profile, targetTime) {
       const drink = history[i];
       if (drink.grams < 0) continue; 
       const drinkTime = new Date(drink.timestamp).getTime();
+      
       if (currentTime >= drinkTime) {
         const absTimeMs = getAbsorptionTime(drink.abv) * 3600000;
         const timeSince = currentTime - drinkTime;
@@ -33,7 +36,7 @@ function calculateBACAtTime(history, profile, targetTime) {
     }
 
     if (absorbedGrams > 0) {
-      bac += absorbedGrams / (profile.weight * r);
+      currentGrams += absorbedGrams;
     }
     
     for (let i = 0; i < history.length; i++) {
@@ -41,15 +44,17 @@ function calculateBACAtTime(history, profile, targetTime) {
       if (drink.grams < 0) {
         const drinkTime = new Date(drink.timestamp).getTime();
         if (Math.abs(currentTime - drinkTime) < 30000) {
-          bac += (drink.grams / (profile.weight * r));
+          currentGrams += drink.grams;
         }
       }
     }
 
-    if (bac > 0) {
-      bac -= betaPerMinute;
-      if (bac < 0) bac = 0;
+    if (currentGrams > 0) {
+      currentGrams -= elimGramsPerMinute;
+      if (currentGrams < 0) currentGrams = 0;
     }
   }
-  return bac;
+  
+  const bac = currentGrams / (profile.weight * r);
+  return bac > 0 ? bac : 0;
 }

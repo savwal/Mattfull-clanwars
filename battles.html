@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Battles - Måttfull</title>
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
+nav { display: flex; gap: 0; margin-bottom: 20px; justify-content: center; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+nav a { flex: 1; text-align: center; padding: 12px 5px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
+nav a:last-child { border-right: none; }
+nav a:hover, nav a.active { background: #FFCC00; }
+.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
+h2 { font-family: 'Arial Black', Impact, sans-serif; text-transform: uppercase; color: #FFF; background: #E74C3C; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; letter-spacing: 1px; text-shadow: 2px 2px 0px #2C3E50; }
+.logger-tile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; background-color: #D1EAFE; padding: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; }
+.logger-tile { border: 4px solid #2C3E50; background: #FFF; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-around; cursor: pointer; transition: transform 0.1s; color: #2C3E50; font-weight: bold; text-align: center; box-shadow: 4px 4px 0px #2C3E50; min-height: 80px;}
+.logger-tile:hover { background-color: #FFCC00; }
+.logger-tile:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+.logger-text { font-size: 1.1em; font-weight: 800; text-transform: uppercase; }
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
+.modal-content { background-color: #2A8CFF; color: white; margin: 30% auto; padding: 25px; border: 6px solid #2C3E50; box-shadow: 8px 8px 0px #2C3E50; border-radius: 0; width: 90%; max-width: 400px; text-align: center; position: relative; }
+.close-modal { color: #E74C3C; font-size: 32px; font-weight: bold; cursor: pointer; position: absolute; right: 15px; top: 10px; }
+.close-modal:hover { color: #FFF; }
+.coming-soon-text { font-family: 'Arial Black'; font-size: 28px; color: #FFCC00; text-shadow: 3px 3px 0px #2C3E50; margin-top: 20px; text-transform: uppercase; transform: rotate(-5deg); display: inline-block; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Krog</a>
+  <a href="battles.html" class="active">Battles</a>
+  <a href="profile.html">Profil</a>
+  <a href="rankings.html">Ranked</a>
+</nav>
+
+<div class="card">
+  <h2>Välj Strid</h2>
+  <div class="logger-tile-grid">
+    <div class="logger-tile" onclick="openBattleModal('Challenge')">
+      <span class="logger-text">Challenge</span>
+    </div>
+    <div class="logger-tile" onclick="openBattleModal('Clan War')">
+      <span class="logger-text">Clan War</span>
+    </div>
+    <div class="logger-tile" onclick="openBattleModal('Solo Battle')">
+      <span class="logger-text">Solo Battle</span>
+    </div>
+    <div class="logger-tile" onclick="openBattleModal('Duos Battle')">
+      <span class="logger-text">Duos Battle</span>
+    </div>
+  </div>
+</div>
+
+<div id="battleModal" class="modal">
+  <div class="modal-content card">
+    <span class="close-modal" onclick="closeBattleModal()">&times;</span>
+    <h2 id="modalTitle" style="font-family: 'Arial Black'; color: #FFF; background: #2C3E50; margin: -25px -25px 20px -25px; padding: 15px; border-bottom: 4px solid #0984E3;"></h2>
+    <div class="coming-soon-text">COMING SOON</div>
+  </div>
+</div>
+
+<script>
+function openBattleModal(title) {
+  document.getElementById('modalTitle').innerText = title;
+  document.getElementById('battleModal').style.display = 'block';
+}
+
+function closeBattleModal() {
+  document.getElementById('battleModal').style.display = 'none';
+}
+</script>
+</body>
+</html>

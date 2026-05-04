@@ -9,7 +9,7 @@
 <style>
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
 nav { display: flex; gap: 0; margin-bottom: 20px; justify-content: center; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
-nav a { flex: 1; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; }
+nav a { flex: 1; text-align: center; padding: 12px 5px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
 nav a:last-child { border-right: none; }
 nav a:hover, nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
@@ -24,20 +24,24 @@ ul { list-style: none; padding: 0; margin: 0; }
 li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
 canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
 .highlight-text { font-size: 1.3em; color: #2A8CFF; font-family: 'Arial Black', sans-serif; text-shadow: 1px 1px 0px #2C3E50; }
-
-/* Modal styles - straight edge Clash Royale style */
+.legend { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 20px; justify-content: center; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-weight: 900; color: #2C3E50; text-transform: uppercase; font-size: 11px; }
+.dot { width: 16px; height: 16px; border: 3px solid #2C3E50; box-shadow: 2px 2px 0px #2C3E50; }
+.dot.red { background: #E74C3C; }
+.dot.green { background: #2ECC71; }
+.dot.purple { background: #9B59B6; }
+.dot.line { background: #FFCC00; height: 6px; width: 20px; }
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
 .modal-content { background-color: #2A8CFF; color: white; margin: 10% auto; padding: 25px; border: 6px solid #2C3E50; box-shadow: 8px 8px 0px #2C3E50; border-radius: 0; width: 90%; max-width: 600px; text-align: center; }
 .close-modal { color: #E74C3C; font-size: 32px; font-weight: bold; cursor: pointer; position: absolute; right: 15px; top: 10px; }
 .close-modal:hover { color: #FFF; }
 .logger-tile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; background-color: #D1EAFE; padding: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; }
-.logger-tile { border: 4px solid #2C3E50; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-around; cursor: pointer; transition: transform 0.1s; color: #2C3E50; font-weight: bold; text-align: center; box-shadow: 4px 4px 0px #2C3E50; }
+.logger-tile { border: 4px solid #2C3E50; background: #FFF; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-around; cursor: pointer; transition: transform 0.1s; color: #2C3E50; font-weight: bold; text-align: center; box-shadow: 4px 4px 0px #2C3E50; min-height: 80px;}
+.logger-tile:last-child:nth-child(odd) { grid-column: span 2; }
 .logger-tile:hover { background-color: #FFCC00; }
 .logger-tile:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
-.logger-icon { max-height: 80px; width: auto; margin-bottom: 10px; }
+.logger-icon { max-height: 50px; width: auto; margin-bottom: 10px; }
 .logger-text { font-size: 1.1em; font-weight: 800; text-transform: uppercase; }
-
-/* List styles */
 .logger-back-btn { background: #FFCC00; color: #2C3E50; padding: 10px 15px; border: 4px solid #2C3E50; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; box-shadow: 4px 4px 0px #2C3E50; width: auto; font-size: 14px; }
 .logger-list { list-style: none; padding: 0; text-align: left; background-color: #fff; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; }
 .logger-list-item { padding: 15px; border-bottom: 4px solid #D1EAFE; cursor: pointer; color: #2C3E50; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
@@ -49,12 +53,11 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
 </head>
 <body>
 
-<div id="pullIndicator">Släpp för att ladda om...</div>
-
 <nav>
   <a href="index.html" class="active">Krog</a>
+  <a href="battles.html">Battles</a>
   <a href="profile.html">Profil</a>
-  <a href="rankings.html">Arena</a>
+  <a href="rankings.html">Ranked</a>
 </nav>
 
 <div class="card">
@@ -65,7 +68,7 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
   <input type="number" id="volume" placeholder="Volym (ml, t.ex. 330)">
   <input type="number" id="abv" placeholder="Alkoholhalt (%, t.ex. 5.0)">
   <button onclick="addDrink()">Manuellt registrera</button>
-  <button class="magic" onclick="gragasUlt()">Gragas Ult (-5g alkohol)</button>
+  <button class="magic" onclick="gragasUlt()">Gragas Ult (Ångra senaste 30 min)</button>
 </div>
 
 <div class="card" style="display: flex; align-items: center; gap: 15px;">
@@ -93,7 +96,6 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
   </div>
 </div>
 
-<!-- Modal for listed drinks registration -->
 <div id="drinkModal" class="modal">
   <div class="modal-content card" style="position: relative; text-align: left; ">
     <span class="close-modal" onclick="closeDrinkModal()">&times;</span>
@@ -107,47 +109,10 @@ canvas { width: 100% !important; max-height: 300px; margin-top: 10px; }
 <script src="graph.js"></script>
 <script src="drinkLogger.js"></script>
 <script>
-// Modal functionality
 function openDrinkModal() {
   document.getElementById('drinkModal').style.display = 'block';
-  renderCategoryTiles('modalContentContainer'); // Initial load with tiles
+  renderCategoryTiles('modalContentContainer'); 
 }
-
-let startY = 0;
-let isPulling = false;
-const body = document.body;
-const indicator = document.getElementById('pullIndicator');
-
-window.addEventListener('touchstart', e => {
-  if (window.scrollY === 0) startY = e.touches[0].clientY;
-}, {passive: true});
-
-window.addEventListener('touchmove', e => {
-  if (window.scrollY === 0 && startY > 0) {
-    const y = e.touches[0].clientY;
-    const delta = y - startY;
-    if (delta > 0) {
-      isPulling = true;
-      body.style.transform = `translateY(${Math.min(delta * 0.4, 100)}px)`;
-      if (delta > 80) {
-        indicator.style.opacity = '1';
-        indicator.style.height = '30px';
-      }
-    }
-  }
-}, {passive: false});
-
-window.addEventListener('touchend', e => {
-  if (isPulling) {
-    const delta = e.changedTouches[0].clientY - startY;
-    body.style.transform = 'translateY(0)';
-    indicator.style.opacity = '0';
-    indicator.style.height = '0';
-    if (delta > 100) location.reload();
-    isPulling = false;
-    startY = 0;
-  }
-});
 
 let historyData = getDrinkHistory();
 
@@ -161,7 +126,17 @@ function addDrink() {
 }
 
 function gragasUlt() {
-  saveEntry("Gragas Ult", 0, 0, -5.0);
+  const now = Date.now();
+  const limit = now - 30 * 60000;
+  let sum = 0;
+  historyData.forEach(item => {
+    if (item.timestamp >= limit && item.grams > 0) {
+      sum += item.grams;
+    }
+  });
+  if (sum > 0) {
+    saveEntry("Gragas Ult", 0, 0, -parseFloat(sum.toFixed(1)));
+  }
 }
 
 function saveEntry(name, volume, abv, grams) {
@@ -169,8 +144,6 @@ function saveEntry(name, volume, abv, grams) {
   const time = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
   historyData.push({ name, volume, abv, grams, time, timestamp: now.getTime() });
   saveDrinkHistory(historyData);
-  
-  // Clear manual inputs
   document.getElementById('name').value = '';
   document.getElementById('volume').value = '';
   document.getElementById('abv').value = '';
@@ -189,19 +162,18 @@ function updateUI() {
   }
 
   historyData.forEach((item, index) => {
-    if (item.grams > 0) total += item.grams;
-    
+    total += item.grams;
     const li = document.createElement('li');
-    li.innerHTML = `<div><strong>${item.time}</strong>: ${item.name} <br><span style="color:#2C3E50;">${item.grams > 0 ? '+' : ''}${item.grams}g alkohol</span></div>`;
-    
+    li.innerHTML = `<div><strong>${item.time}</strong>: ${item.name} <br><span style="color:#2C3E50;">${item.grams > 0 ? '+' : ''}${item.grams.toFixed(1)}g alkohol</span></div>`;
     const btn = document.createElement('button');
     btn.className = 'danger';
     btn.textContent = "X";
     btn.onclick = () => removeDrink(index);
-    
     li.appendChild(btn);
     list.appendChild(li);
   });
+  
+  if (total < 0) total = 0;
   
   const currentBAC = calculateBACAtTime(historyData, profile, Date.now()).toFixed(2);
   document.getElementById('totalGrams').textContent = total.toFixed(1);

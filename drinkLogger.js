@@ -1,16 +1,13 @@
-// listedDrinks.js
-// Data structure for listed drinks based on categories from image_1.png
-
+// Data structure for listed drinks
 const listedDrinks = {
   beer_cider_33: [
     { name: 'Carlsberg Hof', type: 'Lager', abv: 4.2, vol: 330 },
     { name: 'Heineken', type: 'Lager', abv: 5.0, vol: 330 },
     { name: 'Briska', type: 'Cider', abv: 4.5, vol: 330 },
-    { name: 'Somersby', type: 'Cider', abv: 4.6, vol: 330 }, // Average
+    { name: 'Somersby', type: 'Cider', abv: 4.6, vol: 330 },
     { name: 'Xider', type: 'Cider', abv: 4.5, vol: 330 },
     { name: 'Kopparberg', type: 'Cider', abv: 4.5, vol: 330 },
-    { name: 'Ey Bro', type: 'Hard seltzer', abv: 4.5, vol: 330 },
-    { name: 'Gin & Tonic (RTD/mixed)', type: 'Mixed drink', abv: 6.5, vol: 300 }, // Using typical mid-range values
+    { name: 'Ey Bro', type: 'Hard seltzer', abv: 4.5, vol: 330 }
   ],
   beer_cider_50: [
     { name: 'Norrlands Guld', type: 'Lager', abv: 5.3, vol: 500 },
@@ -19,15 +16,21 @@ const listedDrinks = {
     { name: 'Mariestads', type: 'Strong lager', abv: 5.3, vol: 500 },
   ],
   wine: [
-    { name: 'Glas Vin (typical)', type: 'Rött/Vitt/Rosé', abv: 12.5, vol: 125 }, // No brands listed for wine, using generic values.
+    { name: 'Ett Glas Vin', type: 'Rött/Vitt/Rosé', abv: 12.5, vol: 150 },
+  ],
+  drinkar: [
+    { name: 'Gin & Tonic', type: 'Drink (4cl sprit)', abv: 8.0, vol: 200 },
+    { name: 'Vodka Cranberry', type: 'Drink (4cl sprit)', abv: 8.0, vol: 200 },
+    { name: 'Red Bull Vodka', type: 'Drink (4cl sprit)', abv: 6.4, vol: 250 }
   ],
   sprit: [
     { name: 'Vodka (shot)', type: 'Spirit', abv: 40, vol: 40 },
-    { name: 'Gin (shot)', type: 'Spirit', abv: 38.8, vol: 40 }, // Average
-    { name: 'Whisky', type: 'Spirit', abv: 41.5, vol: 40 }, // Average
-    { name: 'Rum', type: 'Spirit', abv: 38.8, vol: 40 }, // Average
+    { name: 'Tequila (shot)', type: 'Spirit', abv: 38, vol: 40 },
+    { name: 'Gin (shot)', type: 'Spirit', abv: 38.8, vol: 40 },
+    { name: 'Whisky', type: 'Spirit', abv: 41.5, vol: 40 },
+    { name: 'Rum', type: 'Spirit', abv: 38.8, vol: 40 },
     { name: 'Jägermeister', type: 'Liqueur', abv: 35, vol: 40 },
-    { name: 'Bacardi (rum)', type: 'Spirit', abv: 38.8, vol: 40 }, // Average
+    { name: 'Bacardi (rum)', type: 'Spirit', abv: 38.8, vol: 40 },
   ]
 };
 
@@ -40,6 +43,7 @@ function renderCategoryTiles(containerId) {
     { id: 'beer_cider_33', text: 'Öl/cider 33 cl', icon: 'beer-33.svg' },
     { id: 'beer_cider_50', text: 'Öl/cider 50 cl', icon: 'beer-50.svg' },
     { id: 'wine', text: 'Vin', icon: 'wine.svg' },
+    { id: 'drinkar', text: 'Drinkar', icon: 'drink.svg' },
     { id: 'sprit', text: 'Sprit', icon: 'sprit.svg' }
   ];
 
@@ -49,7 +53,9 @@ function renderCategoryTiles(containerId) {
     tile.onclick = () => renderDrinkList(containerId, category.id);
 
     const img = document.createElement('img');
+    // Använd en fallback om ikonen saknas så appen inte ser trasig ut
     img.src = `icons/${category.icon}`;
+    img.onerror = () => { img.style.display = 'none'; }; 
     img.alt = category.text;
     img.className = 'logger-icon';
 
@@ -65,9 +71,8 @@ function renderCategoryTiles(containerId) {
 
 function renderDrinkList(containerId, categoryId) {
   const container = document.getElementById(containerId);
-  container.innerHTML = ''; // Clear previous content
+  container.innerHTML = ''; 
 
-  // Add back button
   const backBtn = document.createElement('button');
   backBtn.innerText = '< Gå tillbaka';
   backBtn.className = 'logger-back-btn';
