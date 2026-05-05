@@ -6,9 +6,9 @@
 <title>Plupfull - Battles</title>
 <style>
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
-nav { display: flex; gap: 0; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
 nav::-webkit-scrollbar { display: none; }
-nav a { flex: 0 0 auto; text-align: center; padding: 12px 20px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
+nav a { flex: 1 1 120px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
 nav a:last-child { border-right: none; }
 nav a:hover, nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
@@ -27,31 +27,22 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 </head>
 <body>
 <nav>
-  <a href="index.html">Krog</a>
+  <a href="index.html">Log</a>
   <a href="battles.html" class="active">Battles</a>
+  <a href="events.html">Events</a>
   <a href="clans.html">Klan</a>
   <a href="friends.html">Vänner</a>
   <a href="wrapped.html">Wrapped</a>
   <a href="profile.html">Profil</a>
-  <a href="rankings.html">Ranked</a>
 </nav>
 <div class="card">
   <h2>Välj Strid</h2>
   <div class="logger-tile-grid">
-    <div class="logger-tile" onclick="openBattleModal('Challenge')">
-      <span class="logger-text">Challenge</span>
-    </div>
-    <div class="logger-tile" onclick="openBattleModal('Clan War')">
-      <span class="logger-text">Clan War</span>
-    </div>
     <div class="logger-tile" onclick="openBattleModal('Solo Battle')">
       <span class="logger-text">Solo Battle</span>
     </div>
     <div class="logger-tile" onclick="openBattleModal('Duos Battle')">
       <span class="logger-text">Duos Battle</span>
-    </div>
-    <div class="logger-tile" onclick="openBattleModal('Single Player')">
-      <span class="logger-text">Single Player</span>
     </div>
     <div class="logger-tile" onclick="openBattleModal('Custom Battle Royale')">
       <span class="logger-text">Custom Battle Royale</span>
@@ -62,7 +53,7 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   <div class="modal-content card">
     <span class="close-modal" onclick="closeBattleModal()">&times;</span>
     <h2 id="modalTitle" style="font-family: 'Arial Black'; color: #FFF; background: #2C3E50; margin: -25px -25px 20px -25px; padding: 15px; border-bottom: 4px solid #0984E3;"></h2>
-    <input type="text" id="battleHash" placeholder="Ange Hash-kod">
+    <div id="battleFields"></div>
     <button onclick="startBattle()">Starta</button>
   </div>
 </div>
@@ -73,24 +64,60 @@ let currentMode = '';
 function openBattleModal(title) {
   currentMode = title;
   document.getElementById('modalTitle').innerText = title;
-  const ph = (title === 'Clan War') ? 'Ange Klan Hash' : 'Ange Person Hash';
-  document.getElementById('battleHash').placeholder = ph;
+  renderBattleFields(title);
   document.getElementById('battleModal').style.display = 'block';
+}
+function renderBattleFields(title) {
+  const container = document.getElementById('battleFields');
+  container.innerHTML = '';
+  if (title === 'Duos Battle') {
+    container.appendChild(createBattleInput('teammateHash', 'Teammate hash'));
+    container.appendChild(createBattleInput('opponentHash1', 'Motstandare hash 1'));
+    container.appendChild(createBattleInput('opponentHash2', 'Motstandare hash 2'));
+  } else if (title === 'Custom Battle Royale') {
+    const info = document.createElement('p');
+    info.style.margin = '10px 0 0 0';
+    info.style.fontWeight = 'bold';
+    info.innerText = 'Inga hash behovs for denna battle.';
+    container.appendChild(info);
+  } else {
+    container.appendChild(createBattleInput('opponentHash', 'Ange person hash'));
+  }
+}
+function createBattleInput(id, placeholder) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.id = id;
+  input.placeholder = placeholder;
+  return input;
 }
 function closeBattleModal() {
   document.getElementById('battleModal').style.display = 'none';
 }
 function startBattle() {
-  const hash = document.getElementById('battleHash').value.trim();
   let globalData = getGlobalData();
-  let found = false;
-  if(currentMode === 'Clan War') {
-    if(globalData.clans[hash]) found = true;
-  } else {
-    if(globalData.persons[hash]) found = true;
-  }
-  if(found || currentMode === 'Single Player' || currentMode === 'Custom Battle Royale') {
+  if (currentMode === 'Custom Battle Royale') {
     closeBattleModal();
+    return;
+  }
+  if (currentMode === 'Duos Battle') {
+    const teammateHash = document.getElementById('teammateHash').value.trim();
+    const opponentHash1 = document.getElementById('opponentHash1').value.trim();
+    const opponentHash2 = document.getElementById('opponentHash2').value.trim();
+    if (!teammateHash || !opponentHash1 || !opponentHash2) return;
+    if (globalData.persons[teammateHash] && globalData.persons[opponentHash1] && globalData.persons[opponentHash2]) {
+      closeBattleModal();
+    } else {
+      alert('Hittade inte alla hashkoder.');
+    }
+    return;
+  }
+  const opponentHash = document.getElementById('opponentHash').value.trim();
+  if (!opponentHash) return;
+  if (globalData.persons[opponentHash]) {
+    closeBattleModal();
+  } else {
+    alert('Hittade inte hashkoden.');
   }
 }
 </script>

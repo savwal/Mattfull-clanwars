@@ -6,9 +6,9 @@
 <title>Plupfull - Ranked</title>
 <style>
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
-nav { display: flex; gap: 0; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
 nav::-webkit-scrollbar { display: none; }
-nav a { flex: 0 0 auto; text-align: center; padding: 12px 20px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
+nav a { flex: 1 1 120px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
 nav a:last-child { border-right: none; }
 nav a:hover, nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; }
@@ -23,60 +23,17 @@ li:last-child { border-bottom: none; }
 </head>
 <body>
 <nav>
-  <a href="index.html">Krog</a>
+  <a href="index.html">Log</a>
   <a href="battles.html">Battles</a>
+  <a href="events.html">Events</a>
   <a href="clans.html">Klan</a>
   <a href="friends.html">Vänner</a>
   <a href="wrapped.html">Wrapped</a>
   <a href="profile.html">Profil</a>
-  <a href="rankings.html" class="active">Ranked</a>
 </nav>
 <div class="card">
-  <h2>Ranked Leaderboard</h2>
-  <ol id="leaderboard"></ol>
+  <h2>Ranked Borttagen</h2>
+  <p style="font-weight: 900; color: #2C3E50; text-align: center;">Ranked-listan ar borttagen fran appen.</p>
 </div>
-<script src="shared.js"></script>
-<script>
-const profiles = getProfiles();
-const allHistory = JSON.parse(localStorage.getItem('drinkHistory_all')) || {};
-const activeProfileId = getActiveProfile().id;
-let rankings = [];
-profiles.forEach(p => {
-  let total = 0;
-  if (allHistory[p.id]) {
-    allHistory[p.id].forEach(item => {
-        if(item.grams > 0) total += item.grams;
-    });
-  }
-  rankings.push({ 
-    name: p.name, 
-    score: parseFloat(calculateCl(total).toFixed(1)), 
-    pic: p.pic, 
-    isUser: p.id === activeProfileId 
-  });
-});
-rankings.sort((a, b) => b.score - a.score);
-const list = document.getElementById('leaderboard');
-rankings.forEach((player, index) => {
-  const li = document.createElement('li');
-  if (player.isUser) li.classList.add('highlight');
-  const rankNum = document.createElement('span');
-  rankNum.className = 'rank-num';
-  rankNum.textContent = `#${index + 1}`;
-  const img = document.createElement('img');
-  img.className = 'profile-img';
-  if (player.pic) {
-    img.src = player.pic;
-  } else {
-    img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-  }
-  const text = document.createElement('span');
-  text.innerHTML = `<strong>${player.name}</strong><br><span style="font-size:0.85em;color:#E74C3C;font-weight:900;">${player.score} cl</span>`;
-  li.appendChild(rankNum);
-  li.appendChild(img);
-  li.appendChild(text);
-  list.appendChild(li);
-});
-</script>
 </body>
 </html>

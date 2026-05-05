@@ -12,13 +12,12 @@ Registrering:
 
 Logging: 
 
- - Snabbvals meny. 
- - change name: psykoszone till sangriagränsen
- - change name: lokal krigare till Namn
- - change name: Utrustning till profil. 
- - change name: Dina Zoner till Funzone gräns
- - change name: legal zone till Tiger Woods zone
- - change name: under funzone till 
+ - Snabbvals meny add: the bear, brooklyn lager, guinness
+ - change name: krog to Log
+ - change name: Stridslogg to enheter
+  - change name: underfunzone to twilightzone
+  - add guinness to 50cl in Snabbvals
+  - 
 
 Alkolholintags funktion:
 
@@ -26,17 +25,18 @@ Alkolholintags funktion:
 
 Yearly and monthly wrapped:
 
- - Shows how many you have beers, wine, sprit you have drank
+ - 
 
+Profile:
+
+ - Change the player hash to a 5 character combination of any symbols
 
 Battles:
 
- - Custom battle which is a battle royale between friends
+ - remove single player
  - 
 
 ELO system:
 
- - Ranking baseras på cl ren alkohol konsumerad. Man kan gå med i andras clans där totalen av alla i klanens konsumerad alkohol intag är dess ELO. 
-   Det finns två system.
- - Change ELO name to promille symbol
+ - 
 
