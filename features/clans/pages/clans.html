@@ -33,13 +33,13 @@ li:last-child { border-bottom: none; }
 </head>
 <body>
 <nav>
-  <a href="index.html">Log</a>
-  <a href="battles.html">Battles</a>
-  <a href="events.html">Events</a>
-  <a href="clans.html" class="active">Klan</a>
-  <a href="friends.html">Vänner</a>
-  <a href="wrapped.html">Wrapped</a>
-  <a href="profile.html">Profil</a>
+  <a href="../../../index.html">Log</a>
+  <a href="../../battles/pages/battles.html">Battles</a>
+  <a href="../../events/pages/events.html">Events</a>
+  <a href="../../clans/pages/clans.html" class="active">Klan</a>
+  <a href="../../friends/pages/friends.html">Vänner</a>
+  <a href="../../wrapped/pages/wrapped.html">Wrapped</a>
+  <a href="../../profile/pages/profile.html">Profil</a>
 </nav>
 <div id="noClanView" class="card" style="display: none;">
   <h2>Hitta din Klan</h2>
@@ -76,8 +76,8 @@ li:last-child { border-bottom: none; }
     <button onclick="startClanWar()">Starta</button>
   </div>
 </div>
-<script src="hash.js"></script>
-<script src="shared.js"></script>
+<script src="../../shared/scripts/hash.js"></script>
+<script src="../../shared/scripts/shared.js"></script>
 <script>
 let myClanHash = localStorage.getItem('myClanHash') || null;
 const activeProfile = getActiveProfile();
