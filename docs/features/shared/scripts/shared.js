@@ -1,13 +1,13 @@
 function initApp() {
-  let globalData = JSON.parse(localStorage.getItem('plupfull_global')) || { persons: {}, clans: {} };
-  localStorage.setItem('plupfull_global', JSON.stringify(globalData));
+  let globalData = JSON.parse(localStorage.getItem('redlös_global')) || { persons: {}, clans: {} };
+  localStorage.setItem('redlös_global', JSON.stringify(globalData));
 }
 initApp();
 function getGlobalData() {
-  return JSON.parse(localStorage.getItem('plupfull_global'));
+  return JSON.parse(localStorage.getItem('redlös_global'));
 }
 function saveGlobalData(data) {
-  localStorage.setItem('plupfull_global', JSON.stringify(data));
+  localStorage.setItem('redlös_global', JSON.stringify(data));
 }
 function checkRegistration() {
   let profiles = JSON.parse(localStorage.getItem('profiles')) || [];

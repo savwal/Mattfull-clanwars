@@ -1,4 +1,19 @@
 let historyData = [];
+let lastZoneName = null;
+
+function getZoneName(bac, zones) {
+  if (bac <= zones.legalMax) return 'Tiger Woods zone';
+  if (bac <= zones.redMax) return 'Farthållare';
+  if (bac <= zones.greenMax) return 'Funzone';
+  return 'Sangriagränsen';
+}
+
+function notifyZoneChange(currentZone) {
+  if (lastZoneName && currentZone !== lastZoneName) {
+    alert(`Du går in i ${currentZone}.`);
+  }
+  lastZoneName = currentZone;
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   historyData = getDrinkHistory();
@@ -70,9 +85,11 @@ function updateUI() {
   
   if (total < 0) total = 0;
   
-  const currentBAC = calculateBACAtTime(historyData, profile, Date.now()).toFixed(2);
+  const currentBACValue = calculateBACAtTime(historyData, profile, Date.now());
+  const currentBAC = currentBACValue.toFixed(2);
   document.getElementById('totalGrams').textContent = total.toFixed(1);
   document.getElementById('promille').textContent = currentBAC;
+  notifyZoneChange(getZoneName(currentBACValue, getZones(profile)));
 
   const labels = [];
   const dataPoints = [];
