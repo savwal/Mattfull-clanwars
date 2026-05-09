@@ -76,6 +76,10 @@ function calculateCl(grams) {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js');
+    const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    const isGitHubPages = location.hostname.endsWith('github.io');
+    if (!isLocal && (location.protocol === 'https:' || isGitHubPages)) {
+      navigator.serviceWorker.register('/service-worker.js');
+    }
   });
 }

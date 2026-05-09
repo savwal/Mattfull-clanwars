@@ -29,6 +29,20 @@ function showZoneToast(message) {
 
 document.addEventListener("DOMContentLoaded", () => {
   historyData = getDrinkHistory();
+  const quickAddBubble = document.querySelector('.quick-add-bubble');
+  if (quickAddBubble) {
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        quickAddBubble.classList.toggle('is-compact', window.scrollY > 120);
+        ticking = false;
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
   updateUI();
   setInterval(updateUI, 60000);
 });
@@ -83,23 +97,28 @@ function updateUI() {
     document.getElementById('userPic').style.display = 'block';
   }
 
-  historyData.forEach((item, index) => {
+  for (let i = historyData.length - 1; i >= 0; i -= 1) {
+    const item = historyData[i];
     total += item.grams;
     const li = document.createElement('li');
-    li.innerHTML = `<div><strong>${item.time}</strong>: ${item.name} <br><span style="color:#2C3E50;">${item.grams > 0 ? '+' : ''}${item.grams.toFixed(1)}g alkohol</span></div>`;
+    const clValue = calculateCl(item.grams);
+    const timestamp = new Date(item.timestamp);
+    const dateLabel = timestamp.toLocaleDateString();
+    const timeLabel = timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    li.innerHTML = `<div><strong>${dateLabel} ${timeLabel}</strong>: ${item.name} <br><span style="color:#2C3E50;">${clValue > 0 ? '+' : ''}${clValue.toFixed(1)}cl alkohol</span></div>`;
     const btn = document.createElement('button');
     btn.className = 'danger';
     btn.textContent = "X";
-    btn.onclick = () => removeDrink(index);
+    btn.onclick = () => removeDrink(i);
     li.appendChild(btn);
     list.appendChild(li);
-  });
+  }
   
   if (total < 0) total = 0;
   
   const currentBACValue = calculateBACAtTime(historyData, profile, Date.now());
   const currentBAC = currentBACValue.toFixed(2);
-  document.getElementById('totalGrams').textContent = total.toFixed(1);
+  document.getElementById('totalCl').textContent = calculateCl(total).toFixed(1);
   document.getElementById('promille').textContent = currentBAC;
   notifyZoneChange(getZoneName(currentBACValue, getZones(profile)));
 

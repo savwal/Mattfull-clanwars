@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2C3E50">
+<title>redlos - Historik</title>
+<link rel="manifest" href="manifest.json">
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
+.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+.main-nav::-webkit-scrollbar { display: none; }
+.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 12px; }
+.main-nav a:last-child { border-right: none; }
+.main-nav a:hover, .main-nav a.active { background: #FFCC00; }
+.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; text-align: center; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #9B59B6; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; }
+button { padding: 14px; margin: 15px 0; width: 100%; box-sizing: border-box; border-radius: 0; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
+button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+</style>
+<link rel="stylesheet" href="features/shared/styles/nav.css">
+</head>
+<body>
+<nav class="main-nav">
+  <a href="index.html" aria-label="Log" title="Log">
+    <img class="menu-icon" src="icons/menu-log.svg" alt="Log">
+    <span class="menu-label">Log</span>
+  </a>
+  <a href="features/battles/pages/battles.html" aria-label="Battles" title="Battles">
+    <img class="menu-icon" src="icons/menu-battles.svg" alt="Battles">
+    <span class="menu-label">Battles</span>
+  </a>
+  <a href="features/events/pages/events.html" aria-label="Events" title="Events">
+    <img class="menu-icon" src="icons/menu-events.svg" alt="Events">
+    <span class="menu-label">Events</span>
+  </a>
+  <a href="features/clans/pages/clans.html" aria-label="Klan" title="Klan">
+    <img class="menu-icon" src="icons/menu-clans.svg" alt="Klan">
+    <span class="menu-label">Klan</span>
+  </a>
+  <a href="features/friends/pages/friends.html" aria-label="Vänner" title="Vänner">
+    <img class="menu-icon" src="icons/menu-friends.svg" alt="Vänner">
+    <span class="menu-label">Vänner</span>
+  </a>
+  <a href="historik.html" class="active" aria-label="Historik" title="Historik">
+    <img class="menu-icon" src="icons/menu-wrapped.svg" alt="Historik">
+    <span class="menu-label">Historik</span>
+  </a>
+  <a href="features/profile/pages/profile.html" aria-label="Profil" title="Profil">
+    <img class="menu-icon" src="icons/menu-profile.svg" alt="Profil">
+    <span class="menu-label">Profil</span>
+  </a>
+</nav>
+<nav class="mobile-bottom-menu">
+  <a href="index.html" class="menu-item" aria-label="Log" title="Log">
+    <img class="menu-icon" src="icons/menu-log.svg" alt="Log">
+    <span class="menu-label">Log</span>
+  </a>
+  <a href="features/battles/pages/battles.html" class="menu-item" aria-label="Battles" title="Battles">
+    <img class="menu-icon" src="icons/menu-battles.svg" alt="Battles">
+    <span class="menu-label">Battles</span>
+  </a>
+  <a href="features/events/pages/events.html" class="menu-item" aria-label="Events" title="Events">
+    <img class="menu-icon" src="icons/menu-events.svg" alt="Events">
+    <span class="menu-label">Events</span>
+  </a>
+  <a href="features/clans/pages/clans.html" class="menu-item" aria-label="Klan" title="Klan">
+    <img class="menu-icon" src="icons/menu-clans.svg" alt="Klan">
+    <span class="menu-label">Klan</span>
+  </a>
+  <a href="features/friends/pages/friends.html" class="menu-item" aria-label="Vänner" title="Vänner">
+    <img class="menu-icon" src="icons/menu-friends.svg" alt="Vänner">
+    <span class="menu-label">Vänner</span>
+  </a>
+  <a href="historik.html" class="menu-item active" aria-label="Historik" title="Historik">
+    <img class="menu-icon" src="icons/menu-wrapped.svg" alt="Historik">
+    <span class="menu-label">Historik</span>
+  </a>
+  <a href="features/profile/pages/profile.html" class="menu-item" aria-label="Profil" title="Profil">
+    <img class="menu-icon" src="icons/menu-profile.svg" alt="Profil">
+    <span class="menu-label">Profil</span>
+  </a>
+</nav>
+<div class="card">
+  <h2>Historik</h2>
+  <p style="font-weight: bold; color: #2C3E50;">Välj en vy för din historik.</p>
+  <button onclick="window.location.href='features/wrapped/pages/wrapped.html'">Wrapped</button>
+</div>
+<script src="features/shared/scripts/shared.js"></script>
+</body>
+</html>
