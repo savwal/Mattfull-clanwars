@@ -9,10 +9,20 @@ function getGlobalData() {
 function saveGlobalData(data) {
   localStorage.setItem('redlös_global', JSON.stringify(data));
 }
+function getRepoBasePath() {
+  const path = window.location.pathname;
+  const docsIndex = path.indexOf('/docs/');
+  if (docsIndex !== -1) {
+    return path.slice(0, docsIndex);
+  }
+  const lastSlash = path.lastIndexOf('/');
+  return lastSlash > 0 ? path.slice(0, lastSlash) : '';
+}
 function checkRegistration() {
   let profiles = JSON.parse(localStorage.getItem('profiles')) || [];
   if (profiles.length === 0 && !window.location.href.includes('register.html')) {
-    window.location.href = 'register.html';
+    const basePath = getRepoBasePath();
+    window.location.href = `${basePath}/docs/features/register/pages/register.html`;
   }
 }
 checkRegistration();
