@@ -6,16 +6,11 @@ nav {
 
 @media (max-width: 700px) {
   nav {
-    position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    margin-bottom: 0;
+    position: static;
   }
 
   body {
-    padding-bottom: 90px;
+    padding-bottom: 0;
   }
 }
 
@@ -24,6 +19,14 @@ nav {
 }
 
 @media (max-width: 767px) {
+  nav {
+    display: none;
+  }
+
+  body {
+    padding-bottom: calc(50px + env(safe-area-inset-bottom));
+  }
+
   .mobile-bottom-menu {
     display: flex;
     position: fixed;
