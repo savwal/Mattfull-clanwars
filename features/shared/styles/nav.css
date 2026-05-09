@@ -18,3 +18,32 @@ nav {
     padding-bottom: 90px;
   }
 }
+
+.mobile-bottom-menu {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-bottom-menu {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 50px;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: #fff;
+    border-top: 4px solid #2C3E50;
+    box-shadow: 0 -4px 0 #2C3E50;
+    z-index: 1100;
+  }
+
+  .mobile-bottom-menu .menu-item {
+    flex: 1 1 0;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
