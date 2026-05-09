@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2C3E50">
+<title>redlös - Klan</title>
+<link rel="manifest" href="../../../manifest.json">
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
+nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+nav::-webkit-scrollbar { display: none; }
+nav a { flex: 1 1 120px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
+nav a:last-child { border-right: none; }
+nav a:hover, nav a.active { background: #FFCC00; }
+.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #9B59B6; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; }
+input, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
+input:focus { background: #f1f2f6; }
+button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
+button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+ul { list-style: none; padding: 0; margin: 0; }
+li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+li:last-child { border-bottom: none; }
+.profile-img { width: 50px; height: 50px; border-radius: 0; object-fit: cover; border: 3px solid #2C3E50; background: #fff; }
+.member-info { flex: 1; margin-left: 15px; }
+.member-stats { text-align: right; color: #9B59B6; font-size: 1.2em; font-family: 'Arial Black'; }
+.clan-shield { display: block; margin: 0 auto 15px auto; width: 100px; height: 110px; background: #9B59B6; border: 6px solid #2C3E50; border-radius: 10px 10px 50px 50px; box-shadow: inset -10px -10px 0px rgba(0,0,0,0.2), 6px 6px 0px #2C3E50; }
+.highlight-text { font-size: 1.5em; color: #E74C3C; font-family: 'Arial Black', sans-serif; text-shadow: 1px 1px 0px #2C3E50; }
+.hash-text { display: inline-block; background: #2C3E50; color: #FFF; padding: 5px 10px; font-family: monospace; font-size: 1.2em; margin: 10px 0; letter-spacing: 2px; }
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
+.modal-content { background-color: #2A8CFF; color: white; margin: 30% auto; padding: 25px; border: 6px solid #2C3E50; box-shadow: 8px 8px 0px #2C3E50; border-radius: 0; width: 90%; max-width: 400px; text-align: center; position: relative; }
+.close-modal { color: #E74C3C; font-size: 32px; font-weight: bold; cursor: pointer; position: absolute; right: 15px; top: 10px; }
+</style>
+<link rel="stylesheet" href="../../shared/styles/nav.css">
+</head>
+<body>
+<nav>
+  <a href="../../../index.html">Log</a>
+  <a href="../../battles/pages/battles.html">Battles</a>
+  <a href="../../events/pages/events.html">Events</a>
+  <a href="../../clans/pages/clans.html" class="active">Klan</a>
+  <a href="../../friends/pages/friends.html">Vänner</a>
+  <a href="../../wrapped/pages/wrapped.html">Wrapped</a>
+  <a href="../../profile/pages/profile.html">Profil</a>
+</nav>
+<div id="noClanView" class="card" style="display: none;">
+  <h2>Hitta din Klan</h2>
+  <input type="text" id="newClanName" placeholder="Ny Klan Namn">
+  <button onclick="createClan()" style="background: #2ECC71; color: #FFF;">Skapa Ny Klan</button>
+  <div style="margin: 20px 0; border-top: 4px dashed #2C3E50;"></div>
+  <input type="text" id="joinClanHash" placeholder="Klan Hash (5 tecken)">
+  <button onclick="joinClan()" style="background: #2A8CFF; color: #FFF;">Gå med i Klan</button>
+</div>
+<div id="hasClanView" style="display: none;">
+  <div class="card" style="text-align: center;">
+    <h2 style="background: #E74C3C;">Klanens Läger</h2>
+    <div class="clan-shield"></div>
+    <h1 id="clanTitle" style="margin: 0 0 5px 0; color: #2C3E50; font-family: 'Arial Black'; text-transform: uppercase;"></h1>
+    <div class="hash-text" id="clanHashDisplay"></div>
+    <p style="margin: 10px 0 0 0; font-weight: bold;">Klanens Totala Poäng:</p>
+    <div class="highlight-text" id="clanTotalElo">0.00 ‰</div>
+    <button onclick="leaveClan()" style="background: #E74C3C; color: #FFF; margin-top: 20px; width: auto; font-size: 12px; padding: 10px;">Lämna Klan</button>
+  </div>
+  <div class="card">
+    <h2 style="background: #FFCC00; color: #2C3E50;">Medlemmar</h2>
+    <ul id="clanMembers"></ul>
+  </div>
+  <div class="card">
+    <h2 style="background: #2A8CFF;">Klan War</h2>
+    <button onclick="openClanWarModal()">Starta Klan War</button>
+  </div>
+</div>
+<div id="clanWarModal" class="modal">
+  <div class="modal-content card">
+    <span class="close-modal" onclick="closeClanWarModal()">&times;</span>
+    <h2 style="font-family: 'Arial Black'; color: #FFF; background: #2C3E50; margin: -25px -25px 20px -25px; padding: 15px; border-bottom: 4px solid #0984E3;">Klan War</h2>
+    <input type="text" id="opponentClanHash" placeholder="Ange motstandare klan hash">
+    <button onclick="startClanWar()">Starta</button>
+  </div>
+</div>
+<script src="../../shared/scripts/hash.js"></script>
+<script src="../../shared/scripts/shared.js"></script>
+<script>
+let myClanHash = localStorage.getItem('myClanHash') || null;
+const activeProfile = getActiveProfile();
+function updateClanUI() {
+  const noClanView = document.getElementById('noClanView');
+  const hasClanView = document.getElementById('hasClanView');
+  let globalData = getGlobalData();
+  if (!myClanHash || !globalData.clans[myClanHash]) {
+    noClanView.style.display = 'block';
+    hasClanView.style.display = 'none';
+  } else {
+    noClanView.style.display = 'none';
+    hasClanView.style.display = 'block';
+    let clanData = globalData.clans[myClanHash];
+    document.getElementById('clanTitle').innerText = clanData.name;
+    document.getElementById('clanHashDisplay').innerText = myClanHash;
+    let totalElo = 0;
+    const list = document.getElementById('clanMembers');
+    list.innerHTML = '';
+    clanData.members.forEach(member => {
+      let cl = calculateCl(member.grams);
+      member.elo = cl;
+    });
+    clanData.members.sort((a, b) => b.elo - a.elo).forEach(member => {
+      totalElo += member.elo;
+      const li = document.createElement('li');
+      if (member.id === activeProfile.id) li.style.background = 'rgba(46, 204, 113, 0.1)';
+      const img = document.createElement('img');
+      img.className = 'profile-img';
+      img.src = member.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+      const info = document.createElement('div');
+      info.className = 'member-info';
+      info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${member.name}</span><br><span style="font-size:0.8em; color:#7f8c8d;">${member.role}</span>`;
+      const stats = document.createElement('div');
+      stats.className = 'member-stats';
+      stats.innerHTML = `${member.elo.toFixed(1)} <span style="font-size:12px; color:#2C3E50;">‰</span>`;
+      li.appendChild(img);
+      li.appendChild(info);
+      li.appendChild(stats);
+      list.appendChild(li);
+    });
+    document.getElementById('clanTotalElo').innerText = totalElo.toFixed(1) + " ‰";
+  }
+}
+function getMyCurrentGrams() {
+  const history = getDrinkHistory();
+  return history.reduce((sum, item) => sum + item.grams, 0);
+}
+function createClan() {
+  const name = document.getElementById('newClanName').value;
+  if (!name) return;
+  const newHash = generateUniqueHash();
+  let globalData = getGlobalData();
+  globalData.clans[newHash] = {
+    name: name,
+    members: [
+      { id: activeProfile.id, name: activeProfile.name, role: 'Ledare', pic: activeProfile.pic, grams: getMyCurrentGrams() }
+    ]
+  };
+  saveGlobalData(globalData);
+  localStorage.setItem('myClanHash', newHash);
+  updateClanUI();
+}
+function joinClan() {
+  const hash = document.getElementById('joinClanHash').value.trim();
+  if(!hash) return;
+  let globalData = getGlobalData();
+  if(globalData.clans[hash]) {
+    const exists = globalData.clans[hash].members.find(m => m.id === activeProfile.id);
+    if(!exists) {
+      globalData.clans[hash].members.push({ id: activeProfile.id, name: activeProfile.name, role: 'Medlem', pic: activeProfile.pic, grams: getMyCurrentGrams() });
+      saveGlobalData(globalData);
+    }
+    localStorage.setItem('myClanHash', hash);
+    updateClanUI();
+  }
+}
+function leaveClan() {
+  let globalData = getGlobalData();
+  if(globalData.clans[myClanHash]) {
+    globalData.clans[myClanHash].members = globalData.clans[myClanHash].members.filter(m => m.id !== activeProfile.id);
+    saveGlobalData(globalData);
+  }
+  localStorage.removeItem('myClanHash');
+  myClanHash = null;
+  updateClanUI();
+}
+function openClanWarModal() {
+  if (!myClanHash) return;
+  document.getElementById('opponentClanHash').value = '';
+  document.getElementById('clanWarModal').style.display = 'block';
+}
+function closeClanWarModal() {
+  document.getElementById('clanWarModal').style.display = 'none';
+}
+function startClanWar() {
+  const hash = document.getElementById('opponentClanHash').value.trim();
+  if (!hash) return;
+  let globalData = getGlobalData();
+  if (globalData.clans[hash] && hash !== myClanHash) {
+    closeClanWarModal();
+  } else {
+    alert('Hittade inte klanen.');
+  }
+}
+updateClanUI();
+</script>
+</body>
+</html>

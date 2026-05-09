@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2C3E50">
+<title>redlös - Events</title>
+<link rel="manifest" href="../../../manifest.json">
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
+nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+nav::-webkit-scrollbar { display: none; }
+nav a { flex: 1 1 120px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
+nav a:last-child { border-right: none; }
+nav a:hover, nav a.active { background: #FFCC00; }
+.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #E74C3C; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; }
+input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
+button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
+button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+ul { list-style: none; padding: 0; margin: 0; }
+li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+li:last-child { border-bottom: none; }
+.profile-img { width: 50px; height: 50px; border-radius: 0; object-fit: cover; border: 3px solid #2C3E50; background: #fff; }
+.event-meta { font-weight: 900; color: #2C3E50; }
+.badge { display: inline-block; padding: 4px 8px; border: 3px solid #2C3E50; font-weight: 900; background: #FFCC00; }
+</style>
+<link rel="stylesheet" href="../../shared/styles/nav.css">
+</head>
+<body>
+<nav>
+  <a href="../../../index.html">Log</a>
+  <a href="../../battles/pages/battles.html">Battles</a>
+  <a href="../../events/pages/events.html" class="active">Events</a>
+  <a href="../../clans/pages/clans.html">Klan</a>
+  <a href="../../friends/pages/friends.html">Vänner</a>
+  <a href="../../wrapped/pages/wrapped.html">Wrapped</a>
+  <a href="../../profile/pages/profile.html">Profil</a>
+</nav>
+
+<div class="card">
+  <h2>Event Leaderboard</h2>
+  <select id="eventSelect"></select>
+  <button onclick="renderSelectedEvent()">Visa leaderboard</button>
+  <div style="margin-top: 10px;">
+    <span class="event-meta" id="eventMeta"></span>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="background: #2A8CFF;">Live Promille Top 5</h2>
+  <ul id="liveTopFive"></ul>
+</div>
+
+<div class="card">
+  <h2>Leaderboard (cl)</h2>
+  <ul id="eventLeaderboard"></ul>
+</div>
+
+<div class="card">
+  <h2 style="background: #9B59B6;">Skapa custom event</h2>
+  <input type="text" id="customName" placeholder="Event namn">
+  <input type="datetime-local" id="customStart">
+  <input type="datetime-local" id="customEnd">
+  <input type="text" id="customParticipants" placeholder="Friend hash (komma-separerat)">
+  <button onclick="createCustomEvent()">Skapa event</button>
+  <p id="customHashInfo" style="font-weight: 900; color: #2C3E50;"></p>
+</div>
+
+<div class="card">
+  <h2 style="background: #2A8CFF;">Gå med i custom event</h2>
+  <input type="text" id="joinHash" placeholder="Event hash (6 tecken)">
+  <button onclick="joinCustomEvent()">Gå med</button>
+</div>
+
+<script src="../../shared/scripts/hash.js"></script>
+<script src="../../shared/scripts/shared.js"></script>
+<script src="../../shared/scripts/calculator.js"></script>
+<script>
+const customEventsKey = 'events_custom';
+
+function getPresetEvents(year) {
+  const midsummer = getMidsummerEve(year);
+  return [
+    { id: 'valborg', name: 'Valborg (Uppsala)', city: 'Uppsala', start: dateAt(year, 4, 30), end: dateAt(year, 4, 30, 23, 59) },
+    { id: 'forsta-maj', name: 'Forsta maj (Sverige)', city: 'Sverige', start: dateAt(year, 5, 1), end: dateAt(year, 5, 1, 23, 59) },
+    { id: 'nationaldagen', name: 'Nationaldagen (Sverige)', city: 'Sverige', start: dateAt(year, 6, 6), end: dateAt(year, 6, 6, 23, 59) },
+    { id: 'midsommar', name: 'Midsommarafton (Sverige)', city: 'Sverige', start: dateAt(year, midsummer.month, midsummer.day), end: dateAt(year, midsummer.month, midsummer.day, 23, 59) },
+    { id: 'nyarsafton', name: 'Nyarsafton (Sverige)', city: 'Sverige', start: dateAt(year, 12, 31), end: dateAt(year, 12, 31, 23, 59) },
+    { id: 'uppsala-reggae', name: 'Uppsala Reggae Festival', city: 'Uppsala', start: dateAt(year, 7, 25), end: dateAt(year, 7, 27, 23, 59) },
+    { id: 'kulturnatten-uppsala', name: 'Kulturnatten Uppsala', city: 'Uppsala', start: dateAt(year, 9, 13), end: dateAt(year, 9, 13, 23, 59) },
+    { id: 'wow', name: 'Way Out West', city: 'Goteborg', start: dateAt(year, 8, 7), end: dateAt(year, 8, 9, 23, 59) },
+    { id: 'kulturkalaset', name: 'Kulturkalaset', city: 'Goteborg', start: dateAt(year, 8, 13), end: dateAt(year, 8, 17, 23, 59) },
+    { id: 'stockholm-pride', name: 'Stockholm Pride', city: 'Stockholm', start: dateAt(year, 8, 4), end: dateAt(year, 8, 10, 23, 59) },
+    { id: 'kulturfestivalen', name: 'Kulturfestivalen (Stockholm)', city: 'Stockholm', start: dateAt(year, 8, 13), end: dateAt(year, 8, 17, 23, 59) }
+  ];
+}
+
+function dateAt(year, month, day, hour = 0, minute = 0) {
+  return new Date(year, month - 1, day, hour, minute, 0, 0);
+}
+
+function getMidsummerEve(year) {
+  for (let day = 19; day <= 25; day++) {
+    const date = new Date(year, 5, day);
+    if (date.getDay() === 5) {
+      return { month: 6, day: day };
+    }
+  }
+  return { month: 6, day: 20 };
+}
+
+function loadCustomEvents() {
+  return JSON.parse(localStorage.getItem(customEventsKey)) || [];
+}
+
+function saveCustomEvents(events) {
+  localStorage.setItem(customEventsKey, JSON.stringify(events));
+}
+
+function buildEventOptions() {
+  const select = document.getElementById('eventSelect');
+  select.innerHTML = '';
+  const year = new Date().getFullYear();
+  const presetEvents = getPresetEvents(year);
+  const customEvents = loadCustomEvents();
+
+  const presetGroup = document.createElement('optgroup');
+  presetGroup.label = 'Events (Sverige)';
+  presetEvents.forEach(evt => {
+    const opt = document.createElement('option');
+    opt.value = `preset:${evt.id}`;
+    opt.textContent = `${evt.name}`;
+    presetGroup.appendChild(opt);
+  });
+
+  const customGroup = document.createElement('optgroup');
+  customGroup.label = 'Custom Events';
+  customEvents.forEach(evt => {
+    const opt = document.createElement('option');
+    opt.value = `custom:${evt.hash}`;
+    opt.textContent = `${evt.name} (${evt.hash})`;
+    customGroup.appendChild(opt);
+  });
+
+  select.appendChild(presetGroup);
+  select.appendChild(customGroup);
+  if (select.options.length > 0) {
+    select.selectedIndex = 0;
+  }
+}
+
+function getHistoryForProfile(profileId) {
+  const allHistory = JSON.parse(localStorage.getItem('drinkHistory_all')) || {};
+  return allHistory[profileId] || [];
+}
+
+function calculateClForRange(profileId, startMs, endMs) {
+  const history = getHistoryForProfile(profileId);
+  const grams = history.reduce((sum, item) => {
+    if (item.grams > 0 && item.timestamp >= startMs && item.timestamp <= endMs) {
+      return sum + item.grams;
+    }
+    return sum;
+  }, 0);
+  return calculateCl(grams);
+}
+
+function getProfileByHash(hash) {
+  const profiles = getProfiles();
+  const localProfile = profiles.find(p => p.id === hash);
+  if (localProfile) return localProfile;
+  const globalData = getGlobalData();
+  return globalData.persons[hash];
+}
+
+function renderLeaderboard(entries, startMs, endMs) {
+  const list = document.getElementById('eventLeaderboard');
+  list.innerHTML = '';
+
+  if (entries.length === 0) {
+    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga deltagare.</p>';
+    return;
+  }
+
+  const ranked = entries
+    .map(entry => {
+      const cl = calculateClForRange(entry.id, startMs, endMs);
+      return { ...entry, cl };
+    })
+    .sort((a, b) => b.cl - a.cl);
+
+  ranked.forEach((player, index) => {
+    const li = document.createElement('li');
+    const img = document.createElement('img');
+    img.className = 'profile-img';
+    img.src = player.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+    const info = document.createElement('div');
+    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#${index + 1} ${player.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${player.id}</span>`;
+    const stats = document.createElement('div');
+    stats.className = 'badge';
+    stats.innerText = `${player.cl.toFixed(1)} cl`;
+    li.appendChild(img);
+    li.appendChild(info);
+    li.appendChild(stats);
+    list.appendChild(li);
+  });
+}
+
+function getAllProfilesForLive() {
+  const globalData = getGlobalData();
+  const globalProfiles = Object.values(globalData.persons || {});
+  const localProfiles = getProfiles();
+  const merged = new Map();
+  localProfiles.forEach(profile => merged.set(profile.id, profile));
+  globalProfiles.forEach(profile => {
+    if (!merged.has(profile.id)) merged.set(profile.id, profile);
+  });
+  return Array.from(merged.values());
+}
+
+function getLivePromille(profile) {
+  const history = getHistoryForProfile(profile.id);
+  if (!profile.weight || !profile.gender) return null;
+  if (!history || history.length === 0) return null;
+  return calculateBACAtTime(history, profile, Date.now());
+}
+
+function renderLiveTopFive() {
+  const list = document.getElementById('liveTopFive');
+  list.innerHTML = '';
+  const ranked = getAllProfilesForLive()
+    .map(profile => ({
+      profile,
+      promille: getLivePromille(profile)
+    }))
+    .filter(entry => entry.promille !== null)
+    .sort((a, b) => b.promille - a.promille)
+    .slice(0, 5);
+
+  if (ranked.length === 0) {
+    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga aktiva promille att visa.</p>';
+    return;
+  }
+
+  ranked.forEach((entry, index) => {
+    const li = document.createElement('li');
+    const img = document.createElement('img');
+    img.className = 'profile-img';
+    img.src = entry.profile.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+    const info = document.createElement('div');
+    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#${index + 1} ${entry.profile.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${entry.profile.id}</span>`;
+    const stats = document.createElement('div');
+    stats.className = 'badge';
+    stats.innerText = `${entry.promille.toFixed(2)} ‰`;
+    li.appendChild(img);
+    li.appendChild(info);
+    li.appendChild(stats);
+    list.appendChild(li);
+  });
+}
+
+function renderSelectedEvent() {
+  const select = document.getElementById('eventSelect');
+  const value = select.value;
+  const eventMeta = document.getElementById('eventMeta');
+  const year = new Date().getFullYear();
+  const presetEvents = getPresetEvents(year);
+  const customEvents = loadCustomEvents();
+
+  if (!value) return;
+
+  if (value.startsWith('preset:')) {
+    const id = value.split(':')[1];
+    const evt = presetEvents.find(e => e.id === id);
+    if (!evt) return;
+    const globalData = getGlobalData();
+    const profiles = Object.values(globalData.persons || {});
+    eventMeta.innerText = `${evt.name} - ${evt.city} (${formatRange(evt.start, evt.end)})`;
+    renderLeaderboard(profiles, evt.start.getTime(), evt.end.getTime());
+  } else {
+    const hash = value.split(':')[1];
+    const evt = customEvents.find(e => e.hash === hash);
+    if (!evt) return;
+    const participants = evt.participants
+      .map(getProfileByHash)
+      .filter(Boolean);
+    eventMeta.innerText = `${evt.name} (${evt.hash}) - ${formatRange(new Date(evt.start), new Date(evt.end))}`;
+    renderLeaderboard(participants, new Date(evt.start).getTime(), new Date(evt.end).getTime());
+  }
+}
+
+function formatRange(start, end) {
+  const startText = start.toLocaleDateString('sv-SE', { month: 'short', day: 'numeric' });
+  const endText = end.toLocaleDateString('sv-SE', { month: 'short', day: 'numeric' });
+  if (startText === endText) return startText;
+  return `${startText} - ${endText}`;
+}
+
+function createCustomEvent() {
+  const name = document.getElementById('customName').value.trim();
+  const startValue = document.getElementById('customStart').value;
+  const endValue = document.getElementById('customEnd').value;
+  if (!name || !startValue || !endValue) return;
+
+  const start = new Date(startValue);
+  const end = new Date(endValue);
+  if (end <= start) return;
+
+  const participantsInput = document.getElementById('customParticipants').value.trim();
+  const hashes = participantsInput
+    ? participantsInput.split(',').map(h => h.trim()).filter(Boolean)
+    : [];
+
+  const globalData = getGlobalData();
+  const validHashes = hashes.filter(hash => globalData.persons[hash]);
+  const activeProfile = getActiveProfile();
+  validHashes.push(activeProfile.id);
+  const uniqueParticipants = Array.from(new Set(validHashes));
+
+  const events = loadCustomEvents();
+  let hash = generateUniqueHash(6);
+  while (events.some(evt => evt.hash === hash)) {
+    hash = generateUniqueHash(6);
+  }
+
+  const newEvent = {
+    hash: hash,
+    name: name,
+    start: start.toISOString(),
+    end: end.toISOString(),
+    participants: uniqueParticipants
+  };
+
+  events.push(newEvent);
+  saveCustomEvents(events);
+  document.getElementById('customHashInfo').innerText = `Event hash: ${hash}`;
+  document.getElementById('customName').value = '';
+  document.getElementById('customStart').value = '';
+  document.getElementById('customEnd').value = '';
+  document.getElementById('customParticipants').value = '';
+  buildEventOptions();
+}
+
+function joinCustomEvent() {
+  const hash = document.getElementById('joinHash').value.trim();
+  if (!hash) return;
+  const events = loadCustomEvents();
+  const target = events.find(evt => evt.hash === hash);
+  if (!target) {
+    alert('Hittade inte eventet.');
+    return;
+  }
+  const activeProfile = getActiveProfile();
+  if (!target.participants.includes(activeProfile.id)) {
+    target.participants.push(activeProfile.id);
+    saveCustomEvents(events);
+  }
+  document.getElementById('joinHash').value = '';
+  buildEventOptions();
+}
+
+buildEventOptions();
+renderSelectedEvent();
+renderLiveTopFive();
+setInterval(renderLiveTopFive, 60000);
+</script>
+</body>
+</html>
