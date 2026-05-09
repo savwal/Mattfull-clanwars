@@ -42,7 +42,7 @@
   }
 
   body {
-    padding-bottom: calc(50px + env(safe-area-inset-bottom));
+    padding-bottom: calc(56px + env(safe-area-inset-bottom));
   }
 
   .mobile-bottom-menu {
@@ -51,7 +51,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: 50px;
+    height: 56px;
     padding-bottom: env(safe-area-inset-bottom);
     background: #fff;
     border-top: 4px solid #2C3E50;
@@ -76,17 +76,17 @@
   }
 
   .mobile-bottom-menu .menu-item {
-    flex: 0 0 auto;
-    width: 50px;
-    min-height: 44px;
+    flex: 1 1 0;
+    min-width: 56px;
+    min-height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
   .mobile-bottom-menu .menu-icon {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
   }
 
   .mobile-bottom-menu .menu-label {
