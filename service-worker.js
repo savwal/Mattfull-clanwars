@@ -1,10 +1,18 @@
-const CACHE_NAME = 'redlos-v1';
+const CACHE_NAME = 'redlos-v2';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './features/shared/styles/nav.css',
   './icons/icon-192.svg',
-  './icons/icon-512.svg'
+  './icons/icon-512.svg',
+  './icons/menu-log.svg',
+  './icons/menu-battles.svg',
+  './icons/menu-events.svg',
+  './icons/menu-clans.svg',
+  './icons/menu-friends.svg',
+  './icons/menu-wrapped.svg',
+  './icons/menu-profile.svg'
 ];
 
 self.addEventListener('install', (event) => {

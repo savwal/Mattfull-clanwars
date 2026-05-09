@@ -8,11 +8,11 @@
 <link rel="manifest" href="../../../manifest.json">
 <style>
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
-nav::-webkit-scrollbar { display: none; }
-nav a { flex: 1 1 120px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
-nav a:last-child { border-right: none; }
-nav a:hover, nav a.active { background: #FFCC00; }
+.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+.main-nav::-webkit-scrollbar { display: none; }
+.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 12px; }
+.main-nav a:last-child { border-right: none; }
+.main-nav a:hover, .main-nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
 h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #9B59B6; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; }
 input, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
@@ -35,23 +35,58 @@ li:last-child { border-bottom: none; }
 <link rel="stylesheet" href="../../shared/styles/nav.css">
 </head>
 <body>
-<nav>
-  <a href="../../../index.html">Log</a>
-  <a href="../../battles/pages/battles.html">Battles</a>
-  <a href="../../events/pages/events.html">Events</a>
-  <a href="../../clans/pages/clans.html" class="active">Klan</a>
-  <a href="../../friends/pages/friends.html">Vänner</a>
-  <a href="../../wrapped/pages/wrapped.html">Wrapped</a>
-  <a href="../../profile/pages/profile.html">Profil</a>
+<nav class="main-nav">
+  <a href="../../../index.html" aria-label="Log" title="Log">
+    <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
+    <span class="menu-label">Log</span>
+  </a>
+  <a href="../../battles/pages/battles.html" aria-label="Battles" title="Battles">
+    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
+    <span class="menu-label">Battles</span>
+  </a>
+  <a href="../../events/pages/events.html" aria-label="Events" title="Events">
+    <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
+    <span class="menu-label">Events</span>
+  </a>
+  <a href="../../clans/pages/clans.html" class="active" aria-label="Klan" title="Klan">
+    <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
+    <span class="menu-label">Klan</span>
+  </a>
+  <a href="../../friends/pages/friends.html" aria-label="Vänner" title="Vänner">
+    <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
+    <span class="menu-label">Vänner</span>
+  </a>
+  <a href="../../wrapped/pages/wrapped.html" aria-label="Wrapped" title="Wrapped">
+    <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Wrapped">
+    <span class="menu-label">Wrapped</span>
+  </a>
+  <a href="../../profile/pages/profile.html" aria-label="Profil" title="Profil">
+    <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
+    <span class="menu-label">Profil</span>
+  </a>
 </nav>
 <nav class="mobile-bottom-menu">
-  <a href="../../../index.html" class="menu-item">Log</a>
-  <a href="../../battles/pages/battles.html" class="menu-item">Battles</a>
-  <a href="../../events/pages/events.html" class="menu-item">Events</a>
-  <a href="../../clans/pages/clans.html" class="menu-item active">Klan</a>
-  <a href="../../friends/pages/friends.html" class="menu-item">Vänner</a>
-  <a href="../../wrapped/pages/wrapped.html" class="menu-item">Wrapped</a>
-  <a href="../../profile/pages/profile.html" class="menu-item">Profil</a>
+  <a href="../../../index.html" class="menu-item" aria-label="Log" title="Log">
+    <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
+  </a>
+  <a href="../../battles/pages/battles.html" class="menu-item" aria-label="Battles" title="Battles">
+    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
+  </a>
+  <a href="../../events/pages/events.html" class="menu-item" aria-label="Events" title="Events">
+    <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
+  </a>
+  <a href="../../clans/pages/clans.html" class="menu-item active" aria-label="Klan" title="Klan">
+    <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
+  </a>
+  <a href="../../friends/pages/friends.html" class="menu-item" aria-label="Vänner" title="Vänner">
+    <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
+  </a>
+  <a href="../../wrapped/pages/wrapped.html" class="menu-item" aria-label="Wrapped" title="Wrapped">
+    <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Wrapped">
+  </a>
+  <a href="../../profile/pages/profile.html" class="menu-item" aria-label="Profil" title="Profil">
+    <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
+  </a>
 </nav>
 <div id="noClanView" class="card" style="display: none;">
   <h2>Hitta din Klan</h2>

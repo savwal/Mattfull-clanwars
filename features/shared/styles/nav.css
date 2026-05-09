@@ -1,11 +1,18 @@
-nav {
+.main-nav {
   position: sticky;
   top: 0;
   z-index: 1000;
 }
 
+.main-nav a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 @media (max-width: 700px) {
-  nav {
+  .main-nav {
     position: static;
   }
 
@@ -18,8 +25,19 @@ nav {
   display: none;
 }
 
+.menu-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.menu-label {
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
 @media (max-width: 767px) {
-  nav {
+  .main-nav {
     display: none;
   }
 
@@ -39,14 +57,39 @@ nav {
     border-top: 4px solid #2C3E50;
     box-shadow: 0 -4px 0 #2C3E50;
     z-index: 1100;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    position: fixed;
+  }
+
+  .mobile-bottom-menu::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 26px;
+    pointer-events: none;
+    background: linear-gradient(270deg, #fff 0%, rgba(255, 255, 255, 0) 100%);
   }
 
   .mobile-bottom-menu .menu-item {
-    flex: 1 1 0;
-    min-width: 44px;
+    flex: 0 0 auto;
+    width: 50px;
     min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .mobile-bottom-menu .menu-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .mobile-bottom-menu .menu-label {
+    display: none;
   }
 }

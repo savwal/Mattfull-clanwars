@@ -10,11 +10,11 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
 <style>
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
-nav::-webkit-scrollbar { display: none; }
-nav a { flex: 1 1 120px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 14px; }
-nav a:last-child { border-right: none; }
-nav a:hover, nav a.active { background: #FFCC00; }
+.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+.main-nav::-webkit-scrollbar { display: none; }
+.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 12px; }
+.main-nav a:last-child { border-right: none; }
+.main-nav a:hover, .main-nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
 h2 { font-family: 'Arial Black', Impact, sans-serif; text-transform: uppercase; color: #FFF; background: #2A8CFF; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; letter-spacing: 1px; text-shadow: 2px 2px 0px #2C3E50; }
 input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 0; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
@@ -23,6 +23,16 @@ button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: u
 button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
 button.danger { background: #E74C3C; width: auto; color: white; padding: 8px 16px; font-size: 14px; margin-left: 10px; box-shadow: 3px 3px 0px #2C3E50; border: 3px solid #2C3E50; }
 button.magic { background: #9B59B6; color: white; margin-top: 15px; }
+.quick-add-bubble {
+  position: fixed;
+  left: 16px;
+  bottom: calc(110px + env(safe-area-inset-bottom));
+  width: auto;
+  padding: 12px 16px;
+  border-radius: 999px;
+  z-index: 1200;
+  margin: 0;
+}
 ul { list-style: none; padding: 0; margin: 0; }
 li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
 canvas { max-height: 300px; margin-top: 10px; }
@@ -64,27 +74,75 @@ canvas { max-height: 300px; margin-top: 10px; }
 <link rel="stylesheet" href="features/shared/styles/nav.css">
 </head>
 <body>
-<nav>
-  <a href="index.html" class="active">Log</a>
-  <a href="features/battles/pages/battles.html">Battles</a>
-  <a href="features/events/pages/events.html">Events</a>
-  <a href="features/clans/pages/clans.html">Klan</a>
-  <a href="features/friends/pages/friends.html">Vänner</a>
-  <a href="features/wrapped/pages/wrapped.html">Wrapped</a>
-  <a href="features/profile/pages/profile.html">Profil</a>
+<nav class="main-nav">
+  <a href="index.html" class="active" aria-label="Log" title="Log">
+    <img class="menu-icon" src="icons/menu-log.svg" alt="Log">
+    <span class="menu-label">Log</span>
+  </a>
+  <a href="features/battles/pages/battles.html" aria-label="Battles" title="Battles">
+    <img class="menu-icon" src="icons/menu-battles.svg" alt="Battles">
+    <span class="menu-label">Battles</span>
+  </a>
+  <a href="features/events/pages/events.html" aria-label="Events" title="Events">
+    <img class="menu-icon" src="icons/menu-events.svg" alt="Events">
+    <span class="menu-label">Events</span>
+  </a>
+  <a href="features/clans/pages/clans.html" aria-label="Klan" title="Klan">
+    <img class="menu-icon" src="icons/menu-clans.svg" alt="Klan">
+    <span class="menu-label">Klan</span>
+  </a>
+  <a href="features/friends/pages/friends.html" aria-label="Vänner" title="Vänner">
+    <img class="menu-icon" src="icons/menu-friends.svg" alt="Vänner">
+    <span class="menu-label">Vänner</span>
+  </a>
+  <a href="features/wrapped/pages/wrapped.html" aria-label="Wrapped" title="Wrapped">
+    <img class="menu-icon" src="icons/menu-wrapped.svg" alt="Wrapped">
+    <span class="menu-label">Wrapped</span>
+  </a>
+  <a href="features/profile/pages/profile.html" aria-label="Profil" title="Profil">
+    <img class="menu-icon" src="icons/menu-profile.svg" alt="Profil">
+    <span class="menu-label">Profil</span>
+  </a>
 </nav>
 <nav class="mobile-bottom-menu">
-  <a href="index.html" class="menu-item active">Log</a>
-  <a href="features/battles/pages/battles.html" class="menu-item">Battles</a>
-  <a href="features/events/pages/events.html" class="menu-item">Events</a>
-  <a href="features/clans/pages/clans.html" class="menu-item">Klan</a>
-  <a href="features/friends/pages/friends.html" class="menu-item">Vänner</a>
-  <a href="features/wrapped/pages/wrapped.html" class="menu-item">Wrapped</a>
-  <a href="features/profile/pages/profile.html" class="menu-item">Profil</a>
+  <a href="index.html" class="menu-item active" aria-label="Log" title="Log">
+    <img class="menu-icon" src="icons/menu-log.svg" alt="Log">
+  </a>
+  <a href="features/battles/pages/battles.html" class="menu-item" aria-label="Battles" title="Battles">
+    <img class="menu-icon" src="icons/menu-battles.svg" alt="Battles">
+  </a>
+  <a href="features/events/pages/events.html" class="menu-item" aria-label="Events" title="Events">
+    <img class="menu-icon" src="icons/menu-events.svg" alt="Events">
+  </a>
+  <a href="features/clans/pages/clans.html" class="menu-item" aria-label="Klan" title="Klan">
+    <img class="menu-icon" src="icons/menu-clans.svg" alt="Klan">
+  </a>
+  <a href="features/friends/pages/friends.html" class="menu-item" aria-label="Vänner" title="Vänner">
+    <img class="menu-icon" src="icons/menu-friends.svg" alt="Vänner">
+  </a>
+  <a href="features/wrapped/pages/wrapped.html" class="menu-item" aria-label="Wrapped" title="Wrapped">
+    <img class="menu-icon" src="icons/menu-wrapped.svg" alt="Wrapped">
+  </a>
+  <a href="features/profile/pages/profile.html" class="menu-item" aria-label="Profil" title="Profil">
+    <img class="menu-icon" src="icons/menu-profile.svg" alt="Profil">
+  </a>
 </nav>
 <div class="card">
+  <h2>Blodflöde</h2>
+  <div class="graph-scroll">
+    <canvas id="promilleChart"></canvas>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><span class="dot line"></span> Promille</div>
+    <div class="legend-item"><span class="dot blue"></span> Tiger Woods zone</div>
+    <div class="legend-item"><span class="dot red"></span> Farthållare</div>
+    <div class="legend-item"><span class="dot green"></span> Funzone</div>
+    <div class="legend-item"><span class="dot purple"></span> Sangriagränsen</div>
+  </div>
+</div>
+<div class="card">
   <h2>Lägret</h2>
-  <button onclick="openDrinkModal()" style="background: linear-gradient(135deg, #FFCC00, #FFD700); margin-bottom: 15px;">Registrera Dryck (Snabbval)</button>
+  <button onclick="openDrinkModal()" class="quick-add-bubble" style="background: linear-gradient(135deg, #FFCC00, #FFD700);">Registrera snabbt</button>
   <p style="text-align: center; font-weight: bold; color: #2C3E50; margin: 10px 0;">Eller manuellt:</p>
   <input type="text" id="name" placeholder="Dryck (t.ex. Öl, Vin)">
   <input type="number" id="volume" placeholder="Volym (ml, t.ex. 330)">
@@ -103,19 +161,6 @@ canvas { max-height: 300px; margin-top: 10px; }
 <div class="card">
   <h2>Enheter</h2>
   <ul id="history"></ul>
-</div>
-<div class="card">
-  <h2>Blodflöde</h2>
-  <div class="graph-scroll">
-    <canvas id="promilleChart"></canvas>
-  </div>
-  <div class="legend">
-    <div class="legend-item"><span class="dot line"></span> Promille</div>
-    <div class="legend-item"><span class="dot blue"></span> Tiger Woods zone</div>
-    <div class="legend-item"><span class="dot red"></span> Farthållare</div>
-    <div class="legend-item"><span class="dot green"></span> Funzone</div>
-    <div class="legend-item"><span class="dot purple"></span> Sangriagränsen</div>
-  </div>
 </div>
 <div id="zoneToast" class="toast"></div>
 <div id="drinkModal" class="modal">
