@@ -1,5 +1,7 @@
 let historyData = [];
 let lastZoneName = null;
+let graphStartPercent = 0;
+let toastTimer = null;
 
 function getZoneName(bac, zones) {
   if (bac <= zones.legalMax) return 'Tiger Woods zone';
@@ -10,13 +12,32 @@ function getZoneName(bac, zones) {
 
 function notifyZoneChange(currentZone) {
   if (lastZoneName && currentZone !== lastZoneName) {
-    alert(`Du går in i ${currentZone}.`);
+    showZoneToast(`Du går in i ${currentZone}.`);
   }
   lastZoneName = currentZone;
 }
 
+function showZoneToast(message) {
+  const toast = document.getElementById('zoneToast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2500);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   historyData = getDrinkHistory();
+  const slider = document.getElementById('graphStartSlider');
+  if (slider) {
+    graphStartPercent = parseFloat(slider.value) || 0;
+    slider.addEventListener('input', (event) => {
+      graphStartPercent = parseFloat(event.target.value) || 0;
+      updateUI();
+    });
+  }
   updateUI();
   setInterval(updateUI, 60000);
 });
@@ -93,17 +114,55 @@ function updateUI() {
 
   const labels = [];
   const dataPoints = [];
+  const timeline = [];
   
   if (historyData.length > 0) {
     const firstTime = new Date(historyData[0].timestamp).getTime();
     const endTime = Date.now() + (3600000 * 2); 
     for (let t = firstTime; t <= endTime; t += 900000) {
-      labels.push(new Date(t).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
-      dataPoints.push(calculateBACAtTime(historyData, profile, t).toFixed(2));
+      const label = new Date(t).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      const value = calculateBACAtTime(historyData, profile, t);
+      timeline.push({ time: t, label, value });
+    }
+  }
+  const totalPoints = timeline.length;
+  const startIndex = totalPoints > 0 ? Math.floor((graphStartPercent / 100) * (totalPoints - 1)) : 0;
+  const visible = timeline.slice(startIndex);
+  visible.forEach(point => {
+    labels.push(point.label);
+    dataPoints.push(point.value.toFixed(2));
+  });
+
+  const currentTimeLabel = document.getElementById('currentTimeLabel');
+  if (currentTimeLabel) {
+    currentTimeLabel.textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  }
+  const graphStartLabel = document.getElementById('graphStartLabel');
+  if (graphStartLabel) {
+    const label = totalPoints > 0 ? timeline[startIndex].label : '--:--';
+    graphStartLabel.textContent = `Start: ${label}`;
+  }
+
+  let currentLabel = null;
+  if (timeline.length > 0) {
+    const now = Date.now();
+    let closestIndex = 0;
+    let closestDiff = Math.abs(timeline[0].time - now);
+    for (let i = 1; i < timeline.length; i++) {
+      const diff = Math.abs(timeline[i].time - now);
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        closestIndex = i;
+      }
+    }
+    if (closestIndex >= startIndex) {
+      currentLabel = timeline[closestIndex].label;
+    } else if (visible.length > 0) {
+      currentLabel = visible[0].label;
     }
   }
 
-  renderChart('promilleChart', labels, dataPoints, getZones(profile));
+  renderChart('promilleChart', labels, dataPoints, getZones(profile), { currentLabel });
 }
 
 function removeDrink(index) {

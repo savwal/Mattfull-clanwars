@@ -1,9 +1,25 @@
 let chartInstance = null;
 
-function renderChart(canvasId, labels, dataPoints, zones) {
+function renderChart(canvasId, labels, dataPoints, zones, options = {}) {
   const ctx = document.getElementById(canvasId).getContext('2d');
   
   if (chartInstance) chartInstance.destroy();
+
+  const currentLabel = options.currentLabel || null;
+  const currentTimeLine = currentLabel ? {
+    type: 'line',
+    xMin: currentLabel,
+    xMax: currentLabel,
+    borderColor: '#2A8CFF',
+    borderWidth: 2,
+    label: {
+      display: true,
+      content: 'Nu',
+      backgroundColor: '#2A8CFF',
+      color: '#FFF',
+      position: 'start'
+    }
+  } : null;
   
   chartInstance = new Chart(ctx, {
     type: 'line',
@@ -42,7 +58,8 @@ function renderChart(canvasId, labels, dataPoints, zones) {
             legalZone: { type: 'box', yMin: 0, yMax: zones.legalMax, backgroundColor: 'rgba(52, 152, 219, 0.15)', borderWidth: 0 },
             redZone: { type: 'box', yMin: zones.legalMax, yMax: zones.redMax, backgroundColor: 'rgba(231, 76, 60, 0.15)', borderWidth: 0 },
             funZone: { type: 'box', yMin: zones.redMax, yMax: zones.greenMax, backgroundColor: 'rgba(46, 204, 113, 0.15)', borderWidth: 0 },
-            psykosZone: { type: 'box', yMin: zones.greenMax, yMax: 10, backgroundColor: 'rgba(155, 89, 182, 0.15)', borderWidth: 0 }
+            psykosZone: { type: 'box', yMin: zones.greenMax, yMax: 10, backgroundColor: 'rgba(155, 89, 182, 0.15)', borderWidth: 0 },
+            ...(currentTimeLine ? { currentTimeLine } : {})
           }
         }
       }

@@ -20,6 +20,10 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 .profile-pic-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
 #picPreview { width: 120px; height: 120px; border-radius: 0; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; display: none; object-fit: cover; }
 .hash-text { display: inline-block; background: #2C3E50; color: #FFF; padding: 5px 10px; font-family: monospace; font-size: 1.2em; margin: 10px 0; letter-spacing: 2px; }
+.file-input { display: none; }
+.file-label { display: inline-block; background: #FFCC00; color: #2C3E50; padding: 10px 12px; border: 4px solid #2C3E50; font-weight: 900; cursor: pointer; box-shadow: 4px 4px 0px #2C3E50; text-transform: uppercase; margin-top: 10px; }
+.hash-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.hash-actions input { flex: 1 1 200px; }
 </style>
 </head>
 <body>
@@ -42,10 +46,19 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   <div class="hash-text" id="myHashDisplay"></div>
 </div>
 <div class="card">
+  <h2>Öppna profil via hash</h2>
+  <div class="hash-actions">
+    <input type="text" id="hashLookup" placeholder="Klistra in hash">
+    <button onclick="openProfileByHash()" style="width: auto;">Öppna</button>
+  </div>
+  <p id="hashLookupStatus" style="font-weight: 900; color:#2C3E50;"></p>
+</div>
+<div class="card">
   <h2>Profil</h2>
   <div class="profile-pic-container">
     <img id="picPreview" src="">
-    <input type="file" id="picInput" accept="image/*" style="font-size: 12px; padding: 8px;">
+    <label class="file-label" for="picInput">Lägg till profilbild</label>
+    <input type="file" id="picInput" class="file-input" accept="image/*">
   </div>
   <input type="text" id="profileName" placeholder="Namn">
   <input type="number" id="profileWeight" placeholder="Vikt (kg)">
@@ -113,6 +126,29 @@ function saveCurrentProfile() {
   currentProfile.funzone = parseFloat(document.getElementById('profileFunzone').value);
   saveProfile(currentProfile);
   renderProfileSelect();
+}
+function openProfileByHash() {
+  const hash = document.getElementById('hashLookup').value.trim();
+  const status = document.getElementById('hashLookupStatus');
+  if (!hash) return;
+  const profiles = getProfiles();
+  let target = profiles.find(p => p.id === hash);
+  if (!target) {
+    const globalData = getGlobalData();
+    target = globalData.persons[hash];
+    if (target) {
+      saveProfile(target);
+    }
+  }
+  if (target) {
+    switchProfile(target.id);
+    currentProfile = getActiveProfile();
+    renderProfileSelect();
+    populateForm();
+    status.textContent = `Öppnade profil: ${target.name}`;
+  } else {
+    status.textContent = 'Hittade ingen profil med den hashen.';
+  }
 }
 renderProfileSelect();
 populateForm();

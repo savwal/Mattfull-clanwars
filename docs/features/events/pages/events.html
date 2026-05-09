@@ -45,6 +45,11 @@ li:last-child { border-bottom: none; }
 </div>
 
 <div class="card">
+  <h2 style="background: #2A8CFF;">Live Promille Top 5</h2>
+  <ul id="liveTopFive"></ul>
+</div>
+
+<div class="card">
   <h2>Leaderboard (cl)</h2>
   <ul id="eventLeaderboard"></ul>
 </div>
@@ -199,6 +204,59 @@ function renderLeaderboard(entries, startMs, endMs) {
   });
 }
 
+function getAllProfilesForLive() {
+  const globalData = getGlobalData();
+  const globalProfiles = Object.values(globalData.persons || {});
+  const localProfiles = getProfiles();
+  const merged = new Map();
+  localProfiles.forEach(profile => merged.set(profile.id, profile));
+  globalProfiles.forEach(profile => {
+    if (!merged.has(profile.id)) merged.set(profile.id, profile);
+  });
+  return Array.from(merged.values());
+}
+
+function getLivePromille(profile) {
+  const history = getHistoryForProfile(profile.id);
+  if (!profile.weight || !profile.gender) return null;
+  if (!history || history.length === 0) return null;
+  return calculateBACAtTime(history, profile, Date.now());
+}
+
+function renderLiveTopFive() {
+  const list = document.getElementById('liveTopFive');
+  list.innerHTML = '';
+  const ranked = getAllProfilesForLive()
+    .map(profile => ({
+      profile,
+      promille: getLivePromille(profile)
+    }))
+    .filter(entry => entry.promille !== null)
+    .sort((a, b) => b.promille - a.promille)
+    .slice(0, 5);
+
+  if (ranked.length === 0) {
+    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga aktiva promille att visa.</p>';
+    return;
+  }
+
+  ranked.forEach((entry, index) => {
+    const li = document.createElement('li');
+    const img = document.createElement('img');
+    img.className = 'profile-img';
+    img.src = entry.profile.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+    const info = document.createElement('div');
+    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#${index + 1} ${entry.profile.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${entry.profile.id}</span>`;
+    const stats = document.createElement('div');
+    stats.className = 'badge';
+    stats.innerText = `${entry.promille.toFixed(2)} ‰`;
+    li.appendChild(img);
+    li.appendChild(info);
+    li.appendChild(stats);
+    list.appendChild(li);
+  });
+}
+
 function renderSelectedEvent() {
   const select = document.getElementById('eventSelect');
   const value = select.value;
@@ -301,6 +359,8 @@ function joinCustomEvent() {
 
 buildEventOptions();
 renderSelectedEvent();
+renderLiveTopFive();
+setInterval(renderLiveTopFive, 60000);
 </script>
 </body>
 </html>
