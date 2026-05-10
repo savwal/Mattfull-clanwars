@@ -26,9 +26,10 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   <button onclick="registerProfile()">Skapa Profil</button>
 </div>
 <script src="../../shared/scripts/hash.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/scripts/shared.js"></script>
 <script>
-function registerProfile() {
+async function registerProfile() {
   const name = document.getElementById('regName').value;
   const weight = parseFloat(document.getElementById('regWeight').value);
   const gender = document.getElementById('regGender').value;
@@ -39,14 +40,8 @@ function registerProfile() {
   const newHash = generateUniqueHash();
   const newProfile = { id: newHash, name, weight, gender, funzone, pic: '' };
   
-  let globalData = getGlobalData();
-  globalData.persons[newHash] = newProfile;
-  saveGlobalData(globalData);
-  
-  let profiles = JSON.parse(localStorage.getItem('profiles')) || [];
-  profiles.push(newProfile);
-  localStorage.setItem('profiles', JSON.stringify(profiles));
-  localStorage.setItem('activeProfileId', newHash);
+  saveProfile(newProfile);
+  await syncProfileToSupabase(newProfile);
   
   window.location.href = '../../../index.html';
 }

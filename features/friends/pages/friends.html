@@ -127,12 +127,14 @@ li:last-child { border-bottom: none; }
 </div>
 
 <script src="../../shared/scripts/hash.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/scripts/shared.js"></script>
 <script src="../../shared/scripts/calculator.js"></script>
 <script>
 let myFriends = JSON.parse(localStorage.getItem('myFriendsHashes')) || [];
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 let activeView = 'weekly';
+let friendsData = {};
 
 function setFriendsView(view) {
   activeView = view;
@@ -141,16 +143,45 @@ function setFriendsView(view) {
   renderViews();
 }
 
+async function fetchFriendsData() {
+  if (myFriends.length === 0 || !sb) return;
+  const { data: profiles } = await sb.from('profiles').select('*').in('player_hash', myFriends);
+  const sinceISO = new Date(Date.now() - WEEK_MS).toISOString();
+  const { data: drinks } = await sb.from('drink_logs')
+    .select('*')
+    .in('player_hash', myFriends)
+    .gte('consumed_at', sinceISO);
+
+  friendsData = {};
+  if (profiles) {
+    profiles.forEach(p => {
+      friendsData[p.player_hash] = {
+        profile: { id: p.player_hash, name: p.display_name, pic: p.avatar_url, weight: p.weight, gender: p.gender },
+        drinks: []
+      };
+    });
+  }
+  if (drinks) {
+    drinks.forEach(d => {
+      if (friendsData[d.player_hash]) {
+        friendsData[d.player_hash].drinks.push({
+          timestamp: new Date(d.consumed_at).getTime(),
+          grams: d.grams_alcohol
+        });
+      }
+    });
+  }
+}
+
 function getFriendEntries() {
-  let globalData = getGlobalData();
   return myFriends
-    .map(hash => ({ hash, profile: globalData.persons[hash] }))
-    .filter(item => item.profile);
+    .filter(hash => friendsData[hash])
+    .map(hash => ({ hash, profile: friendsData[hash].profile }));
 }
 
 function getHistoryForProfile(profileId) {
-  const allHistory = JSON.parse(localStorage.getItem('drinkHistory_all')) || {};
-  return allHistory[profileId] || [];
+  if (friendsData[profileId]) return friendsData[profileId].drinks;
+  return [];
 }
 
 function getWeeklyCl(profileId) {
@@ -239,31 +270,30 @@ function renderViews() {
   }
 }
 
-function updateFriendsUI() {
+async function updateFriendsUI() {
   const list = document.getElementById('friendsList');
   list.innerHTML = '';
   
   if (myFriends.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga vänner tillagda. Sök på deras Hashkod!</p>';
+    renderViews();
     return;
   }
 
-  let globalData = getGlobalData();
+  await fetchFriendsData();
 
   myFriends.forEach((hash, index) => {
-    let friend = globalData.persons[hash];
-    if(!friend) return;
+    let friendObj = friendsData[hash];
+    if(!friendObj) return;
+    let friend = friendObj.profile;
     
     const li = document.createElement('li');
-    
     const img = document.createElement('img');
     img.className = 'profile-img';
     img.src = friend.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-    
     const info = document.createElement('div');
     info.className = 'friend-info';
     info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${friend.name}</span><br><span style="font-size:0.8em; color:#7f8c8d;">Hash: ${hash}</span>`;
-
     const delBtn = document.createElement('button');
     delBtn.innerText = "X";
     delBtn.style.cssText = "background: #E74C3C; color: white; width: auto; padding: 5px 10px; font-size: 12px; box-shadow: 2px 2px 0px #2C3E50;";
@@ -272,7 +302,6 @@ function updateFriendsUI() {
       localStorage.setItem('myFriendsHashes', JSON.stringify(myFriends));
       updateFriendsUI();
     };
-
     li.appendChild(img);
     li.appendChild(info);
     li.appendChild(delBtn);
@@ -282,16 +311,26 @@ function updateFriendsUI() {
   renderViews();
 }
 
-function addFriend() {
+async function addFriend() {
   const hash = document.getElementById('friendHash').value.trim();
-  if(!hash) return;
+  if(!hash || !sb) return;
   
-  let globalData = getGlobalData();
+  if(myFriends.includes(hash)) {
+     alert("Du har redan lagt till denna vän!");
+     return;
+  }
   
-  if(globalData.persons[hash] && !myFriends.includes(hash)) {
+  const { data } = await sb.from('profiles').select('player_hash').eq('player_hash', hash).single();
+  if (data) {
     myFriends.push(hash);
     localStorage.setItem('myFriendsHashes', JSON.stringify(myFriends));
     document.getElementById('friendHash').value = '';
+    
+    const activeProfile = getActiveProfile();
+    if(activeProfile) {
+      await sb.from('friends').insert({ player_hash: activeProfile.id, friend_hash: hash });
+    }
+    
     updateFriendsUI();
   } else {
     alert("Kunde inte hitta en krigare med den hashen!");
@@ -299,7 +338,6 @@ function addFriend() {
 }
 
 updateFriendsUI();
-renderViews();
 setInterval(() => {
   if (activeView === 'live') {
     renderLiveStats();

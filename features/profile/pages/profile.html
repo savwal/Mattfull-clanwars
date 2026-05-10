@@ -123,6 +123,7 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   <h3 style="margin-top:20px; font-family:'Arial Black';">Funzone gräns</h3>
   <input type="number" step="0.1" id="profileFunzone" placeholder="Funzone gräns (‰)">
   <button onclick="saveCurrentProfile()" style="margin-top: 15px;">Spara Lokalt</button>
+  <button onclick="logout()" style="margin-top: 15px; background: #E74C3C; color: white;">Logga Ut (Nollställ)</button>
 </div>
 <div class="card">
   <h2>Historik 24h</h2>
@@ -130,6 +131,7 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   <ul id="history24h"></ul>
 </div>
 <script src="../../shared/scripts/hash.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/scripts/shared.js"></script>
 <script>
 let currentProfile = getActiveProfile();
@@ -187,6 +189,13 @@ function saveCurrentProfile() {
   saveProfile(currentProfile);
   renderProfileSelect();
   renderHistory24h();
+}
+
+function logout() {
+  if (confirm("Är du säker på att du vill logga ut? Detta tar bort all lokal data på denna enhet. (Din data finns fortfarande sparad på din Hash i databasen!)")) {
+    localStorage.clear();
+    window.location.href = '../../register/pages/register.html';
+  }
 }
 
 function renderHistory24h() {

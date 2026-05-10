@@ -125,6 +125,7 @@ li:last-child { border-bottom: none; }
 </div>
 
 <script src="../../shared/scripts/hash.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/scripts/shared.js"></script>
 <script src="../../shared/scripts/calculator.js"></script>
 <script>
@@ -154,27 +155,31 @@ function dateAt(year, month, day, hour = 0, minute = 0) {
 function getMidsummerEve(year) {
   for (let day = 19; day <= 25; day++) {
     const date = new Date(year, 5, day);
-    if (date.getDay() === 5) {
-      return { month: 6, day: day };
-    }
+    if (date.getDay() === 5) return { month: 6, day: day };
   }
   return { month: 6, day: 20 };
 }
 
-function loadCustomEvents() {
-  return JSON.parse(localStorage.getItem(customEventsKey)) || [];
+async function loadCustomEvents() {
+  if (!sb) return [];
+  const { data } = await sb.from('events').select('id, hash, name, start_time, end_time, event_participants(player_hash)');
+  if (!data) return [];
+  return data.map(evt => ({
+    id: evt.id,
+    hash: evt.hash,
+    name: evt.name,
+    start: evt.start_time,
+    end: evt.end_time,
+    participants: evt.event_participants.map(p => p.player_hash)
+  }));
 }
 
-function saveCustomEvents(events) {
-  localStorage.setItem(customEventsKey, JSON.stringify(events));
-}
-
-function buildEventOptions() {
+async function buildEventOptions() {
   const select = document.getElementById('eventSelect');
   select.innerHTML = '';
   const year = new Date().getFullYear();
   const presetEvents = getPresetEvents(year);
-  const customEvents = loadCustomEvents();
+  const customEvents = await loadCustomEvents();
 
   const presetGroup = document.createElement('optgroup');
   presetGroup.label = 'Events (Sverige)';
@@ -196,51 +201,23 @@ function buildEventOptions() {
 
   select.appendChild(presetGroup);
   select.appendChild(customGroup);
-  if (select.options.length > 0) {
-    select.selectedIndex = 0;
-  }
+  if (select.options.length > 0) select.selectedIndex = 0;
 }
 
-function getHistoryForProfile(profileId) {
-  const allHistory = JSON.parse(localStorage.getItem('drinkHistory_all')) || {};
-  return allHistory[profileId] || [];
+function formatRange(start, end) {
+  const startText = start.toLocaleDateString('sv-SE', { month: 'short', day: 'numeric' });
+  const endText = end.toLocaleDateString('sv-SE', { month: 'short', day: 'numeric' });
+  return startText === endText ? startText : `${startText} - ${endText}`;
 }
 
-function calculateClForRange(profileId, startMs, endMs) {
-  const history = getHistoryForProfile(profileId);
-  const grams = history.reduce((sum, item) => {
-    if (item.grams > 0 && item.timestamp >= startMs && item.timestamp <= endMs) {
-      return sum + item.grams;
-    }
-    return sum;
-  }, 0);
-  return calculateCl(grams);
-}
-
-function getProfileByHash(hash) {
-  const profiles = getProfiles();
-  const localProfile = profiles.find(p => p.id === hash);
-  if (localProfile) return localProfile;
-  const globalData = getGlobalData();
-  return globalData.persons[hash];
-}
-
-function renderLeaderboard(entries, startMs, endMs) {
+function renderLeaderboard(entries) {
   const list = document.getElementById('eventLeaderboard');
   list.innerHTML = '';
-
   if (entries.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga deltagare.</p>';
     return;
   }
-
-  const ranked = entries
-    .map(entry => {
-      const cl = calculateClForRange(entry.id, startMs, endMs);
-      return { ...entry, cl };
-    })
-    .sort((a, b) => b.cl - a.cl);
-
+  const ranked = entries.sort((a, b) => b.cl - a.cl);
   ranked.forEach((player, index) => {
     const li = document.createElement('li');
     const img = document.createElement('img');
@@ -258,36 +235,100 @@ function renderLeaderboard(entries, startMs, endMs) {
   });
 }
 
-function getAllProfilesForLive() {
-  const globalData = getGlobalData();
-  const globalProfiles = Object.values(globalData.persons || {});
-  const localProfiles = getProfiles();
-  const merged = new Map();
-  localProfiles.forEach(profile => merged.set(profile.id, profile));
-  globalProfiles.forEach(profile => {
-    if (!merged.has(profile.id)) merged.set(profile.id, profile);
+async function renderSelectedEvent() {
+  const select = document.getElementById('eventSelect');
+  const value = select.value;
+  const eventMeta = document.getElementById('eventMeta');
+  if (!value || !sb) return;
+
+  let startMs, endMs, participantHashes = [];
+  let eventName, eventCity = '', eventHash = '';
+
+  if (value.startsWith('preset:')) {
+    const id = value.split(':')[1];
+    const year = new Date().getFullYear();
+    const evt = getPresetEvents(year).find(e => e.id === id);
+    if (!evt) return;
+    eventName = evt.name;
+    eventCity = evt.city;
+    startMs = evt.start.getTime();
+    endMs = evt.end.getTime();
+
+    const { data: drinks } = await sb.from('drink_logs')
+      .select('player_hash')
+      .gte('consumed_at', new Date(startMs).toISOString())
+      .lte('consumed_at', new Date(endMs).toISOString());
+    if (drinks) participantHashes = Array.from(new Set(drinks.map(d => d.player_hash)));
+    eventMeta.innerText = `${eventName} - ${eventCity} (${formatRange(new Date(startMs), new Date(endMs))})`;
+  } else {
+    const hash = value.split(':')[1];
+    const customEvents = await loadCustomEvents();
+    const evt = customEvents.find(e => e.hash === hash);
+    if (!evt) return;
+    eventName = evt.name;
+    eventHash = evt.hash;
+    startMs = new Date(evt.start).getTime();
+    endMs = new Date(evt.end).getTime();
+    participantHashes = evt.participants;
+    eventMeta.innerText = `${eventName} (${eventHash}) - ${formatRange(new Date(startMs), new Date(endMs))}`;
+  }
+
+  if (participantHashes.length === 0) {
+    renderLeaderboard([]);
+    return;
+  }
+
+  const { data: profiles } = await sb.from('profiles').select('*').in('player_hash', participantHashes);
+  const { data: drinks } = await sb.from('drink_logs')
+    .select('player_hash, grams_alcohol, consumed_at')
+    .in('player_hash', participantHashes)
+    .gte('consumed_at', new Date(startMs).toISOString())
+    .lte('consumed_at', new Date(endMs).toISOString());
+
+  const entries = (profiles || []).map(p => {
+    const pDrinks = (drinks || []).filter(d => d.player_hash === p.player_hash);
+    const totalGrams = pDrinks.reduce((sum, d) => sum + (d.grams_alcohol || 0), 0);
+    return {
+      id: p.player_hash,
+      name: p.display_name,
+      pic: p.avatar_url,
+      cl: calculateCl(totalGrams)
+    };
   });
-  return Array.from(merged.values());
+
+  renderLeaderboard(entries);
 }
 
-function getLivePromille(profile) {
-  const history = getHistoryForProfile(profile.id);
-  if (!profile.weight || !profile.gender) return null;
-  if (!history || history.length === 0) return null;
-  return calculateBACAtTime(history, profile, Date.now());
-}
-
-function renderLiveTopFive() {
+async function renderLiveTopFive() {
+  if (!sb) return;
   const list = document.getElementById('liveTopFive');
   list.innerHTML = '';
-  const ranked = getAllProfilesForLive()
-    .map(profile => ({
-      profile,
-      promille: getLivePromille(profile)
-    }))
-    .filter(entry => entry.promille !== null)
-    .sort((a, b) => b.promille - a.promille)
-    .slice(0, 5);
+  
+  const yesterdayISO = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data: recentDrinks } = await sb.from('drink_logs').select('*').gte('consumed_at', yesterdayISO);
+  
+  if (!recentDrinks || recentDrinks.length === 0) {
+    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga aktiva promille att visa.</p>';
+    return;
+  }
+  
+  const activeHashes = Array.from(new Set(recentDrinks.map(d => d.player_hash)));
+  const { data: profiles } = await sb.from('profiles').select('*').in('player_hash', activeHashes);
+  
+  if(!profiles) return;
+  
+  const ranked = profiles.map(p => {
+    const pDrinks = recentDrinks.filter(d => d.player_hash === p.player_hash).map(d => ({
+       timestamp: new Date(d.consumed_at).getTime(),
+       grams: d.grams_alcohol
+    }));
+    const profileObj = { id: p.player_hash, weight: p.weight, gender: p.gender };
+    const promille = calculateBACAtTime(pDrinks, profileObj, Date.now());
+    return {
+      profile: { name: p.display_name, id: p.player_hash, pic: p.avatar_url },
+      promille
+    };
+  }).filter(r => r.promille > 0).sort((a,b) => b.promille - a.promille).slice(0, 5);
 
   if (ranked.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga aktiva promille att visa.</p>';
@@ -311,109 +352,71 @@ function renderLiveTopFive() {
   });
 }
 
-function renderSelectedEvent() {
-  const select = document.getElementById('eventSelect');
-  const value = select.value;
-  const eventMeta = document.getElementById('eventMeta');
-  const year = new Date().getFullYear();
-  const presetEvents = getPresetEvents(year);
-  const customEvents = loadCustomEvents();
-
-  if (!value) return;
-
-  if (value.startsWith('preset:')) {
-    const id = value.split(':')[1];
-    const evt = presetEvents.find(e => e.id === id);
-    if (!evt) return;
-    const globalData = getGlobalData();
-    const profiles = Object.values(globalData.persons || {});
-    eventMeta.innerText = `${evt.name} - ${evt.city} (${formatRange(evt.start, evt.end)})`;
-    renderLeaderboard(profiles, evt.start.getTime(), evt.end.getTime());
-  } else {
-    const hash = value.split(':')[1];
-    const evt = customEvents.find(e => e.hash === hash);
-    if (!evt) return;
-    const participants = evt.participants
-      .map(getProfileByHash)
-      .filter(Boolean);
-    eventMeta.innerText = `${evt.name} (${evt.hash}) - ${formatRange(new Date(evt.start), new Date(evt.end))}`;
-    renderLeaderboard(participants, new Date(evt.start).getTime(), new Date(evt.end).getTime());
-  }
-}
-
-function formatRange(start, end) {
-  const startText = start.toLocaleDateString('sv-SE', { month: 'short', day: 'numeric' });
-  const endText = end.toLocaleDateString('sv-SE', { month: 'short', day: 'numeric' });
-  if (startText === endText) return startText;
-  return `${startText} - ${endText}`;
-}
-
-function createCustomEvent() {
+async function createCustomEvent() {
   const name = document.getElementById('customName').value.trim();
   const startValue = document.getElementById('customStart').value;
   const endValue = document.getElementById('customEnd').value;
-  if (!name || !startValue || !endValue) return;
+  if (!name || !startValue || !endValue || !sb) return;
 
   const start = new Date(startValue);
   const end = new Date(endValue);
   if (end <= start) return;
 
   const participantsInput = document.getElementById('customParticipants').value.trim();
-  const hashes = participantsInput
-    ? participantsInput.split(',').map(h => h.trim()).filter(Boolean)
-    : [];
-
-  const globalData = getGlobalData();
-  const validHashes = hashes.filter(hash => globalData.persons[hash]);
+  const hashes = participantsInput ? participantsInput.split(',').map(h => h.trim()).filter(Boolean) : [];
+  
   const activeProfile = getActiveProfile();
-  validHashes.push(activeProfile.id);
-  const uniqueParticipants = Array.from(new Set(validHashes));
+  if (activeProfile) hashes.push(activeProfile.id);
+  const uniqueParticipants = Array.from(new Set(hashes));
 
-  const events = loadCustomEvents();
-  let hash = generateUniqueHash(6);
-  while (events.some(evt => evt.hash === hash)) {
-    hash = generateUniqueHash(6);
-  }
+  const hash = generateUniqueHash(6);
 
-  const newEvent = {
+  const { data: eventData, error: eventErr } = await sb.from('events').insert({
     hash: hash,
     name: name,
-    start: start.toISOString(),
-    end: end.toISOString(),
-    participants: uniqueParticipants
-  };
+    start_time: start.toISOString(),
+    end_time: end.toISOString()
+  }).select('id').single();
 
-  events.push(newEvent);
-  saveCustomEvents(events);
+  if (eventData) {
+    const pInserts = uniqueParticipants.map(ph => ({ event_id: eventData.id, player_hash: ph }));
+    await sb.from('event_participants').insert(pInserts);
+  }
+
   document.getElementById('customHashInfo').innerText = `Event hash: ${hash}`;
   document.getElementById('customName').value = '';
   document.getElementById('customStart').value = '';
   document.getElementById('customEnd').value = '';
   document.getElementById('customParticipants').value = '';
-  buildEventOptions();
+  await buildEventOptions();
 }
 
-function joinCustomEvent() {
+async function joinCustomEvent() {
   const hash = document.getElementById('joinHash').value.trim();
-  if (!hash) return;
-  const events = loadCustomEvents();
-  const target = events.find(evt => evt.hash === hash);
-  if (!target) {
+  if (!hash || !sb) return;
+  
+  const { data: evt } = await sb.from('events').select('id').eq('hash', hash).single();
+  if (!evt) {
     alert('Hittade inte eventet.');
     return;
   }
+  
   const activeProfile = getActiveProfile();
-  if (!target.participants.includes(activeProfile.id)) {
-    target.participants.push(activeProfile.id);
-    saveCustomEvents(events);
+  if (activeProfile) {
+    await sb.from('event_participants').upsert({ event_id: evt.id, player_hash: activeProfile.id }, { onConflict: 'event_id, player_hash' });
   }
+  
   document.getElementById('joinHash').value = '';
-  buildEventOptions();
+  await buildEventOptions();
 }
 
-buildEventOptions();
-renderSelectedEvent();
-renderLiveTopFive();
+async function initEvents() {
+  await buildEventOptions();
+  await renderSelectedEvent();
+  await renderLiveTopFive();
+}
+
+initEvents();
 setInterval(renderLiveTopFive, 60000);
 </script>
 </body>

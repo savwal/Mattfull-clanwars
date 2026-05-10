@@ -90,6 +90,12 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   </a>
 </nav>
 <div class="card">
+  <h2 style="background: #2ECC71;">Aktiva Strider</h2>
+  <ul id="activeBattlesList">
+    <li style="justify-content:center; color:#7f8c8d;">Laddar strider...</li>
+  </ul>
+</div>
+<div class="card">
   <h2>Välj Strid</h2>
   <div class="logger-tile-grid">
     <div class="logger-tile" onclick="openBattleModal('Solo Battle')">
@@ -112,15 +118,23 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   </div>
 </div>
 <script src="../../shared/scripts/hash.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/scripts/shared.js"></script>
+<script src="../../shared/scripts/calculator.js"></script>
 <script>
 let currentMode = '';
+let myActiveBattles = [];
+let activeParticipants = new Set();
+let profilesData = {};
+let realtimeChannel = null;
+
 function openBattleModal(title) {
   currentMode = title;
   document.getElementById('modalTitle').innerText = title;
   renderBattleFields(title);
   document.getElementById('battleModal').style.display = 'block';
 }
+
 function renderBattleFields(title) {
   const container = document.getElementById('battleFields');
   container.innerHTML = '';
@@ -132,12 +146,13 @@ function renderBattleFields(title) {
     const info = document.createElement('p');
     info.style.margin = '10px 0 0 0';
     info.style.fontWeight = 'bold';
-    info.innerText = 'Inga hash behovs for denna battle.';
+    info.innerText = 'Custom Battle Royale är under utveckling.';
     container.appendChild(info);
   } else {
-    container.appendChild(createBattleInput('opponentHash', 'Ange person hash'));
+    container.appendChild(createBattleInput('opponentHash', 'Ange motståndarens hash'));
   }
 }
+
 function createBattleInput(id, placeholder) {
   const input = document.createElement('input');
   input.type = 'text';
@@ -145,35 +160,187 @@ function createBattleInput(id, placeholder) {
   input.placeholder = placeholder;
   return input;
 }
+
 function closeBattleModal() {
   document.getElementById('battleModal').style.display = 'none';
 }
-function startBattle() {
-  let globalData = getGlobalData();
+
+async function startBattle() {
+  if (!sb) return;
   if (currentMode === 'Custom Battle Royale') {
+    alert("Under utveckling!");
     closeBattleModal();
     return;
   }
+
+  const activeProfile = getActiveProfile();
+  if (!activeProfile) return;
+
+  const now = new Date();
+  const endTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+  let participants = [activeProfile.id];
+
   if (currentMode === 'Duos Battle') {
     const teammateHash = document.getElementById('teammateHash').value.trim();
     const opponentHash1 = document.getElementById('opponentHash1').value.trim();
     const opponentHash2 = document.getElementById('opponentHash2').value.trim();
     if (!teammateHash || !opponentHash1 || !opponentHash2) return;
-    if (globalData.persons[teammateHash] && globalData.persons[opponentHash1] && globalData.persons[opponentHash2]) {
-      closeBattleModal();
-    } else {
-      alert('Hittade inte alla hashkoder.');
-    }
+    participants.push(teammateHash, opponentHash1, opponentHash2);
+  } else if (currentMode === 'Solo Battle') {
+    const opponentHash = document.getElementById('opponentHash').value.trim();
+    if (!opponentHash) return;
+    participants.push(opponentHash);
+  }
+
+  // Validate unique players
+  participants = Array.from(new Set(participants));
+
+  const { data: validProfiles } = await sb.from('profiles').select('player_hash').in('player_hash', participants);
+  if (!validProfiles || validProfiles.length !== participants.length) {
+    alert('Kunde inte hitta alla angivna hashkoder i databasen.');
     return;
   }
-  const opponentHash = document.getElementById('opponentHash').value.trim();
-  if (!opponentHash) return;
-  if (globalData.persons[opponentHash]) {
+
+  const { data: newBattle, error } = await sb.from('battles').insert({
+    type: currentMode,
+    status: 'active',
+    start_time: now.toISOString(),
+    end_time: endTime.toISOString()
+  }).select('id').single();
+
+  if (newBattle) {
+    const pInserts = participants.map((p, idx) => ({
+      battle_id: newBattle.id,
+      player_hash: p,
+      team: currentMode === 'Duos Battle' ? (idx < 2 ? 1 : 2) : idx
+    }));
+    await sb.from('battle_participants').insert(pInserts);
     closeBattleModal();
-  } else {
-    alert('Hittade inte hashkoden.');
+    await fetchActiveBattles();
+  } else if (error) {
+    console.error(error);
+    alert("Ett fel inträffade.");
   }
 }
+
+async function fetchActiveBattles() {
+  const activeProfile = getActiveProfile();
+  if (!activeProfile || !sb) return;
+
+  const now = new Date().toISOString();
+  
+  const { data: myParticipations } = await sb.from('battle_participants')
+    .select('battle_id')
+    .eq('player_hash', activeProfile.id);
+
+  if (!myParticipations || myParticipations.length === 0) {
+    renderActiveBattles([]);
+    return;
+  }
+
+  const battleIds = myParticipations.map(p => p.battle_id);
+  
+  const { data: battles } = await sb.from('battles')
+    .select(`id, type, start_time, end_time, battle_participants(player_hash, team)`)
+    .in('id', battleIds)
+    .gt('end_time', now)
+    .eq('status', 'active');
+
+  myActiveBattles = battles || [];
+  
+  activeParticipants = new Set();
+  myActiveBattles.forEach(b => {
+    b.battle_participants.forEach(p => activeParticipants.add(p.player_hash));
+  });
+
+  if (activeParticipants.size > 0) {
+    const { data: profiles } = await sb.from('profiles').select('*').in('player_hash', Array.from(activeParticipants));
+    if (profiles) {
+      profiles.forEach(p => profilesData[p.player_hash] = p);
+    }
+  }
+
+  await renderActiveBattles();
+}
+
+async function renderActiveBattles() {
+  const list = document.getElementById('activeBattlesList');
+  if (!list) return;
+  list.innerHTML = '';
+  
+  if (myActiveBattles.length === 0) {
+    list.innerHTML = '<li style="justify-content:center; color:#7f8c8d;">Inga aktiva strider.</li>';
+    return;
+  }
+
+  for (const battle of myActiveBattles) {
+    const li = document.createElement('li');
+    li.style.flexDirection = 'column';
+    li.style.alignItems = 'flex-start';
+    
+    const title = document.createElement('div');
+    title.innerHTML = `<strong style="font-size:1.2em; color:#2C3E50;">${battle.type}</strong> <br><span style="font-size:0.8em; color:#7f8c8d;">Slutar: ${new Date(battle.end_time).toLocaleString()}</span>`;
+    li.appendChild(title);
+    
+    const statsContainer = document.createElement('div');
+    statsContainer.style.width = '100%';
+    statsContainer.style.marginTop = '10px';
+
+    const startIso = battle.start_time;
+    const endIso = battle.end_time;
+    const hashes = battle.battle_participants.map(p => p.player_hash);
+    
+    const { data: drinks } = await sb.from('drink_logs')
+      .select('player_hash, grams_alcohol')
+      .in('player_hash', hashes)
+      .gte('consumed_at', startIso)
+      .lte('consumed_at', endIso);
+
+    const scores = {};
+    hashes.forEach(h => scores[h] = 0);
+    if (drinks) {
+      drinks.forEach(d => {
+        if(d.grams_alcohol > 0) scores[d.player_hash] += d.grams_alcohol;
+      });
+    }
+
+    const sortedHashes = hashes.sort((a, b) => scores[b] - scores[a]);
+
+    sortedHashes.forEach((hash, idx) => {
+      const p = profilesData[hash];
+      const cl = calculateCl(scores[hash]).toFixed(1);
+      
+      const pDiv = document.createElement('div');
+      pDiv.style.display = 'flex';
+      pDiv.style.justifyContent = 'space-between';
+      pDiv.style.padding = '5px 0';
+      pDiv.style.borderBottom = idx < sortedHashes.length - 1 ? '1px solid #eee' : 'none';
+      
+      pDiv.innerHTML = `
+        <span style="font-weight:bold; color:#2C3E50;">${p ? p.display_name : hash}</span>
+        <span class="badge" style="background:#FFCC00; padding:2px 6px; border: 3px solid #2C3E50; font-weight: 900;">${cl} cl</span>
+      `;
+      statsContainer.appendChild(pDiv);
+    });
+
+    li.appendChild(statsContainer);
+    list.appendChild(li);
+  }
+}
+
+function initRealtime() {
+  if (!sb) return;
+  realtimeChannel = sb.channel('public:drink_logs')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'drink_logs' }, payload => {
+      if (activeParticipants.has(payload.new.player_hash)) {
+        renderActiveBattles();
+      }
+    })
+    .subscribe();
+}
+
+fetchActiveBattles().then(() => initRealtime());
 </script>
 </body>
 </html>

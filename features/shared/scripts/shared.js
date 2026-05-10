@@ -1,3 +1,33 @@
+const SUPABASE_URL = 'https://zynyfrqdrihrltdcbnfm.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_v9oyPX430I7TusN4mKFYIw_AO4r033c';
+const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+async function syncProfileToSupabase(profile) {
+  if (!sb) return;
+  const { error } = await sb.from('profiles').upsert({
+    player_hash: profile.id,
+    display_name: profile.name,
+    weight: profile.weight,
+    gender: profile.gender,
+    funzone_limit: profile.funzone || 1.0,
+    avatar_url: profile.pic || ''
+  }, { onConflict: 'player_hash' });
+  if (error) console.error('Error syncing profile:', error);
+}
+
+async function syncDrinkToSupabase(profileId, drink) {
+  if (!sb || !drink) return;
+  const { error } = await sb.from('drink_logs').insert({
+    player_hash: profileId,
+    drink_name: drink.name,
+    volume_ml: drink.volume,
+    abv: drink.abv,
+    grams_alcohol: drink.grams,
+    consumed_at: new Date(drink.timestamp).toISOString()
+  });
+  if (error) console.error('Error syncing drink log:', error);
+}
+
 function initApp() {
   let globalData = JSON.parse(localStorage.getItem('redlös_global')) || { persons: {}, clans: {} };
   localStorage.setItem('redlös_global', JSON.stringify(globalData));
@@ -50,6 +80,7 @@ function saveProfile(profile) {
     globalData.persons[profile.id] = profile;
     saveGlobalData(globalData);
   }
+  syncProfileToSupabase(profile);
 }
 function switchProfile(id) {
   localStorage.setItem('activeProfileId', id);
@@ -67,6 +98,13 @@ function saveDrinkHistory(history) {
   const profile = getActiveProfile();
   if(!profile) return;
   const allHistory = JSON.parse(localStorage.getItem('drinkHistory_all')) || {};
+  
+  const oldHistory = allHistory[profile.id] || [];
+  if (history.length > oldHistory.length) {
+    const newDrink = history[history.length - 1];
+    syncDrinkToSupabase(profile.id, newDrink);
+  }
+  
   allHistory[profile.id] = history;
   localStorage.setItem('drinkHistory_all', JSON.stringify(allHistory));
 }
