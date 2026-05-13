@@ -39,24 +39,28 @@ function getGlobalData() {
 function saveGlobalData(data) {
   localStorage.setItem('redlös_global', JSON.stringify(data));
 }
-function getRepoBasePath() {
-  const path = window.location.pathname;
-  const featuresIndex = path.indexOf('/features/');
-  if (featuresIndex !== -1) {
-    return path.slice(0, featuresIndex);
-  }
-  const indexMatch = path.lastIndexOf('/index.html');
-  if (indexMatch !== -1) {
-    return path.slice(0, indexMatch);
-  }
-  const lastSlash = path.lastIndexOf('/');
-  return lastSlash > 0 ? path.slice(0, lastSlash) : '';
-}
 function checkRegistration() {
   let profiles = JSON.parse(localStorage.getItem('profiles')) || [];
   if (profiles.length === 0 && !window.location.href.includes('register.html')) {
-    const basePath = getRepoBasePath();
-    window.location.href = `${basePath}/features/register/pages/register.html`;
+    let currentHref = window.location.href;
+    currentHref = currentHref.split('?')[0].split('#')[0];
+    
+    let redirectUrl;
+    const featuresIndex = currentHref.indexOf('/features/');
+    if (featuresIndex !== -1) {
+      const baseHref = currentHref.slice(0, featuresIndex);
+      redirectUrl = baseHref + '/features/register/pages/register.html';
+    } else {
+      let baseHref = currentHref;
+      if (baseHref.endsWith('/index.html')) {
+        baseHref = baseHref.slice(0, -11);
+      } else if (baseHref.endsWith('/')) {
+        baseHref = baseHref.slice(0, -1);
+      }
+      redirectUrl = baseHref + '/features/register/pages/register.html';
+    }
+    
+    window.location.href = redirectUrl;
   }
 }
 checkRegistration();
