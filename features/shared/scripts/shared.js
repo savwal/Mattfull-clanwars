@@ -4,14 +4,19 @@ const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE
 
 async function syncProfileToSupabase(profile) {
   if (!sb) return;
-  const { error } = await sb.from('profiles').upsert({
+  const { data: { session } } = await sb.auth.getSession();
+  const payload = {
     player_hash: profile.id,
     display_name: profile.name,
     weight: profile.weight,
     gender: profile.gender,
     funzone_limit: profile.funzone || 1.0,
     avatar_url: profile.pic || ''
-  }, { onConflict: 'player_hash' });
+  };
+  if (session && session.user) {
+    payload.auth_id = session.user.id;
+  }
+  const { error } = await sb.from('profiles').upsert(payload, { onConflict: 'player_hash' });
   if (error) console.error('Error syncing profile:', error);
 }
 
@@ -143,3 +148,26 @@ if ('serviceWorker' in navigator) {
     }
   });
 }
+
+async function ensureSupabaseAuth() {
+  if (!sb) return null;
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) return session;
+  
+  const { data, error } = await sb.auth.signInAnonymously();
+  if (error) {
+    console.error('Error signing in anonymously:', error);
+    return null;
+  }
+  
+  const activeProfile = getActiveProfile();
+  if (activeProfile && activeProfile.id) {
+    const { error: updateError } = await sb.from('profiles')
+      .update({ auth_id: data.user.id })
+      .eq('player_hash', activeProfile.id)
+      .is('auth_id', null);
+    if (updateError) console.error('Error linking profile to auth:', updateError);
+  }
+  return data.session;
+}
+ensureSupabaseAuth();

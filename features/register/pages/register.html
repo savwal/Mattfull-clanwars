@@ -37,6 +37,8 @@ async function registerProfile() {
   
   if (!name || isNaN(weight) || isNaN(funzone)) return;
   
+  await ensureSupabaseAuth();
+  
   const newHash = generateUniqueHash();
   const newProfile = { id: newHash, name, weight, gender, funzone, pic: '' };
   
