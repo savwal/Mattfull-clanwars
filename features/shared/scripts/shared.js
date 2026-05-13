@@ -29,7 +29,12 @@ async function syncDrinkToSupabase(profileId, drink) {
 }
 
 function initApp() {
-  let globalData = JSON.parse(localStorage.getItem('redlös_global')) || { persons: {}, clans: {} };
+  let globalData;
+  try {
+    globalData = JSON.parse(localStorage.getItem('redlös_global')) || { persons: {}, clans: {} };
+  } catch(e) {
+    globalData = { persons: {}, clans: {} };
+  }
   localStorage.setItem('redlös_global', JSON.stringify(globalData));
 }
 initApp();
@@ -40,7 +45,12 @@ function saveGlobalData(data) {
   localStorage.setItem('redlös_global', JSON.stringify(data));
 }
 function checkRegistration() {
-  let profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+  let profiles = [];
+  try {
+    profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+  } catch(e) {
+    profiles = [];
+  }
   if (profiles.length === 0 && !window.location.href.includes('register.html')) {
     let currentHref = window.location.href;
     currentHref = currentHref.split('?')[0].split('#')[0];
@@ -65,7 +75,11 @@ function checkRegistration() {
 }
 checkRegistration();
 function getProfiles() {
-  return JSON.parse(localStorage.getItem('profiles')) || [];
+  try {
+    return JSON.parse(localStorage.getItem('profiles')) || [];
+  } catch(e) {
+    return [];
+  }
 }
 function getActiveProfile() {
   const profiles = getProfiles();
@@ -95,8 +109,12 @@ function getZones(profile) {
 function getDrinkHistory() {
   const profile = getActiveProfile();
   if(!profile) return [];
-  const history = JSON.parse(localStorage.getItem('drinkHistory_all')) || {};
-  return history[profile.id] || [];
+  try {
+    const history = JSON.parse(localStorage.getItem('drinkHistory_all')) || {};
+    return history[profile.id] || [];
+  } catch(e) {
+    return [];
+  }
 }
 function saveDrinkHistory(history) {
   const profile = getActiveProfile();
