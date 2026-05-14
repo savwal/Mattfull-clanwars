@@ -11,9 +11,30 @@ h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #
 input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; font-weight: bold; outline: none; }
 button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; margin-top: 15px; }
 button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+.modal { position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
 </style>
 </head>
 <body>
+<div id="descriptionModal" class="modal" style="display: block; z-index: 10000;">
+  <div class="card" style="margin: 10% auto; width: 90%; max-width: 500px;">
+    <h2 style="background: #2A8CFF;">Om redlös</h2>
+    <div style="text-align: left; font-size: 14px; color: #2C3E50; font-weight: bold; line-height: 1.6; margin-bottom: 20px;">
+      <p><strong>Välkommen till redlös!</strong></p>
+      <p>redlös är din personliga drinklogg med statistik, event-tävlingar och vänleaderboards. Spåra din alkoholkonsumtion i realtid, se din promillegraf och jämför resultat med dina vänner.</p>
+      <p><strong>Funktioner:</strong></p>
+      <ul style="list-style-type: disc; padding-left: 20px; margin: 10px 0;">
+        <li>Logga drycker och se din promillegraf uppdateras i realtid</li>
+        <li>Jämför statistik med vänner i leaderboards</li>
+        <li>Delta i event och tävlingar (battles)</li>
+        <li>Spara flera profiler och hantera din egen hashkod</li>
+        <li>Se din historik och data från tidigare tillfällen</li>
+      </ul>
+      <p style="font-size: 12px; color: #666;"><em>Allt innehåll är endast för underhållning och är INTE medicinsk rådgivning eller hälsorekommendation.</em></p>
+    </div>
+    <button onclick="document.getElementById('descriptionModal').style.display = 'none';" style="background: #2A8CFF; color: white;">Fortsätt</button>
+  </div>
+</div>
+
 <div class="card">
   <h2>Ny Krigare</h2>
   <input type="text" id="regName" placeholder="Namn">

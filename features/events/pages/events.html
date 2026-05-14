@@ -49,7 +49,7 @@ li:last-child { border-bottom: none; }
     <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
     <span class="menu-label">Vänner</span>
   </a>
-  <a href="../../../historik.html" aria-label="Historik" title="Historik">
+  <a href="../../historik/historik.html" aria-label="Historik" title="Historik">
     <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
     <span class="menu-label">Historik</span>
   </a>
@@ -79,7 +79,7 @@ li:last-child { border-bottom: none; }
     <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
     <span class="menu-label">Vänner</span>
   </a>
-  <a href="../../../historik.html" class="menu-item" aria-label="Historik" title="Historik">
+  <a href="../../historik/historik.html" class="menu-item" aria-label="Historik" title="Historik">
     <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
     <span class="menu-label">Historik</span>
   </a>
@@ -148,6 +148,37 @@ function getPresetEvents(year) {
   ];
 }
 
+async function getSwedishPublicHolidays() {
+  try {
+    const currentYear = new Date().getFullYear();
+    const nextYear = currentYear + 1;
+    const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${currentYear}/SE`);
+    const holidays = await response.json();
+    const nextYearResponse = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${nextYear}/SE`);
+    const nextYearHolidays = await nextYearResponse.json();
+    
+    const allHolidays = [...holidays, ...nextYearHolidays];
+    const now = new Date();
+    
+    return allHolidays
+      .filter(holiday => {
+        const holidayDate = new Date(holiday.date);
+        holidayDate.setHours(23, 59, 59, 999);
+        return holidayDate >= now;
+      })
+      .map(holiday => ({
+        id: `holiday-${holiday.date}`,
+        name: `${holiday.localName} (Sverige)`,
+        city: 'Sverige',
+        start: new Date(holiday.date + 'T00:00:00'),
+        end: new Date(holiday.date + 'T23:59:59')
+      }));
+  } catch (error) {
+    console.log('Holiday API error, using preset events only:', error);
+    return [];
+  }
+}
+
 function dateAt(year, month, day, hour = 0, minute = 0) {
   return new Date(year, month - 1, day, hour, minute, 0, 0);
 }
@@ -178,26 +209,58 @@ async function buildEventOptions() {
   const select = document.getElementById('eventSelect');
   select.innerHTML = '';
   const year = new Date().getFullYear();
-  const presetEvents = getPresetEvents(year);
-  const customEvents = await loadCustomEvents();
+  const now = new Date();
+  
+  // Get preset events and filter out past ones
+  const presetEvents = getPresetEvents(year)
+    .filter(evt => evt.end >= now);
+  
+  // Get next year's preset events if we're close to year end
+  const nextYearPresetEvents = getPresetEvents(year + 1)
+    .filter(evt => evt.end >= now);
+  
+  // Get public holidays from API
+  const publicHolidays = await getSwedishPublicHolidays();
+  
+  // Combine all events, removing duplicates and filtering past events
+  const allEvents = [...presetEvents, ...nextYearPresetEvents, ...publicHolidays]
+    .filter(evt => evt.end >= now)
+    .sort((a, b) => a.start - b.start);
+
+  // Remove duplicates based on date and name
+  const eventMap = new Map();
+  allEvents.forEach(evt => {
+    const key = `${evt.name}-${evt.start.getTime()}`;
+    if (!eventMap.has(key)) {
+      eventMap.set(key, evt);
+    }
+  });
 
   const presetGroup = document.createElement('optgroup');
   presetGroup.label = 'Events (Sverige)';
-  presetEvents.forEach(evt => {
+  
+  const customGroup = document.createElement('optgroup');
+  customGroup.label = 'Custom Events';
+  
+  // Add events to appropriate groups
+  Array.from(eventMap.values()).forEach(evt => {
     const opt = document.createElement('option');
     opt.value = `preset:${evt.id}`;
     opt.textContent = `${evt.name}`;
     presetGroup.appendChild(opt);
   });
 
-  const customGroup = document.createElement('optgroup');
-  customGroup.label = 'Custom Events';
-  customEvents.forEach(evt => {
-    const opt = document.createElement('option');
-    opt.value = `custom:${evt.hash}`;
-    opt.textContent = `${evt.name} (${evt.hash})`;
-    customGroup.appendChild(opt);
-  });
+  // Load and add custom events
+  const customEvents = await loadCustomEvents();
+  const customNow = new Date();
+  customEvents
+    .filter(evt => new Date(evt.end) >= customNow)
+    .forEach(evt => {
+      const opt = document.createElement('option');
+      opt.value = `custom:${evt.hash}`;
+      opt.textContent = `${evt.name} (${evt.hash})`;
+      customGroup.appendChild(opt);
+    });
 
   select.appendChild(presetGroup);
   select.appendChild(customGroup);

@@ -114,7 +114,7 @@ canvas { max-height: 300px; margin-top: 10px; }
     <img class="menu-icon" src="icons/menu-friends.svg" alt="Vänner">
     <span class="menu-label">Vänner</span>
   </a>
-  <a href="historik.html" aria-label="Historik" title="Historik">
+  <a href="features/historik/historik.html" aria-label="Historik" title="Historik">
     <img class="menu-icon" src="icons/menu-wrapped.svg" alt="Historik">
     <span class="menu-label">Historik</span>
   </a>
@@ -144,7 +144,7 @@ canvas { max-height: 300px; margin-top: 10px; }
     <img class="menu-icon" src="icons/menu-friends.svg" alt="Vänner">
     <span class="menu-label">Vänner</span>
   </a>
-  <a href="historik.html" class="menu-item" aria-label="Historik" title="Historik">
+  <a href="features/historik/historik.html" class="menu-item" aria-label="Historik" title="Historik">
     <img class="menu-icon" src="icons/menu-wrapped.svg" alt="Historik">
     <span class="menu-label">Historik</span>
   </a>
@@ -168,16 +168,26 @@ canvas { max-height: 300px; margin-top: 10px; }
 </div>
 <div class="card">
   <h2>Lägret</h2>
-  <button onclick="openDrinkModal()" class="quick-add-bubble" style="background: linear-gradient(135deg, #FFCC00, #FFD700);">
+  <button onclick="openDrinkModal()" class="quick-add-bubble" style="background: linear-gradient(135deg, #FFCC00, #FFD700); left: 14px;">
     <span class="quick-add-icon">+</span>
     <span class="quick-add-label">Registrera snabbt</span>
   </button>
   <p style="text-align: center; font-weight: bold; color: #2C3E50; margin: 10px 0;">Eller manuellt:</p>
-  <input type="text" id="name" placeholder="Dryck (t.ex. Öl, Vin)">
+  <select id="name" style="width: 100%;">
+    <option value="">Välj dryck...</option>
+    <option value="Öl">Öl</option>
+    <option value="Rött vin">Rött vin</option>
+    <option value="Vitt vin">Vitt vin</option>
+    <option value="Sprit">Sprit</option>
+    <option value="Drink">Drink</option>
+  </select>
   <input type="number" id="volume" placeholder="Volym (ml, t.ex. 330)">
   <input type="number" id="abv" placeholder="Alkoholhalt (%, t.ex. 5.0)">
   <button onclick="addDrink()">Manuellt registrera</button>
-  <button class="magic" onclick="gragasUlt()">GRAGAS ULT (SPY)</button>
+</div>
+<div class="card">
+  <h2 style="background: #9B59B6;">Tactical Retreat</h2>
+  <button class="magic" onclick="ulta()" style="background: #9B59B6;">ULTA (SPY)</button>
 </div>
 <div class="card" style="display: flex; align-items: center; gap: 15px;">
   <img id="userPic" style="width: 70px; height: 70px; border-radius: 0; border: 4px solid #2C3E50; display: none; object-fit: cover;">

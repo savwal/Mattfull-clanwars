@@ -61,7 +61,7 @@ function addDrink() {
   saveEntry(name, volume, abv, grams);
 }
 
-function gragasUlt() {
+function ulta() {
   const now = Date.now();
   const limit = now - 30 * 60000;
   let sum = 0;
@@ -71,7 +71,7 @@ function gragasUlt() {
     }
   });
   if (sum > 0) {
-    saveEntry("Gragas Ult", 0, 0, -parseFloat(sum.toFixed(1)));
+    saveEntry("Ulta", 0, 0, -parseFloat(sum.toFixed(1)));
   }
 }
 
