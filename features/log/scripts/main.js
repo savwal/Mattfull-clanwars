@@ -1,6 +1,8 @@
 let historyData = [];
 let lastZoneName = null;
 let toastTimer = null;
+let lastNonZeroTime = Date.now();
+let graphResetCheckInterval = null;
 
 function getZoneName(bac, zones) {
   if (bac <= zones.legalMax) return 'Tiger Woods zone';
@@ -29,6 +31,7 @@ function showZoneToast(message) {
 
 document.addEventListener("DOMContentLoaded", () => {
   historyData = getDrinkHistory();
+  lastNonZeroTime = Date.now();
   const quickAddBubble = document.querySelector('.quick-add-bubble');
   if (quickAddBubble) {
     let ticking = false;
@@ -45,6 +48,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   updateUI();
   setInterval(updateUI, 60000);
+  // Check for graph reset every minute
+  graphResetCheckInterval = setInterval(checkGraphReset, 60000);
 });
 
 function openDrinkModal() {
@@ -168,7 +173,35 @@ function updateUI() {
 }
 
 function removeDrink(index) {
+  const profile = getActiveProfile();
+  const removedDrink = historyData[index];
+  
+  // Sync removal to Supabase
+  if (profile && removedDrink) {
+    removeDrinkFromSupabase(profile.id, removedDrink.name, removedDrink.timestamp);
+  }
+  
   historyData.splice(index, 1);
   saveDrinkHistory(historyData);
   updateUI();
+}
+
+function checkGraphReset() {
+  const profile = getActiveProfile();
+  if (!profile) return;
+  
+  const currentBAC = calculateBACAtTime(historyData, profile, Date.now());
+  
+  // If current BAC is above 0.00, update lastNonZeroTime
+  if (currentBAC > 0.01) {
+    lastNonZeroTime = Date.now();
+  }
+  // If BAC is 0.00 and 2 hours have passed since last non-zero reading
+  else if (currentBAC <= 0.01 && (Date.now() - lastNonZeroTime) >= (2 * 60 * 60 * 1000)) {
+    // Reset graph - clear history
+    historyData = [];
+    saveDrinkHistory(historyData);
+    showZoneToast('Graf återställd efter 2 timmar med 0.00 promille!');
+    updateUI();
+  }
 }
