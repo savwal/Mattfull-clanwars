@@ -33,6 +33,41 @@ async function syncDrinkToSupabase(profileId, drink) {
   if (error) console.error('Error syncing drink log:', error);
 }
 
+async function removeDrinkFromSupabase(profileId, drinkName, timestamp) {
+  if (!sb) return;
+  const drinkTime = new Date(timestamp).toISOString();
+  const { error } = await sb.from('drink_logs')
+    .delete()
+    .eq('player_hash', profileId)
+    .eq('drink_name', drinkName)
+    .eq('consumed_at', drinkTime);
+  if (error) console.error('Error removing drink from cloud:', error);
+}
+
+async function fetchProfileFromSupabase(hash) {
+  if (!sb) return null;
+  try {
+    const { data, error } = await sb.from('profiles')
+      .select('*')
+      .eq('player_hash', hash)
+      .single();
+    if (error) return null;
+    if (data) {
+      return {
+        id: data.player_hash,
+        name: data.display_name,
+        weight: data.weight,
+        gender: data.gender,
+        funzone: data.funzone_limit,
+        pic: data.avatar_url || ''
+      };
+    }
+  } catch(e) {
+    console.error('Error fetching profile:', e);
+  }
+  return null;
+}
+
 function initApp() {
   let globalData;
   try {

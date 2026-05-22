@@ -25,6 +25,16 @@ h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #
 input, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
 button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
 button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+.opponent-name { cursor: pointer; text-decoration: underline; color: #0984E3; }
+.opponent-name:hover { color: #2A8CFF; }
+.graph-modal-content { background-color: #FFFFFF; color: #2C3E50; max-width: 100%; width: 95%; max-height: 90vh; overflow-y: auto; }
+#opponentGraphCanvas { width: 100%; height: 400px !important; margin: 20px 0; }
+.duo-graphs-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+@media (max-width: 768px) { .duo-graphs-container { grid-template-columns: 1fr; } }
+.graph-card { background: #f0f0f0; padding: 15px; border: 2px solid #2C3E50; }
+.graph-card canvas { width: 100%; height: 350px !important; margin: 10px 0; }
+.graph-card h3 { margin: 0 0 10px 0; color: #2C3E50; font-family: 'Arial Black'; text-transform: uppercase; }
+.graph-stats { background: #e8e8e8; padding: 10px; border: 1px solid #2C3E50; font-size: 0.9em; margin-top: 10px; }
 </style>
 <link rel="stylesheet" href="../../shared/styles/nav.css">
 </head>
@@ -117,10 +127,35 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
     <button onclick="startBattle()">Starta</button>
   </div>
 </div>
+<div id="graphModal" class="modal">
+  <div class="modal-content graph-modal-content card">
+    <span class="close-modal" onclick="closeGraphModal()">&times;</span>
+    <h2 id="graphModalTitle" style="font-family: 'Arial Black'; color: #FFF; background: #2A8CFF; margin: -25px -25px 20px -25px; padding: 15px; border-bottom: 4px solid #0984E3;"></h2>
+    <div id="graphLoadingIndicator" style="text-align: center; color: #7f8c8d; font-weight: bold;">Laddar graf...</div>
+    <div id="singleGraphContainer" style="display: none;">
+      <div id="graphStats" style="margin-bottom: 20px;"></div>
+      <canvas id="opponentGraphCanvas"></canvas>
+    </div>
+    <div id="duoGraphsContainer" class="duo-graphs-container" style="display: none;">
+      <div class="graph-card">
+        <h3 id="duoGraphTitle1"></h3>
+        <canvas id="opponentGraphCanvas1"></canvas>
+        <div id="graphStats1" class="graph-stats"></div>
+      </div>
+      <div class="graph-card">
+        <h3 id="duoGraphTitle2"></h3>
+        <canvas id="opponentGraphCanvas2"></canvas>
+        <div id="graphStats2" class="graph-stats"></div>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="../../shared/scripts/hash.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3"></script>
 <script src="../../shared/scripts/shared.js"></script>
 <script src="../../shared/scripts/calculator.js"></script>
+<script src="../../log/scripts/graph.js"></script>
 <script>
 let currentMode = '';
 let myActiveBattles = [];
@@ -317,16 +352,159 @@ async function renderActiveBattles() {
       pDiv.style.padding = '5px 0';
       pDiv.style.borderBottom = idx < sortedHashes.length - 1 ? '1px solid #eee' : 'none';
       
-      pDiv.innerHTML = `
-        <span style="font-weight:bold; color:#2C3E50;">${p ? p.display_name : hash}</span>
-        <span class="badge" style="background:#FFCC00; padding:2px 6px; border: 3px solid #2C3E50; font-weight: 900;">${cl} cl</span>
-      `;
+      const nameSpan = document.createElement('span');
+      nameSpan.style.fontWeight = 'bold';
+      nameSpan.style.color = '#2C3E50';
+      nameSpan.className = 'opponent-name';
+      nameSpan.textContent = p ? p.display_name : hash;
+      nameSpan.onclick = () => viewOpponentGraph(hash, battle, p);
+      
+      const badgeSpan = document.createElement('span');
+      badgeSpan.className = 'badge';
+      badgeSpan.style.background = '#FFCC00';
+      badgeSpan.style.padding = '2px 6px';
+      badgeSpan.style.border = '3px solid #2C3E50';
+      badgeSpan.style.fontWeight = '900';
+      badgeSpan.textContent = `${cl} cl`;
+      
+      pDiv.appendChild(nameSpan);
+      pDiv.appendChild(badgeSpan);
       statsContainer.appendChild(pDiv);
     });
 
     li.appendChild(statsContainer);
     list.appendChild(li);
   }
+}
+
+async function renderOpponentGraphData(canvasId, statsId, opponentHash, opponentProfile, battle) {
+  try {
+    // Fetch opponent's drink logs during the battle period
+    const { data: drinkLogs } = await sb.from('drink_logs')
+      .select('*')
+      .eq('player_hash', opponentHash)
+      .gte('consumed_at', battle.start_time)
+      .lte('consumed_at', battle.end_time)
+      .order('consumed_at', { ascending: true });
+    
+    if (!drinkLogs || drinkLogs.length === 0) {
+      document.getElementById(statsId).innerHTML = '<p style="color:#7f8c8d;">Ingen dryckdata</p>';
+      return false;
+    }
+    
+    // Convert database format to app format
+    const history = drinkLogs.map(d => ({
+      name: d.drink_name,
+      volume: d.volume_ml,
+      abv: d.abv,
+      grams: d.grams_alcohol,
+      timestamp: new Date(d.consumed_at)
+    }));
+    
+    // Create time points for graph (every 30 minutes from start to now/end)
+    const startTime = new Date(battle.start_time);
+    const endTime = Math.min(new Date(battle.end_time), new Date());
+    const labels = [];
+    const dataPoints = [];
+    
+    let currentTime = new Date(startTime);
+    while (currentTime <= endTime) {
+      const bac = calculateBACAtTime(history, opponentProfile, currentTime.getTime());
+      labels.push(currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }));
+      dataPoints.push(bac);
+      currentTime = new Date(currentTime.getTime() + 30 * 60000); // Add 30 minutes
+    }
+    
+    // Calculate opponent zones
+    const opponentZones = { 
+      legalMax: 0.2, 
+      redMax: opponentProfile.funzone_limit || 1.0, 
+      greenMax: 3.0 
+    };
+    
+    // Display stats
+    const totalGrams = history.reduce((sum, d) => sum + d.grams, 0);
+    const maxBac = Math.max(...dataPoints);
+    document.getElementById(statsId).innerHTML = `
+      <p style="margin:3px 0;"><strong>Vikt:</strong> ${opponentProfile.weight} kg</p>
+      <p style="margin:3px 0;"><strong>Kön:</strong> ${opponentProfile.gender === 'kvinna' ? 'Kvinna' : 'Man'}</p>
+      <p style="margin:3px 0;"><strong>Funzone:</strong> ${opponentZones.redMax.toFixed(1)} ‰</p>
+      <p style="margin:3px 0;"><strong>Total:</strong> ${totalGrams.toFixed(1)} g (${calculateCl(totalGrams).toFixed(1)} cl)</p>
+      <p style="margin:3px 0;"><strong>Max promille:</strong> ${maxBac.toFixed(2)} ‰</p>
+    `;
+    
+    // Render the chart
+    renderChart(canvasId, labels, dataPoints, opponentZones);
+    return true;
+    
+  } catch (error) {
+    console.error('Error fetching opponent graph:', error);
+    document.getElementById(statsId).innerHTML = '<p style="color:#E74C3C;">Fel vid hämtning</p>';
+    return false;
+  }
+}
+
+async function viewOpponentGraph(opponentHash, battle, opponentProfile) {
+  if (!sb || !opponentProfile) return;
+  
+  document.getElementById('graphLoadingIndicator').style.display = 'block';
+  document.getElementById('singleGraphContainer').style.display = 'none';
+  document.getElementById('duoGraphsContainer').style.display = 'none';
+  document.getElementById('graphModal').style.display = 'block';
+  
+  try {
+    // Check if it's a duos battle
+    if (battle.type === 'Duos Battle') {
+      // Get both opponents (the other team)
+      const activeProfile = getActiveProfile();
+      const myTeam = battle.battle_participants.find(p => p.player_hash === activeProfile.id)?.team;
+      const opponentTeam = myTeam === 1 ? 2 : 1;
+      const opponents = battle.battle_participants.filter(p => p.team === opponentTeam).map(p => p.player_hash);
+      
+      if (opponents.length !== 2) {
+        alert('Kunde inte hitta båda motståndare');
+        return;
+      }
+      
+      // Get opponent profiles
+      const { data: opponentProfiles } = await sb.from('profiles')
+        .select('*')
+        .in('player_hash', opponents);
+      
+      if (!opponentProfiles || opponentProfiles.length !== 2) return;
+      
+      const opp1 = opponentProfiles[0];
+      const opp2 = opponentProfiles[1];
+      
+      document.getElementById('graphModalTitle').textContent = `${opp1.display_name} vs ${opp2.display_name}`;
+      document.getElementById('duoGraphTitle1').textContent = opp1.display_name;
+      document.getElementById('duoGraphTitle2').textContent = opp2.display_name;
+      
+      document.getElementById('graphLoadingIndicator').style.display = 'none';
+      document.getElementById('duoGraphsContainer').style.display = 'grid';
+      
+      // Render both graphs
+      await renderOpponentGraphData('opponentGraphCanvas1', 'graphStats1', opp1.player_hash, opp1, battle);
+      await renderOpponentGraphData('opponentGraphCanvas2', 'graphStats2', opp2.player_hash, opp2, battle);
+    } else {
+      // Solo battle - single graph
+      document.getElementById('graphModalTitle').textContent = `Stridsgraf - ${opponentProfile.display_name}`;
+      document.getElementById('graphLoadingIndicator').style.display = 'none';
+      document.getElementById('singleGraphContainer').style.display = 'block';
+      
+      await renderOpponentGraphData('opponentGraphCanvas', 'graphStats', opponentHash, opponentProfile, battle);
+    }
+    
+  } catch (error) {
+    console.error('Error viewing opponent graph:', error);
+    document.getElementById('graphLoadingIndicator').innerHTML = '<p style="color:#E74C3C;">Fel vid hämtning av stridsgraf.</p>';
+  }
+}
+
+function closeGraphModal() {
+  document.getElementById('graphModal').style.display = 'none';
+  document.getElementById('singleGraphContainer').style.display = 'none';
+  document.getElementById('duoGraphsContainer').style.display = 'none';
 }
 
 function initRealtime() {

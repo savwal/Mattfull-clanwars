@@ -134,6 +134,7 @@ const customEventsKey = 'events_custom';
 function getPresetEvents(year) {
   const midsummer = getMidsummerEve(year);
   return [
+    { id: 'lundakarnevalen', name: 'Lundakarnevalen (Lund)', city: 'Lund', start: dateAt(year, 5, 22), end: dateAt(year, 5, 24, 23, 59) },
     { id: 'valborg', name: 'Valborg (Uppsala)', city: 'Uppsala', start: dateAt(year, 4, 30), end: dateAt(year, 4, 30, 23, 59) },
     { id: 'forsta-maj', name: 'Forsta maj (Sverige)', city: 'Sverige', start: dateAt(year, 5, 1), end: dateAt(year, 5, 1, 23, 59) },
     { id: 'nationaldagen', name: 'Nationaldagen (Sverige)', city: 'Sverige', start: dateAt(year, 6, 6), end: dateAt(year, 6, 6, 23, 59) },

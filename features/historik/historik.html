@@ -91,13 +91,22 @@ li:last-child { border-bottom: none; }
   <h2>Historik</h2>
   <p style="font-weight: bold; color: #2C3E50;">Välj en vy för din historik.</p>
   <button class="tab-button active" onclick="showTab('historiskalogar')">Historiska Loggar</button>
-  <button class="tab-button" onclick="showTab('wrapped')">Wrapped</button>
+  <button class=\"tab-button\" onclick=\"showTab('pastevents')\">Förflutna Events</button>
+  <button class=\"tab-button\" onclick=\"showTab('wrapped')\">Wrapped</button>
   
-  <div id="historiskalogar-tab" style="display: none;">
-    <div style="margin-top: 20px; text-align: left;">
-      <h3 style="font-weight: bold; color: #2C3E50; margin: 0 0 15px 0;">Alla registrerade drycker:</h3>
-      <ul id="allLogsHistory"></ul>
-      <p id="noLogsMessage" style="text-align: center; color: #2C3E50; font-weight: bold; margin-top: 20px;">Ingen drinkhistorik än.</p>
+  <div id=\"historiskalogar-tab\" style=\"display: none;\">
+    <div style=\"margin-top: 20px; text-align: left;\">
+      <h3 style=\"font-weight: bold; color: #2C3E50; margin: 0 0 15px 0;\">Alla registrerade drycker:</h3>
+      <ul id=\"allLogsHistory\"></ul>
+      <p id=\"noLogsMessage\" style=\"text-align: center; color: #2C3E50; font-weight: bold; margin-top: 20px;\">Ingen drinkhistorik än.</p>
+    </div>
+  </div>
+  
+  <div id=\"pastevents-tab\" style=\"display: none;\">
+    <div style=\"margin-top: 20px; text-align: left;\">
+      <h3 style=\"font-weight: bold; color: #2C3E50; margin: 0 0 15px 0;\">Förflutna Events:</h3>
+      <ul id=\"pastEventsList\"></ul>
+      <p id=\"noEventsMessage\" style=\"text-align: center; color: #2C3E50; font-weight: bold; margin-top: 20px;\">Inga tidigare events att visa.</p>
     </div>
   </div>
   
@@ -112,6 +121,7 @@ li:last-child { border-bottom: none; }
 <script>
 function showTab(tabName) {
   document.getElementById('historiskalogar-tab').style.display = 'none';
+  document.getElementById('pastevents-tab').style.display = 'none';
   document.getElementById('wrapped-tab').style.display = 'none';
   
   if (tabName === 'historiskalogar') {
@@ -119,6 +129,11 @@ function showTab(tabName) {
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
     loadAllLogs();
+  } else if (tabName === 'pastevents') {
+    document.getElementById('pastevents-tab').style.display = 'block';
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    loadPastEvents();
   } else if (tabName === 'wrapped') {
     document.getElementById('wrapped-tab').style.display = 'block';
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -150,6 +165,59 @@ function loadAllLogs() {
     const timeLabel = timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     li.innerHTML = `<div><strong>${dateLabel} ${timeLabel}</strong>: ${item.name}</div><div>${clValue > 0 ? '+' : ''}${clValue.toFixed(1)}cl</div>`;
     listContainer.appendChild(li);
+  }
+}
+
+async function loadPastEvents() {
+  if (!sb) return;
+  const profile = getActiveProfile();
+  if (!profile) return;
+  
+  const listContainer = document.getElementById('pastEventsList');
+  const noEventsMessage = document.getElementById('noEventsMessage');
+  const now = new Date();
+  
+  listContainer.innerHTML = '';
+  
+  try {
+    // Get all events the profile participated in
+    const { data: eventParticipations } = await sb.from('event_participants')
+      .select('event_id, events(id, name, start_time, end_time, hash)')
+      .eq('player_hash', profile.id);
+    
+    if (!eventParticipations || eventParticipations.length === 0) {
+      noEventsMessage.style.display = 'block';
+      return;
+    }
+    
+    // Filter only past events
+    const pastEvents = eventParticipations
+      .map(ep => ep.events)
+      .filter(evt => evt && new Date(evt.end_time) < now)
+      .sort((a, b) => new Date(b.end_time) - new Date(a.end_time));
+    
+    if (pastEvents.length === 0) {
+      noEventsMessage.style.display = 'block';
+      return;
+    }
+    
+    noEventsMessage.style.display = 'none';
+    
+    // Display past events
+    pastEvents.forEach(evt => {
+      const li = document.createElement('li');
+      const startDate = new Date(evt.start_time);
+      const endDate = new Date(evt.end_time);
+      const dateLabel = startDate.toLocaleDateString();
+      li.innerHTML = `<div><strong>${evt.name}</strong><br><span style="color: #7f8c8d; font-size: 0.9em;">${dateLabel}</span></div>`;
+      li.style.cursor = 'pointer';
+      li.style.padding = '15px';
+      li.style.borderBottom = '2px solid #E5E9F0';
+      listContainer.appendChild(li);
+    });
+  } catch (error) {
+    console.error('Error loading past events:', error);
+    noEventsMessage.style.display = 'block';
   }
 }
 </script>

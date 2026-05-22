@@ -117,9 +117,14 @@ li:last-child { border-bottom: none; }
     <h2 style="background: #FFCC00; color: #2C3E50;">Medlemmar</h2>
     <ul id="clanMembers"></ul>
   </div>
+  <div id="ongoingEventCard" class="card" style="display: none;">
+    <h2 style="background: #9B59B6;">Pågående Event</h2>
+    <div id="ongoingEventContent"></div>
+  </div>
   <div class="card">
     <h2 style="background: #2A8CFF;">Klan War</h2>
     <button onclick="openClanWarModal()">Starta Klan War</button>
+    <button onclick="refreshClanUI()" style="background: #2ECC71; color: white; margin-top: 10px; width: auto; font-size: 12px; padding: 10px;">Uppdatera medlemmar</button>
   </div>
 </div>
 <div id="clanWarModal" class="modal">
@@ -136,6 +141,43 @@ li:last-child { border-bottom: none; }
 <script>
 let myClanHash = localStorage.getItem('myClanHash') || null;
 const activeProfile = getActiveProfile();
+
+async function loadOngoingEvent() {
+  if (!sb) return;
+  
+  const now = new Date().toISOString();
+  const eventCard = document.getElementById('ongoingEventCard');
+  const eventContent = document.getElementById('ongoingEventContent');
+  
+  try {
+    // Get ongoing events (not custom)
+    const { data: events } = await sb.from('events')
+      .select('id, name, start_time, end_time, hash')
+      .lte('start_time', now)
+      .gte('end_time', now);
+    
+    if (!events || events.length === 0) {
+      eventCard.style.display = 'none';
+      return;
+    }
+    
+    // Show the first ongoing event
+    const event = events[0];
+    const startDate = new Date(event.start_time);
+    const endDate = new Date(event.end_time);
+    
+    eventContent.innerHTML = `
+      <p style="font-weight: bold; color: #2C3E50; margin: 10px 0;">${event.name}</p>
+      <p style="margin: 5px 0; color: #7f8c8d;">Börjar: ${startDate.toLocaleString()}</p>
+      <p style="margin: 5px 0; color: #7f8c8d;">Slutar: ${endDate.toLocaleString()}</p>
+      <p style="margin: 10px 0; font-size: 0.9em; color: #2C3E50;">Ditt klans medlemmar kan delta i detta event!</p>
+    `;
+    eventCard.style.display = 'block';
+  } catch (error) {
+    console.error('Error loading ongoing event:', error);
+    eventCard.style.display = 'none';
+  }
+}
 
 async function updateClanUI() {
   const noClanView = document.getElementById('noClanView');
@@ -161,6 +203,9 @@ async function updateClanUI() {
   hasClanView.style.display = 'block';
   document.getElementById('clanTitle').innerText = clanData.name;
   document.getElementById('clanHashDisplay').innerText = myClanHash;
+
+  // Load ongoing event
+  await loadOngoingEvent();
 
   const { data: membersData } = await sb.from('clan_members')
     .select('role, profiles(player_hash, display_name, avatar_url)')
@@ -214,6 +259,10 @@ async function updateClanUI() {
     });
   }
   document.getElementById('clanTotalElo').innerText = totalElo.toFixed(1) + " cl";
+}
+
+function refreshClanUI() {
+  updateClanUI();
 }
 
 async function createClan() {
@@ -276,6 +325,8 @@ async function startClanWar() {
 }
 
 updateClanUI();
+// Refresh clan UI every 30 seconds to pick up new members
+setInterval(updateClanUI, 30000);
 </script>
 </body>
 </html>
