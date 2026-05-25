@@ -231,3 +231,34 @@ async function ensureSupabaseAuth() {
   return data.session;
 }
 ensureSupabaseAuth();
+
+const DRINK_REMINDER_MESSAGE = 'Har du druckit något mer :) Logga och se din graf';
+
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  const result = await Notification.requestPermission();
+  return result === 'granted';
+}
+
+async function showDrinkReminderNotification() {
+  const granted = await requestNotificationPermission();
+  if (!granted) return false;
+  const options = {
+    body: DRINK_REMINDER_MESSAGE,
+    icon: '/icons/icon-192.svg',
+    badge: '/icons/icon-192.svg',
+    tag: 'drink-reminder',
+    renotify: true
+  };
+  if ('serviceWorker' in navigator) {
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (registration) {
+      await registration.showNotification('redlös', options);
+      return true;
+    }
+  }
+  new Notification('redlös', options);
+  return true;
+}

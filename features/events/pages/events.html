@@ -26,9 +26,7 @@ li:last-child { border-bottom: none; }
 .badge { display: inline-block; padding: 4px 8px; border: 3px solid #2C3E50; font-weight: 900; background: #FFCC00; }
 .stat-value { transition: opacity 2s ease; display: inline-block; }
 .stat-bump { opacity: 0.35; }
-.refresh-zone { background: #D45AA6; color: #FFF; text-align: center; border: 4px solid #2C3E50; box-shadow: 6px 6px 0px #2C3E50; }
-.refresh-zone button { width: auto; margin-top: 10px; background: #FFF; color: #2C3E50; border: 4px solid #2C3E50; box-shadow: 3px 3px 0px #2C3E50; }
-</style>
+.error-text { color: #E74C3C !important; font-weight: 700; }
 </style>
 <link rel="stylesheet" href="../../shared/styles/nav.css">
 </head>
@@ -63,6 +61,7 @@ li:last-child { border-bottom: none; }
     <span class="menu-label">Profil</span>
   </a>
 </nav>
+
 <nav class="mobile-bottom-menu">
   <a href="../../../index.html" class="menu-item" aria-label="Log" title="Log">
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
@@ -130,23 +129,19 @@ li:last-child { border-bottom: none; }
 
 <div class="card">
   <h2 style="background: #2A8CFF;">Gå med i custom event</h2>
-  <input type="text" id="joinHash" placeholder="Event hash (8 tecken)">
+  <input type="text" id="joinHash" placeholder="Event hash (4 tecken)">
   <button onclick="joinCustomEvent()">Gå med</button>
   <p id="joinStatus" style="font-weight: 900; color:#2C3E50;"></p>
 </div>
-
-
 
 <script src="../../shared/scripts/hash.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/scripts/shared.js"></script>
 <script src="../../shared/scripts/calculator.js"></script>
 <script>
-const CUSTOM_EVENT_ID_LENGTH = 8;
+const CUSTOM_EVENT_ID_LENGTH = 4;
 const CUSTOM_EVENT_REFRESH_MS = 30000;
 const CUSTOM_EVENT_MAX_RANGE_DAYS = 7;
-const LOCAL_EVENTS_KEY = 'custom_events_local';
-const LOCAL_PARTICIPANTS_KEY = 'custom_event_participants_local';
 
 function applyStatUpdate(element, text) {
   if (!element) return;
@@ -174,79 +169,42 @@ function setStatusText(element, message, isError) {
   element.classList.toggle('error-text', Boolean(isError));
 }
 
-function buildHistoryByHash(drinks) {
-  const historyByHash = {};
-  (drinks || []).forEach(d => {
-    if (!historyByHash[d.player_hash]) historyByHash[d.player_hash] = [];
-    const grams = Number.isFinite(d.grams_alcohol)
-      ? d.grams_alcohol
-      : parseFloat((d.volume_ml * (d.abv / 100) * 0.789).toFixed(1));
-    historyByHash[d.player_hash].push({
-      timestamp: new Date(d.consumed_at).getTime(),
-      grams
-    });
+async function syncProfileToSupabase(profile) {
+  if (!sb || !profile) return;
+  await sb.from('profiles').upsert({
+    player_hash: profile.id,
+    display_name: profile.name,
+    avatar_url: profile.pic,
+    weight: profile.weight || null,
+    gender: profile.gender || null
   });
-  return historyByHash;
 }
 
 async function fetchCustomEventsForUser(userId) {
-  if (!userId) return [];
+  if (!userId || !sb) return [];
+  
+  const { data } = await sb.from('custom_event_participants')
+    .select('event_id, custom_events(event_id, event_name, created_at, starts_at, ends_at)')
+    .eq('user_id', userId);
+
   const eventMap = new Map();
-  const missingEventIds = new Set();
-
-  if (sb) {
-    const { data } = await sb.from('custom_event_participants')
-      .select('event_id, custom_events(event_id, event_name, created_at, starts_at, ends_at)')
-      .eq('user_id', userId);
-
-    (data || []).forEach(row => {
-      if (row.custom_events && row.custom_events.event_id) {
-        eventMap.set(row.custom_events.event_id, row.custom_events);
-      } else if (row.event_id) {
-        missingEventIds.add(row.event_id);
-      }
-    });
-  }
-
-  if (sb && missingEventIds.size > 0) {
-    const { data: fallbackEvents } = await sb.from('custom_events')
-      .select('event_id, event_name, created_at, starts_at, ends_at')
-      .in('event_id', Array.from(missingEventIds));
-    (fallbackEvents || []).forEach(evt => {
-      if (evt && evt.event_id) eventMap.set(evt.event_id, evt);
-    });
-  }
-
-  const localParticipants = getLocalParticipants().filter(p => p.user_id === userId);
-  const localEvents = getLocalCustomEvents();
-  localParticipants.forEach(participant => {
-    const evt = localEvents.find(e => e.event_id === participant.event_id);
-    if (evt) eventMap.set(evt.event_id, evt);
+  (data || []).forEach(row => {
+    if (row.custom_events && row.custom_events.event_id) {
+      eventMap.set(row.custom_events.event_id, row.custom_events);
+    }
   });
 
   return Array.from(eventMap.values());
 }
 
 async function fetchCustomEvent(eventId) {
-  if (!eventId) return null;
-  if (sb) {
-    const { data, error } = await sb.from('custom_events')
-      .select('event_id, event_name, created_at, starts_at, ends_at')
-      .eq('event_id', eventId)
-      .single();
-    if (!error && data) return data;
-  }
-  return getLocalCustomEvents().find(evt => evt.event_id === eventId) || null;
-}
-
-async function fetchDrinkLogsForWindow(hashes, startIso, endIso) {
-  if (!sb || hashes.length === 0 || !startIso || !endIso) return [];
-  const { data } = await sb.from('drink_logs')
-    .select('player_hash, grams_alcohol, volume_ml, abv, consumed_at')
-    .in('player_hash', hashes)
-    .gte('consumed_at', startIso)
-    .lte('consumed_at', endIso);
-  return data || [];
+  if (!eventId || !sb) return null;
+  const { data, error } = await sb.from('custom_events')
+    .select('event_id, event_name, created_at, starts_at, ends_at')
+    .eq('event_id', eventId)
+    .single();
+  if (!error && data) return data;
+  return null;
 }
 
 function formatCustomRange(startsAt, endsAt) {
@@ -271,11 +229,7 @@ function renderMyCustomEvents(events) {
     return;
   }
   empty.style.display = 'none';
-  const eventMap = new Map();
   events.forEach(evt => {
-    if (evt && evt.event_id) eventMap.set(evt.event_id, evt);
-  });
-  Array.from(eventMap.values()).forEach(evt => {
     const li = document.createElement('li');
     const meta = formatCustomRange(evt.starts_at, evt.ends_at);
     li.innerHTML = `
@@ -308,30 +262,6 @@ function openCustomEventPage(eventId) {
   window.location.href = `./custom_events.html?event_id=${encodeURIComponent(eventId)}`;
 }
 
-function getLocalCustomEvents() {
-  try {
-    return JSON.parse(localStorage.getItem(LOCAL_EVENTS_KEY)) || [];
-  } catch (error) {
-    return [];
-  }
-}
-
-function saveLocalCustomEvents(events) {
-  localStorage.setItem(LOCAL_EVENTS_KEY, JSON.stringify(events));
-}
-
-function getLocalParticipants() {
-  try {
-    return JSON.parse(localStorage.getItem(LOCAL_PARTICIPANTS_KEY)) || [];
-  } catch (error) {
-    return [];
-  }
-}
-
-function saveLocalParticipants(participants) {
-  localStorage.setItem(LOCAL_PARTICIPANTS_KEY, JSON.stringify(participants));
-}
-
 async function createCustomEvent() {
   const name = document.getElementById('customName').value.trim();
   const startValue = document.getElementById('customStart').value;
@@ -339,7 +269,8 @@ async function createCustomEvent() {
   const activeProfile = getActiveProfile();
   const info = document.getElementById('customHashInfo');
   setStatusText(info, '', false);
-  if (!name || !activeProfile) return;
+
+  if (!name || !activeProfile || !sb) return;
 
   const startDate = parseDateInput(startValue);
   const endDate = parseDateInput(endValue);
@@ -350,67 +281,41 @@ async function createCustomEvent() {
 
   const maxRangeMs = CUSTOM_EVENT_MAX_RANGE_DAYS * 24 * 60 * 60 * 1000;
   if (endDate.getTime() - startDate.getTime() > maxRangeMs) {
-    setStatusText(info, 'INte möjligt just nu. Kommer snart!', true);
+    setStatusText(info, 'Inte möjligt just nu. Max 7 dagar!', true);
     return;
   }
 
-  const eventId = generateUniqueHash(CUSTOM_EVENT_ID_LENGTH);
+  const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ0123456789";
+  let eventId = "";
+  for (let i = 0; i < CUSTOM_EVENT_ID_LENGTH; i++) {
+    eventId += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
   const createdAt = new Date().toISOString();
 
-  let createdInCloud = false;
+  await syncProfileToSupabase(activeProfile);
 
-  if (sb) {
-    const { data: eventData, error: eventError } = await sb.from('custom_events').insert({
-      event_id: eventId,
-      event_name: name,
-      created_at: createdAt,
-      starts_at: toIsoOrNull(startDate),
-      ends_at: toIsoOrNull(endDate)
-    }).select('event_id').single();
+  const { error: eventError } = await sb.from('custom_events').insert({
+    event_id: eventId,
+    event_name: name,
+    created_at: createdAt,
+    starts_at: toIsoOrNull(startDate),
+    ends_at: toIsoOrNull(endDate)
+  });
 
-    if (!eventError && eventData) {
-      createdInCloud = true;
-      const drinks = await fetchDrinkLogsForWindow([activeProfile.id], startDate.toISOString(), endDate.toISOString());
-      const history = buildHistoryByHash(drinks)[activeProfile.id] || [];
-      const promilleValue = calculateBACAtTime(history, activeProfile, Date.now());
-
-      await sb.from('custom_event_participants').insert({
-        event_id: eventId,
-        user_id: activeProfile.id,
-        name: activeProfile.name,
-        hash: activeProfile.id,
-        promille: promilleValue
-      });
-    }
-  }
-
-  if (!createdInCloud) {
-    const localEvents = getLocalCustomEvents();
-    localEvents.push({
-      event_id: eventId,
-      event_name: name,
-      created_at: createdAt,
-      starts_at: toIsoOrNull(startDate),
-      ends_at: toIsoOrNull(endDate)
-    });
-    saveLocalCustomEvents(localEvents);
-
-    const drinks = await fetchDrinkLogsForWindow([activeProfile.id], startDate.toISOString(), endDate.toISOString());
-    const history = buildHistoryByHash(drinks)[activeProfile.id] || [];
-    const promilleValue = calculateBACAtTime(history, activeProfile, Date.now());
-
-    const localParticipants = getLocalParticipants();
-    localParticipants.push({
+  if (!eventError) {
+    await sb.from('custom_event_participants').insert({
       event_id: eventId,
       user_id: activeProfile.id,
       name: activeProfile.name,
       hash: activeProfile.id,
-      promille: promilleValue
+      promille: 0
     });
-    saveLocalParticipants(localParticipants);
+  } else {
+    setStatusText(info, 'Kunde inte skapa event.', true);
+    return;
   }
 
-  setStatusText(info, `Event hash: ${eventId}`, false);
+  setStatusText(info, `Event skapat! Hash: ${eventId}`, false);
   document.getElementById('customName').value = '';
   document.getElementById('customStart').value = '';
   document.getElementById('customEnd').value = '';
@@ -422,61 +327,40 @@ async function joinCustomEvent() {
   const hash = document.getElementById('joinHash').value.trim();
   const status = document.getElementById('joinStatus');
   setStatusText(status, '', false);
+
   if (!hash || !sb) return;
 
   const activeProfile = getActiveProfile();
   if (!activeProfile) return;
 
   const eventData = await fetchCustomEvent(hash);
-  if (!eventData || !eventData.starts_at || !eventData.ends_at) {
+  if (!eventData) {
     setStatusText(status, 'Hittade inte eventet.', true);
     return;
   }
 
-  if (sb) {
-    const existing = await sb.from('custom_event_participants')
-      .select('event_id')
-      .eq('event_id', hash)
-      .eq('user_id', activeProfile.id)
-      .limit(1);
+  const { data: existing } = await sb.from('custom_event_participants')
+    .select('event_id')
+    .eq('event_id', hash)
+    .eq('user_id', activeProfile.id)
+    .limit(1);
 
-    if (existing.data && existing.data.length > 0) {
-      setStatusText(status, 'Du är redan med i eventet.', true);
-      return;
-    }
-  } else {
-    const localParticipants = getLocalParticipants();
-    if (localParticipants.some(p => p.event_id === hash && p.user_id === activeProfile.id)) {
-      setStatusText(status, 'Du är redan med i eventet.', true);
-      return;
-    }
+  if (existing && existing.length > 0) {
+    setStatusText(status, 'Du är redan med i eventet.', true);
+    return;
   }
 
-  const drinks = await fetchDrinkLogsForWindow([activeProfile.id], eventData.starts_at, eventData.ends_at);
-  const history = buildHistoryByHash(drinks)[activeProfile.id] || [];
-  const promilleValue = calculateBACAtTime(history, activeProfile, Date.now());
+  await syncProfileToSupabase(activeProfile);
 
-  if (sb) {
-    await sb.from('custom_event_participants').insert({
-      event_id: hash,
-      user_id: activeProfile.id,
-      name: activeProfile.name,
-      hash: activeProfile.id,
-      promille: promilleValue
-    });
-  } else {
-    const localParticipants = getLocalParticipants();
-    localParticipants.push({
-      event_id: hash,
-      user_id: activeProfile.id,
-      name: activeProfile.name,
-      hash: activeProfile.id,
-      promille: promilleValue
-    });
-    saveLocalParticipants(localParticipants);
-  }
+  await sb.from('custom_event_participants').insert({
+    event_id: hash,
+    user_id: activeProfile.id,
+    name: activeProfile.name,
+    hash: activeProfile.id,
+    promille: 0
+  });
 
-  setStatusText(status, 'Du gick med i eventet.', false);
+  setStatusText(status, 'Du gick med i eventet!', false);
   document.getElementById('joinHash').value = '';
   await loadMyCustomEvents();
 }
@@ -527,7 +411,6 @@ async function getSwedishPublicHolidays() {
         end: new Date(holiday.date + 'T23:59:59')
       }));
   } catch (error) {
-    console.log('Holiday API error, using preset events only:', error);
     return [];
   }
 }

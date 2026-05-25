@@ -3,6 +3,7 @@ let lastZoneName = null;
 let toastTimer = null;
 let lastNonZeroTime = Date.now();
 let graphResetCheckInterval = null;
+let drinkReminderTimer = null;
 const ZERO_BAC_THRESHOLD = 0.005;
 const MAX_ABV = 100;
 const MAX_VOLUME = 1000;
@@ -60,6 +61,26 @@ function showZoneToast(message) {
   }, 2500);
 }
 
+function getLatestDrinkTimestamp() {
+  if (!historyData || historyData.length === 0) return null;
+  return Math.max(...historyData.map((entry) => entry.timestamp));
+}
+
+function scheduleDrinkReminder(timestamp) {
+  if (!timestamp) return;
+  if (drinkReminderTimer) {
+    clearTimeout(drinkReminderTimer);
+  }
+  const targetTime = timestamp + 20 * 60 * 1000;
+  const delay = targetTime - Date.now();
+  if (delay <= 0) return;
+  drinkReminderTimer = setTimeout(() => {
+    if (typeof showDrinkReminderNotification === 'function') {
+      showDrinkReminderNotification();
+    }
+  }, delay);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   historyData = getDrinkHistory();
   const profile = getActiveProfile();
@@ -92,6 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
     onScroll();
   }
   updateUI();
+  scheduleDrinkReminder(getLatestDrinkTimestamp());
   setInterval(updateUI, 60000);
   // Check for graph reset every minute
   graphResetCheckInterval = setInterval(checkGraphReset, 60000);
@@ -138,6 +160,7 @@ function saveEntry(name, volume, abv, grams) {
   const time = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
   historyData.push({ name, volume, abv, grams, time, timestamp: now.getTime() });
   saveDrinkHistory(historyData);
+  scheduleDrinkReminder(now.getTime());
   document.getElementById('name').value = '';
   document.getElementById('volume').value = '';
   document.getElementById('abv').value = '';
@@ -236,6 +259,7 @@ function removeDrink(index) {
   
   historyData.splice(index, 1);
   saveDrinkHistory(historyData);
+  scheduleDrinkReminder(getLatestDrinkTimestamp());
   updateUI();
 }
 

@@ -94,21 +94,21 @@ li:last-child { border-bottom: none; }
 <div class="card">
   <h2>Historik</h2>
   <p style="font-weight: bold; color: #2C3E50;">Välj en vy för din historik.</p>
-  <button class="tab-button active" onclick="showTab('historiskalogar')">Historiska Loggar</button>
-  <button class="tab-button" onclick="showTab('pastevents')">Förflutna Events</button>
-  <button class="tab-button" onclick="showTab('wrapped')">Wrapped</button>
+  <button class="tab-button active" onclick="showTab('historiskalogar', this)">Historiska Loggar</button>
+  <button class="tab-button" onclick="showTab('pastevents', this)">Förflutna Events</button>
+  <button class="tab-button" onclick="showTab('wrapped', this)">Wrapped</button>
   
-  <div id=\"historiskalogar-tab\" style=\"display: none;\">
-    <div style=\"margin-top: 20px; text-align: left;\">
-      <h3 style=\"font-weight: bold; color: #2C3E50; margin: 0 0 15px 0;\">Mina registrerade drycker:</h3>
-      <ul id=\"allLogsHistory\"></ul>
-      <p id=\"noLogsMessage\" style=\"text-align: center; color: #2C3E50; font-weight: bold; margin-top: 20px;\">du behöver börja dricka</p>
+  <div id="historiskalogar-tab" style="display: none;">
+    <div style="margin-top: 20px; text-align: left;">
+      <h3 style="font-weight: bold; color: #2C3E50; margin: 0 0 15px 0;">Mina registrerade drycker:</h3>
+      <ul id="allLogsHistory"></ul>
+      <p id="noLogsMessage" style="text-align: center; color: #2C3E50; font-weight: bold; margin-top: 20px;">du behöver börja dricka</p>
     </div>
   </div>
   
-  <div id=\"pastevents-tab\" style=\"display: none;\">
-    <div style=\"margin-top: 20px; text-align: left;\">
-      <p id=\"noEventsMessage\" style=\"text-align: center; color: #2C3E50; font-weight: bold; margin-top: 20px;\">Inga tidigare events att visa.</p>
+  <div id="pastevents-tab" style="display: none;">
+    <div style="margin-top: 20px; text-align: left;">
+      <p id="noEventsMessage" style="text-align: center; color: #2C3E50; font-weight: bold; margin-top: 20px;">Inga tidigare events att visa.</p>
     </div>
   </div>
   
@@ -131,25 +131,22 @@ li:last-child { border-bottom: none; }
 <script src="../../features/shared/scripts/calculator.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-function showTab(tabName) {
+function showTab(tabName, element) {
   document.getElementById('historiskalogar-tab').style.display = 'none';
   document.getElementById('pastevents-tab').style.display = 'none';
   document.getElementById('wrapped-tab').style.display = 'none';
   
+  document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+  if (element) element.classList.add('active');
+
   if (tabName === 'historiskalogar') {
     document.getElementById('historiskalogar-tab').style.display = 'block';
-    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
     loadAllLogs();
   } else if (tabName === 'pastevents') {
     document.getElementById('pastevents-tab').style.display = 'block';
-    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
     loadPastEvents();
   } else if (tabName === 'wrapped') {
     document.getElementById('wrapped-tab').style.display = 'block';
-    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
   }
 }
 
@@ -173,7 +170,6 @@ function loadAllLogs() {
   }
 
   if (sb) {
-    // Fetch drinks from Supabase for the current user's hash
     sb.from('drink_logs')
       .select('*')
       .eq('player_hash', profile.id)
@@ -258,7 +254,6 @@ async function loadPastEvents() {
       openPastEventsModal();
     }
   } catch (error) {
-    console.error('Error loading past events:', error);
     noEventsMessage.style.display = 'block';
     closePastEventsModal();
   }
@@ -359,7 +354,6 @@ async function getSwedishPublicHolidays(year) {
       end: new Date(holiday.date + 'T23:59:59')
     }));
   } catch (error) {
-    console.log('Holiday API error, using preset events only:', error);
     return [];
   }
 }
@@ -407,6 +401,8 @@ function formatRange(start, end) {
 function showComingSoonPopup() {
   alert('Coming soon!');
 }
+
+showTab('historiskalogar', document.querySelector('.tab-button.active'));
 </script>
 </body>
 </html>

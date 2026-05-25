@@ -22,6 +22,7 @@ function initGDPR() {
               <li style="border: none; padding: 5px 0;">Dina vänner, klannamn, strider (battles) och antagna utmaningar.</li>
             </ul>
             <p><strong>Cookies:</strong> Vi använder cookies för att spara dina preferenser och sessionsdata lokalt på din enhet för en bättre användarupplevelse.</p>
+            <p><strong>Notiser:</strong> Appen kan visa lokala påminnelser om att logga fler drycker. Dessa notiser skapas lokalt på din enhet och fungerar endast när appen är igang. De ar endast en paminnelse och inte medicinsk radgivning.</p>
             <p><strong>Immateriell egendom:</strong> Alla funktioner och features på redlös är skapade inom kreativa gränser. All immateriell egendom och upphovsrätt tillhör redlös-ägarna.</p>
             <p><strong>Ansvarsbegränsning:</strong> redlös.se är inte ansvarigt för någon skada, förlust eller påföljd som uppstår från din användning av tjänsten. Du samtycker att du inte kan väcka juridisk talan eller stämning mot skaparna eller ägarna av redlös.</p>
           </div>
