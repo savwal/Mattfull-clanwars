@@ -178,6 +178,17 @@ function initClanRealtime() {
     .subscribe();
 }
 
+async function syncProfileToSupabase(profile) {
+  if (!sb || !profile) return;
+  await sb.from('profiles').upsert({
+    player_hash: profile.id,
+    display_name: profile.name,
+    avatar_url: profile.pic,
+    weight: profile.weight || null,
+    gender: profile.gender || null
+  });
+}
+
 async function loadOngoingEvent() {
   if (!sb) return;
   
@@ -186,7 +197,6 @@ async function loadOngoingEvent() {
   const eventContent = document.getElementById('ongoingEventContent');
   
   try {
-    // Get ongoing events (not custom)
     const { data: events } = await sb.from('events')
       .select('id, name, start_time, end_time, hash')
       .lte('start_time', now)
@@ -197,7 +207,6 @@ async function loadOngoingEvent() {
       return;
     }
     
-    // Show the first ongoing event
     const event = events[0];
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
@@ -210,7 +219,6 @@ async function loadOngoingEvent() {
     `;
     eventCard.style.display = 'block';
   } catch (error) {
-    console.error('Error loading ongoing event:', error);
     eventCard.style.display = 'none';
   }
 }
@@ -219,7 +227,26 @@ async function updateClanUI() {
   const noClanView = document.getElementById('noClanView');
   const hasClanView = document.getElementById('hasClanView');
 
-  if (!myClanHash || !sb) {
+  if (!sb || !activeProfile) {
+    noClanView.style.display = 'block';
+    hasClanView.style.display = 'none';
+    return;
+  }
+
+  const { data: myMembership } = await sb.from('clan_members')
+    .select('clan_id')
+    .eq('player_hash', activeProfile.id)
+    .maybeSingle();
+
+  if (myMembership && myMembership.clan_id) {
+    myClanHash = myMembership.clan_id;
+    localStorage.setItem('myClanHash', myClanHash);
+  } else {
+    myClanHash = null;
+    localStorage.removeItem('myClanHash');
+  }
+
+  if (!myClanHash) {
     noClanView.style.display = 'block';
     hasClanView.style.display = 'none';
     if (clanChannel) {
@@ -248,7 +275,6 @@ async function updateClanUI() {
   document.getElementById('clanHashDisplay').innerText = myClanHash;
   initClanRealtime();
 
-  // Load ongoing event
   await loadOngoingEvent();
 
   const { data: membersData } = await sb.from('clan_members')
@@ -411,12 +437,11 @@ function refreshClanUI() {
 
 async function createClan() {
   const name = document.getElementById('newClanName').value;
-  if (!name || !sb) return;
+  if (!name || !sb || !activeProfile) return;
   const newHash = generateUniqueHash();
  
-  if (activeProfile) {
-    await syncProfileToSupabase(activeProfile);
-  }
+  await syncProfileToSupabase(activeProfile);
+  
   await sb.from('clans').insert({ id: newHash, name: name });
   await sb.from('clan_members').upsert({ clan_id: newHash, player_hash: activeProfile.id, role: 'Ledare' });
   
@@ -427,14 +452,13 @@ async function createClan() {
 
 async function joinClan() {
   const hash = document.getElementById('joinClanHash').value.trim();
-  if(!hash || !sb) return;
+  if(!hash || !sb || !activeProfile) return;
   
   const { data: clanData } = await sb.from('clans').select('id').eq('id', hash).single();
   if (clanData) {
-    if (activeProfile) {
-      await syncProfileToSupabase(activeProfile);
-    }
+    await syncProfileToSupabase(activeProfile);
     await sb.from('clan_members').upsert({ clan_id: hash, player_hash: activeProfile.id, role: 'Medlem' });
+    
     localStorage.setItem('myClanHash', hash);
     myClanHash = hash;
     updateClanUI();
@@ -445,7 +469,7 @@ async function joinClan() {
 }
 
 async function leaveClan() {
-  if (myClanHash && sb) {
+  if (myClanHash && sb && activeProfile) {
     await sb.from('clan_members').delete().match({ clan_id: myClanHash, player_hash: activeProfile.id });
   }
   localStorage.removeItem('myClanHash');
@@ -467,7 +491,6 @@ async function startClanWar() {
   const { data: clanData } = await sb.from('clans').select('id').eq('id', hash).single();
   if (clanData && hash !== myClanHash) {
     await sb.from('battles').insert({ battle_type: 'Clan War', status: 'pending' });
-    // TODO: Create participants logic here
     closeClanWarModal();
     alert('Klan War startat! (Inte fullt implementerat annu)');
   } else {
@@ -476,7 +499,6 @@ async function startClanWar() {
 }
 
 updateClanUI();
-// Refresh clan UI every 30 seconds to pick up new members
 setInterval(updateClanUI, 30000);
 </script>
 </body>
