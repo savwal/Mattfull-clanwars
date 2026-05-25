@@ -29,6 +29,8 @@ li:last-child { border-bottom: none; }
 .view-toggle button { width: auto; flex: 1 1 140px; }
 .hidden { display: none; }
 .stat-pill { font-weight: 900; color: #2C3E50; }
+.stat-value { transition: opacity 2s ease; display: inline-block; }
+.stat-bump { opacity: 0.35; }
 </style>
 <link rel="stylesheet" href="../../shared/styles/nav.css">
 </head>
@@ -136,6 +138,16 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 let activeView = 'weekly';
 let friendsData = {};
 
+function applyStatUpdate(element, text) {
+  if (!element) return;
+  if (element.textContent === text) return;
+  element.classList.add('stat-bump');
+  setTimeout(() => {
+    element.textContent = text;
+    element.classList.remove('stat-bump');
+  }, 50);
+}
+
 function setFriendsView(view) {
   activeView = view;
   document.getElementById('weeklyView').classList.toggle('hidden', view !== 'weekly');
@@ -202,7 +214,6 @@ function getLivePromille(profile) {
 
 function renderWeeklyLeaderboard() {
   const list = document.getElementById('weeklyLeaderboard');
-  list.innerHTML = '';
   const entries = getFriendEntries();
   if (entries.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga vanner tillagda.</p>';
@@ -217,49 +228,76 @@ function renderWeeklyLeaderboard() {
     }))
     .sort((a, b) => b.cl - a.cl);
 
+  const existingItems = new Map(Array.from(list.querySelectorAll('li')).map(item => [item.dataset.friendHash, item]));
   ranked.forEach((friend, index) => {
-    const li = document.createElement('li');
-    const img = document.createElement('img');
-    img.className = 'profile-img';
+    let li = existingItems.get(friend.hash);
+    if (!li) {
+      li = document.createElement('li');
+      li.dataset.friendHash = friend.hash;
+      const img = document.createElement('img');
+      img.className = 'profile-img';
+      li.appendChild(img);
+      const info = document.createElement('div');
+      info.className = 'friend-info';
+      info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#<span class="stat-value rank-value"></span> ${friend.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${friend.hash}</span>`;
+      li.appendChild(info);
+      const stats = document.createElement('div');
+      stats.className = 'stat-pill';
+      stats.innerHTML = `<span class="stat-value"></span> cl`;
+      li.appendChild(stats);
+    }
+
+    const img = li.querySelector('img.profile-img');
     img.src = friend.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-    const info = document.createElement('div');
-    info.className = 'friend-info';
-    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#${index + 1} ${friend.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${friend.hash}</span>`;
-    const stats = document.createElement('div');
-    stats.className = 'stat-pill';
-    stats.innerText = `${friend.cl.toFixed(1)} cl`;
-    li.appendChild(img);
-    li.appendChild(info);
-    li.appendChild(stats);
+    const rankValue = li.querySelector('.rank-value');
+    applyStatUpdate(rankValue, String(index + 1));
+    const statValue = li.querySelector('.stat-pill .stat-value');
+    applyStatUpdate(statValue, friend.cl.toFixed(1));
+
     list.appendChild(li);
+    existingItems.delete(friend.hash);
   });
+
+  existingItems.forEach(item => item.remove());
 }
 
 function renderLiveStats() {
   const list = document.getElementById('liveStats');
-  list.innerHTML = '';
   const entries = getFriendEntries();
   if (entries.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga vanner tillagda.</p>';
     return;
   }
+  const existingItems = new Map(Array.from(list.querySelectorAll('li')).map(item => [item.dataset.friendHash, item]));
   entries.forEach(item => {
-    const li = document.createElement('li');
-    const img = document.createElement('img');
-    img.className = 'profile-img';
+    let li = existingItems.get(item.hash);
+    if (!li) {
+      li = document.createElement('li');
+      li.dataset.friendHash = item.hash;
+      const img = document.createElement('img');
+      img.className = 'profile-img';
+      li.appendChild(img);
+      const info = document.createElement('div');
+      info.className = 'friend-info';
+      info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${item.profile.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${item.hash}</span>`;
+      li.appendChild(info);
+      const stats = document.createElement('div');
+      stats.className = 'stat-pill';
+      stats.innerHTML = `<span class="stat-value"></span> ‰`;
+      li.appendChild(stats);
+    }
+
+    const img = li.querySelector('img.profile-img');
     img.src = item.profile.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-    const info = document.createElement('div');
-    info.className = 'friend-info';
-    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${item.profile.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${item.hash}</span>`;
-    const stats = document.createElement('div');
-    stats.className = 'stat-pill';
+    const statValue = li.querySelector('.stat-pill .stat-value');
     const promille = getLivePromille(item.profile);
-    stats.innerText = promille === null ? '-- ‰' : `${promille.toFixed(2)} ‰`;
-    li.appendChild(img);
-    li.appendChild(info);
-    li.appendChild(stats);
+    applyStatUpdate(statValue, promille === null ? '--' : promille.toFixed(2));
+
     list.appendChild(li);
+    existingItems.delete(item.hash);
   });
+
+  existingItems.forEach(item => item.remove());
 }
 
 function renderViews() {

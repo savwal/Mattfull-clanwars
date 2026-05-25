@@ -1,9 +1,11 @@
-let chartInstance = null;
+const chartInstances = {};
 
 function renderChart(canvasId, labels, dataPoints, zones, options = {}) {
   const ctx = document.getElementById(canvasId).getContext('2d');
   
-  if (chartInstance) chartInstance.destroy();
+  if (chartInstances[canvasId]) {
+    chartInstances[canvasId].destroy();
+  }
 
   const currentLabel = options.currentLabel || null;
   const currentTimeLine = currentLabel ? {
@@ -21,7 +23,7 @@ function renderChart(canvasId, labels, dataPoints, zones, options = {}) {
     }
   } : null;
   
-  chartInstance = new Chart(ctx, {
+  chartInstances[canvasId] = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,

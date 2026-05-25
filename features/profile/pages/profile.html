@@ -227,8 +227,14 @@ async function openProfileByHash() {
   const hash = document.getElementById('hashLookup').value.trim();
   const status = document.getElementById('hashLookupStatus');
   if (!hash) return;
-  
-  status.textContent = 'Söker...';
+
+  function setStatusText(message, isError) {
+    status.textContent = message;
+    status.classList.toggle('error-text', Boolean(isError));
+  }
+
+  status.classList.remove('error-text');
+  setStatusText('Söker...', false);
   
   // Check local profiles first
   const profiles = getProfiles();
@@ -256,9 +262,9 @@ async function openProfileByHash() {
     currentProfile = getActiveProfile();
     renderProfileSelect();
     populateForm();
-    status.textContent = `Öppnade profil: ${target.name}`;
+    setStatusText(`Öppnade profil: ${target.name}`, false);
   } else {
-    status.textContent = 'Hittade ingen profil med den hashen.';
+    setStatusText('Hittade ingen profil med den hashen.', true);
   }
 }
 renderProfileSelect();

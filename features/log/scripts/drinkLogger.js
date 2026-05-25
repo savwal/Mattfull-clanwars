@@ -30,7 +30,9 @@ const listedDrinks = {
     { name: 'Ey Bro', type: 'Hard seltzer', abv: 4.5, vol: 500 }
   ],
   wine: [
-    { name: 'Ett Glas Vin', type: 'Rött/Vitt/Rosé', abv: 12.5, vol: 150 },
+    { name: 'Ett glas vittvin', type: 'Vitt', abv: 12.0, vol: 150 },
+    { name: 'Ett glas rosé', type: 'Rosé', abv: 12.0, vol: 150 },
+    { name: 'Ett glas rött', type: 'Rött', abv: 13.0, vol: 150 }
   ],
   drinkar: [
     { name: 'Gin & Tonic', type: 'Drink (4cl sprit)', abv: 8.0, vol: 200 },
@@ -45,6 +47,12 @@ const listedDrinks = {
     { name: 'Rum', type: 'Spirit', abv: 38.8, vol: 40 },
     { name: 'Jägermeister', type: 'Liqueur', abv: 35, vol: 40 },
     { name: 'Bacardi (rum)', type: 'Spirit', abv: 38.8, vol: 40 },
+  ],
+  annat: [
+    { name: 'Caprice Kir', type: 'Aperitif', abv: 12, vol: 120 },
+    { name: 'Solbacka Kir', type: 'Aperitif', abv: 12, vol: 120 },
+    { name: 'Champagne', type: 'Sparkling wine', abv: 12, vol: 150 },
+    { name: 'Cava', type: 'Sparkling wine', abv: 11.5, vol: 150 }
   ]
 };
 
@@ -56,7 +64,8 @@ function renderCategoryTiles(containerId) {
     { id: 'beer_cider_50', text: 'Öl/cider 50 cl', icon: 'beer-50.svg' },
     { id: 'wine', text: 'Vin', icon: 'wine.svg' },
     { id: 'drinkar', text: 'Drinkar', icon: 'drink.svg' },
-    { id: 'sprit', text: 'Sprit', icon: 'sprit.svg' }
+    { id: 'sprit', text: 'Sprit', icon: 'sprit.svg' },
+    { id: 'annat', text: 'Annat', icon: 'other.svg' }
   ];
 
   categories.forEach(category => {

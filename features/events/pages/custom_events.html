@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#3498DB">
+<title>redlos - Custom Event</title>
+<link rel="manifest" href="../../../manifest.json">
+<meta name="theme-color" content="#2C3E50">
+<title>redlos - Custom Event</title>
+<link rel="manifest" href="../../../manifest.json">
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
+.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+.main-nav::-webkit-scrollbar { display: none; }
+.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 12px; }
+.main-nav a:last-child { border-right: none; }
+.main-nav a:hover, .main-nav a.active { background: #FFCC00; }
+.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #2A8CFF; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; }
+ul { list-style: none; padding: 0; margin: 0; }
+li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+li:last-child { border-bottom: none; }
+.profile-img { width: 50px; height: 50px; border-radius: 0; object-fit: cover; border: 3px solid #2C3E50; background: #fff; }
+.badge { display: inline-block; padding: 4px 8px; border: 3px solid #2C3E50; font-weight: 900; background: #FFCC00; }
+button { padding: 14px 20px; margin: 8px 0; width: auto; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; border-radius: 0; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
+button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+.loading { text-align: center; padding: 20px; color: #7f8c8d; font-weight: 600; }
+.error-text { color: #E74C3C !important; font-weight: 700; }
+.event-meta { font-weight: 900; color: #2C3E50; }
+</style>
+<link rel="stylesheet" href="../../shared/styles/nav.css">
+</head>
+<body>
+<nav class="main-nav">
+  <a href="../../../index.html" aria-label="Log" title="Log">
+    <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
+    <span class="menu-label">Log</span>
+  </a>
+  <a href="../../battles/pages/battles.html" aria-label="Battles" title="Battles">
+    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
+    <span class="menu-label">Battles</span>
+  </a>
+  <a href="../../events/pages/events.html" class="active" aria-label="Events" title="Events">
+    <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
+    <span class="menu-label">Events</span>
+  </a>
+  <a href="../../clans/pages/clans.html" aria-label="Klan" title="Klan">
+    <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
+    <span class="menu-label">Klan</span>
+  </a>
+  <a href="../../friends/pages/friends.html" aria-label="Vänner" title="Vänner">
+    <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
+    <span class="menu-label">Vänner</span>
+  </a>
+  <a href="../../historik/historik.html" aria-label="Historik" title="Historik">
+    <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
+    <span class="menu-label">Historik</span>
+  </a>
+  <a href="../../profile/pages/profile.html" aria-label="Profil" title="Profil">
+    <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
+    <span class="menu-label">Profil</span>
+  </a>
+</nav>
+<nav class="mobile-bottom-menu">
+  <a href="../../../index.html" class="menu-item" aria-label="Log" title="Log">
+    <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
+    <span class="menu-label">Log</span>
+  </a>
+  <a href="../../battles/pages/battles.html" class="menu-item" aria-label="Battles" title="Battles">
+    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
+    <span class="menu-label">Battles</span>
+  </a>
+  <a href="../../events/pages/events.html" class="menu-item active" aria-label="Events" title="Events">
+    <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
+    <span class="menu-label">Events</span>
+  </a>
+  <a href="../../clans/pages/clans.html" class="menu-item" aria-label="Klan" title="Klan">
+    <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
+    <span class="menu-label">Klan</span>
+  </a>
+  <a href="../../friends/pages/friends.html" class="menu-item" aria-label="Vänner" title="Vänner">
+    <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
+    <span class="menu-label">Vänner</span>
+  </a>
+  <a href="../../historik/historik.html" class="menu-item" aria-label="Historik" title="Historik">
+    <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
+    <span class="menu-label">Historik</span>
+  </a>
+  <a href="../../profile/pages/profile.html" class="menu-item" aria-label="Profil" title="Profil">
+    <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
+    <span class="menu-label">Profil</span>
+  </a>
+</nav>
+
+<div class="card">
+  <h2 id="eventTitle">Custom Event</h2>
+  <p id="eventMeta" class="event-meta"></p>
+  <button onclick="window.location.href='./events.html'" style="width:auto;">Tillbaka</button>
+</div>
+
+<div class="card">
+  <h2>Leaderboard</h2>
+  <ul id="eventLeaderboard"></ul>
+</div>
+
+<div class="card">
+  <h2>Alla Deltagare</h2>
+  <ul id="eventParticipants"></ul>
+</div>
+
+
+
+<script src="../../shared/scripts/hash.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../shared/scripts/shared.js"></script>
+<script src="../../shared/scripts/calculator.js"></script>
+<script>
+function setStatusText(element, message, isError) {
+  if (!element) return;
+  element.textContent = message;
+  element.classList.toggle('error-text', Boolean(isError));
+}
+
+function buildHistoryByHash(drinks) {
+  const historyByHash = {};
+  (drinks || []).forEach(d => {
+    if (!historyByHash[d.player_hash]) historyByHash[d.player_hash] = [];
+    const grams = Number.isFinite(d.grams_alcohol)
+      ? d.grams_alcohol
+      : parseFloat((d.volume_ml * (d.abv / 100) * 0.789).toFixed(1));
+    historyByHash[d.player_hash].push({
+      timestamp: new Date(d.consumed_at).getTime(),
+      grams
+    });
+  });
+  return historyByHash;
+}
+
+async function fetchCustomEvent(eventId) {
+  if (!sb || !eventId) return null;
+  const { data, error } = await sb.from('custom_events')
+    .select('event_id, event_name, created_at, starts_at, ends_at')
+    .eq('event_id', eventId)
+    .single();
+  if (error) return null;
+  return data;
+}
+
+async function fetchCustomParticipants(eventId) {
+  if (!sb || !eventId) return [];
+  const { data, error } = await sb.from('custom_event_participants')
+    .select('event_id, user_id, name, hash, promille')
+    .eq('event_id', eventId);
+  if (error || !data) return [];
+  return data;
+}
+
+async function fetchProfilesByHashes(hashes) {
+  if (!sb || hashes.length === 0) return [];
+  const { data } = await sb.from('profiles')
+    .select('player_hash, display_name, avatar_url, weight, gender')
+    .in('player_hash', hashes);
+  return data || [];
+}
+
+async function fetchDrinkLogsForWindow(hashes, startIso, endIso) {
+  if (!sb || hashes.length === 0 || !startIso || !endIso) return [];
+  const { data } = await sb.from('drink_logs')
+    .select('player_hash, grams_alcohol, volume_ml, abv, consumed_at')
+    .in('player_hash', hashes)
+    .gte('consumed_at', startIso)
+    .lte('consumed_at', endIso);
+  return data || [];
+}
+
+function renderLeaderboard(entries) {
+  const list = document.getElementById('eventLeaderboard');
+  list.innerHTML = '';
+  if (!entries || entries.length === 0) {
+    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga deltagare.</p>';
+    return;
+  }
+  entries.forEach((player, index) => {
+    const li = document.createElement('li');
+    const img = document.createElement('img');
+    img.className = 'profile-img';
+    img.src = player.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+    const info = document.createElement('div');
+    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#${index + 1} ${player.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${player.id}</span>`;
+    const stats = document.createElement('div');
+    stats.className = 'badge';
+    stats.innerText = `${player.promille.toFixed(2)} ‰`;
+    li.appendChild(img);
+    li.appendChild(info);
+    li.appendChild(stats);
+    list.appendChild(li);
+  });
+}
+
+function renderParticipants(participants, profileMap) {
+  const list = document.getElementById('eventParticipants');
+  list.innerHTML = '';
+  if (!participants || participants.length === 0) {
+    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga deltagare.</p>';
+    return;
+  }
+  participants.forEach((p, index) => {
+    const profile = profileMap[p.hash];
+    const li = document.createElement('li');
+    const img = document.createElement('img');
+    img.className = 'profile-img';
+    img.src = (profile && profile.pic) || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+    const info = document.createElement('div');
+    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${profile ? profile.name : p.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${p.hash}</span>`;
+    li.appendChild(img);
+    li.appendChild(info);
+    list.appendChild(li);
+  });
+}
+
+function refreshPage() {
+  window.location.reload();
+}
+
+async function loadCustomEventLeaderboard() {
+  const params = new URLSearchParams(window.location.search);
+  const eventId = params.get('event_id');
+  const title = document.getElementById('eventTitle');
+  const meta = document.getElementById('eventMeta');
+
+  if (!eventId) {
+    setStatusText(meta, 'Saknar event-id.', true);
+    return;
+  }
+
+  const activeProfile = getActiveProfile();
+  const participants = await fetchCustomParticipants(eventId);
+
+  if (!participants || participants.length === 0) {
+    setStatusText(meta, 'Inga deltagare i detta event.', true);
+    return;
+  }
+
+  if (!activeProfile || !participants.some(p => p.user_id === activeProfile.id)) {
+    setStatusText(meta, 'Du är inte medlem i detta event.', true);
+    return;
+  }
+
+  const event = await fetchCustomEvent(eventId);
+  if (!event || !event.starts_at || !event.ends_at) {
+    setStatusText(meta, 'Eventet saknar giltigt start- eller slutdatum.', true);
+    return;
+  }
+
+  title.textContent = event.event_name;
+  setStatusText(meta, `${event.event_id} - ${new Date(event.starts_at).toLocaleString()} till ${new Date(event.ends_at).toLocaleString()}`, false);
+
+  const hashes = participants.map(p => p.hash || p.user_id);
+  const profiles = await fetchProfilesByHashes(hashes);
+  const profileMap = {};
+  profiles.forEach(p => {
+    profileMap[p.player_hash] = {
+      id: p.player_hash,
+      name: p.display_name,
+      pic: p.avatar_url,
+      weight: p.weight,
+      gender: p.gender
+    };
+  });
+
+  const drinks = await fetchDrinkLogsForWindow(hashes, event.starts_at, event.ends_at);
+  const historyByHash = buildHistoryByHash(drinks);
+
+  const entries = participants.map(p => {
+    const profile = profileMap[p.hash];
+    const history = historyByHash[p.hash] || [];
+    const promilleValue = profile && profile.weight && profile.gender
+      ? calculateBACAtTime(history, profile, Date.now())
+      : (p.promille || 0);
+    return {
+      id: p.hash,
+      name: profile ? profile.name : p.name,
+      pic: profile ? profile.pic : '',
+      promille: promilleValue
+    };
+  }).sort((a, b) => b.promille - a.promille);
+
+  renderLeaderboard(entries);
+  renderParticipants(participants, profileMap);
+}
+
+loadCustomEventLeaderboard();
+</script>
+</body>
+</html>
