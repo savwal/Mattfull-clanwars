@@ -179,7 +179,32 @@ if ('serviceWorker' in navigator) {
     const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
     const isGitHubPages = location.hostname.endsWith('github.io');
     if (!isLocal && (location.protocol === 'https:' || isGitHubPages)) {
-      navigator.serviceWorker.register('/service-worker.js');
+      navigator.serviceWorker.register('/service-worker.js', { updateViaCache: 'none' }).then((registration) => {
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+        registration.addEventListener('updatefound', () => {
+          const installing = registration.installing;
+          if (!installing) return;
+          installing.addEventListener('statechange', () => {
+            if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+              if (registration.waiting) {
+                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+              }
+            }
+          });
+        });
+      });
+
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (window.caches) {
+          caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key)))).finally(() => {
+            window.location.reload();
+          });
+        } else {
+          window.location.reload();
+        }
+      });
     }
   });
 }

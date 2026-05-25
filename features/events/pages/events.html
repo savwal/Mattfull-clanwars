@@ -24,6 +24,11 @@ li:last-child { border-bottom: none; }
 .profile-img { width: 50px; height: 50px; border-radius: 0; object-fit: cover; border: 3px solid #2C3E50; background: #fff; }
 .event-meta { font-weight: 900; color: #2C3E50; }
 .badge { display: inline-block; padding: 4px 8px; border: 3px solid #2C3E50; font-weight: 900; background: #FFCC00; }
+.stat-value { transition: opacity 2s ease; display: inline-block; }
+.stat-bump { opacity: 0.35; }
+.refresh-zone { background: #D45AA6; color: #FFF; text-align: center; border: 4px solid #2C3E50; box-shadow: 6px 6px 0px #2C3E50; }
+.refresh-zone button { width: auto; margin-top: 10px; background: #FFF; color: #2C3E50; border: 4px solid #2C3E50; box-shadow: 3px 3px 0px #2C3E50; }
+</style>
 </style>
 <link rel="stylesheet" href="../../shared/styles/nav.css">
 </head>
@@ -92,7 +97,7 @@ li:last-child { border-bottom: none; }
 <div class="card">
   <h2>Event Leaderboard</h2>
   <select id="eventSelect"></select>
-  <button onclick="renderSelectedEvent()">Visa leaderboard</button>
+  <button onclick="renderSelectedEvent()">Visa leaderboards</button>
   <div style="margin-top: 10px;">
     <span class="event-meta" id="eventMeta"></span>
   </div>
@@ -113,23 +118,368 @@ li:last-child { border-bottom: none; }
   <input type="text" id="customName" placeholder="Event namn">
   <input type="datetime-local" id="customStart">
   <input type="datetime-local" id="customEnd">
-  <input type="text" id="customParticipants" placeholder="Friend hash (komma-separerat)">
   <button onclick="createCustomEvent()">Skapa event</button>
   <p id="customHashInfo" style="font-weight: 900; color: #2C3E50;"></p>
 </div>
 
 <div class="card">
-  <h2 style="background: #2A8CFF;">Gå med i custom event</h2>
-  <input type="text" id="joinHash" placeholder="Event hash (6 tecken)">
-  <button onclick="joinCustomEvent()">Gå med</button>
+  <h2 style="background: #2ECC71;">Mina custom events</h2>
+  <ul id="myCustomEventsList"></ul>
+  <p id="noCustomEventsMessage" style="text-align:center; color:#7f8c8d; font-weight: bold;">Inga custom events att visa.</p>
 </div>
+
+<div class="card">
+  <h2 style="background: #2A8CFF;">Gå med i custom event</h2>
+  <input type="text" id="joinHash" placeholder="Event hash (8 tecken)">
+  <button onclick="joinCustomEvent()">Gå med</button>
+  <p id="joinStatus" style="font-weight: 900; color:#2C3E50;"></p>
+</div>
+
+
 
 <script src="../../shared/scripts/hash.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/scripts/shared.js"></script>
 <script src="../../shared/scripts/calculator.js"></script>
 <script>
-const customEventsKey = 'events_custom';
+const CUSTOM_EVENT_ID_LENGTH = 8;
+const CUSTOM_EVENT_REFRESH_MS = 30000;
+const CUSTOM_EVENT_MAX_RANGE_DAYS = 7;
+const LOCAL_EVENTS_KEY = 'custom_events_local';
+const LOCAL_PARTICIPANTS_KEY = 'custom_event_participants_local';
+
+function applyStatUpdate(element, text) {
+  if (!element) return;
+  if (element.textContent === text) return;
+  element.classList.add('stat-bump');
+  setTimeout(() => {
+    element.textContent = text;
+    element.classList.remove('stat-bump');
+  }, 50);
+}
+
+function toIsoOrNull(dateValue) {
+  return dateValue ? dateValue.toISOString() : null;
+}
+
+function parseDateInput(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function setStatusText(element, message, isError) {
+  if (!element) return;
+  element.textContent = message;
+  element.classList.toggle('error-text', Boolean(isError));
+}
+
+function buildHistoryByHash(drinks) {
+  const historyByHash = {};
+  (drinks || []).forEach(d => {
+    if (!historyByHash[d.player_hash]) historyByHash[d.player_hash] = [];
+    const grams = Number.isFinite(d.grams_alcohol)
+      ? d.grams_alcohol
+      : parseFloat((d.volume_ml * (d.abv / 100) * 0.789).toFixed(1));
+    historyByHash[d.player_hash].push({
+      timestamp: new Date(d.consumed_at).getTime(),
+      grams
+    });
+  });
+  return historyByHash;
+}
+
+async function fetchCustomEventsForUser(userId) {
+  if (!userId) return [];
+  const eventMap = new Map();
+  const missingEventIds = new Set();
+
+  if (sb) {
+    const { data } = await sb.from('custom_event_participants')
+      .select('event_id, custom_events(event_id, event_name, created_at, starts_at, ends_at)')
+      .eq('user_id', userId);
+
+    (data || []).forEach(row => {
+      if (row.custom_events && row.custom_events.event_id) {
+        eventMap.set(row.custom_events.event_id, row.custom_events);
+      } else if (row.event_id) {
+        missingEventIds.add(row.event_id);
+      }
+    });
+  }
+
+  if (sb && missingEventIds.size > 0) {
+    const { data: fallbackEvents } = await sb.from('custom_events')
+      .select('event_id, event_name, created_at, starts_at, ends_at')
+      .in('event_id', Array.from(missingEventIds));
+    (fallbackEvents || []).forEach(evt => {
+      if (evt && evt.event_id) eventMap.set(evt.event_id, evt);
+    });
+  }
+
+  const localParticipants = getLocalParticipants().filter(p => p.user_id === userId);
+  const localEvents = getLocalCustomEvents();
+  localParticipants.forEach(participant => {
+    const evt = localEvents.find(e => e.event_id === participant.event_id);
+    if (evt) eventMap.set(evt.event_id, evt);
+  });
+
+  return Array.from(eventMap.values());
+}
+
+async function fetchCustomEvent(eventId) {
+  if (!eventId) return null;
+  if (sb) {
+    const { data, error } = await sb.from('custom_events')
+      .select('event_id, event_name, created_at, starts_at, ends_at')
+      .eq('event_id', eventId)
+      .single();
+    if (!error && data) return data;
+  }
+  return getLocalCustomEvents().find(evt => evt.event_id === eventId) || null;
+}
+
+async function fetchDrinkLogsForWindow(hashes, startIso, endIso) {
+  if (!sb || hashes.length === 0 || !startIso || !endIso) return [];
+  const { data } = await sb.from('drink_logs')
+    .select('player_hash, grams_alcohol, volume_ml, abv, consumed_at')
+    .in('player_hash', hashes)
+    .gte('consumed_at', startIso)
+    .lte('consumed_at', endIso);
+  return data || [];
+}
+
+function formatCustomRange(startsAt, endsAt) {
+  if (!startsAt && !endsAt) return 'Pågående';
+  const start = startsAt ? new Date(startsAt) : null;
+  const end = endsAt ? new Date(endsAt) : null;
+  if (start && end) {
+    const startText = start.toLocaleDateString('sv-SE', { month: 'short', day: 'numeric' });
+    const endText = end.toLocaleDateString('sv-SE', { month: 'short', day: 'numeric' });
+    return startText === endText ? startText : `${startText} - ${endText}`;
+  }
+  if (start) return `${start.toLocaleDateString('sv-SE')} - Pågående`;
+  return `Pågående - ${end.toLocaleDateString('sv-SE')}`;
+}
+
+function renderMyCustomEvents(events) {
+  const list = document.getElementById('myCustomEventsList');
+  const empty = document.getElementById('noCustomEventsMessage');
+  list.innerHTML = '';
+  if (!events || events.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  const eventMap = new Map();
+  events.forEach(evt => {
+    if (evt && evt.event_id) eventMap.set(evt.event_id, evt);
+  });
+  Array.from(eventMap.values()).forEach(evt => {
+    const li = document.createElement('li');
+    const meta = formatCustomRange(evt.starts_at, evt.ends_at);
+    li.innerHTML = `
+      <div>
+        <strong>${evt.event_name}</strong><br>
+        <span style="color:#7f8c8d; font-size:0.9em;">${meta}</span>
+      </div>
+      <div>
+        <div class="badge" style="margin-bottom:6px;">${evt.event_id}</div>
+        <button style="width:auto; padding:6px 10px; font-size:12px;" onclick="openCustomEventPage('${evt.event_id}')">Öppna</button>
+      </div>
+    `;
+    list.appendChild(li);
+  });
+}
+
+async function loadMyCustomEvents() {
+  const activeProfile = getActiveProfile();
+  if (!activeProfile) {
+    renderMyCustomEvents([]);
+    return [];
+  }
+  const events = await fetchCustomEventsForUser(activeProfile.id);
+  renderMyCustomEvents(events);
+  return events;
+}
+
+function openCustomEventPage(eventId) {
+  if (!eventId) return;
+  window.location.href = `./custom_events.html?event_id=${encodeURIComponent(eventId)}`;
+}
+
+function getLocalCustomEvents() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_EVENTS_KEY)) || [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveLocalCustomEvents(events) {
+  localStorage.setItem(LOCAL_EVENTS_KEY, JSON.stringify(events));
+}
+
+function getLocalParticipants() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_PARTICIPANTS_KEY)) || [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveLocalParticipants(participants) {
+  localStorage.setItem(LOCAL_PARTICIPANTS_KEY, JSON.stringify(participants));
+}
+
+async function createCustomEvent() {
+  const name = document.getElementById('customName').value.trim();
+  const startValue = document.getElementById('customStart').value;
+  const endValue = document.getElementById('customEnd').value;
+  const activeProfile = getActiveProfile();
+  const info = document.getElementById('customHashInfo');
+  setStatusText(info, '', false);
+  if (!name || !activeProfile) return;
+
+  const startDate = parseDateInput(startValue);
+  const endDate = parseDateInput(endValue);
+  if (!startDate || !endDate || endDate <= startDate) {
+    setStatusText(info, 'Ogiltigt datumintervall.', true);
+    return;
+  }
+
+  const maxRangeMs = CUSTOM_EVENT_MAX_RANGE_DAYS * 24 * 60 * 60 * 1000;
+  if (endDate.getTime() - startDate.getTime() > maxRangeMs) {
+    setStatusText(info, 'INte möjligt just nu. Kommer snart!', true);
+    return;
+  }
+
+  const eventId = generateUniqueHash(CUSTOM_EVENT_ID_LENGTH);
+  const createdAt = new Date().toISOString();
+
+  let createdInCloud = false;
+
+  if (sb) {
+    const { data: eventData, error: eventError } = await sb.from('custom_events').insert({
+      event_id: eventId,
+      event_name: name,
+      created_at: createdAt,
+      starts_at: toIsoOrNull(startDate),
+      ends_at: toIsoOrNull(endDate)
+    }).select('event_id').single();
+
+    if (!eventError && eventData) {
+      createdInCloud = true;
+      const drinks = await fetchDrinkLogsForWindow([activeProfile.id], startDate.toISOString(), endDate.toISOString());
+      const history = buildHistoryByHash(drinks)[activeProfile.id] || [];
+      const promilleValue = calculateBACAtTime(history, activeProfile, Date.now());
+
+      await sb.from('custom_event_participants').insert({
+        event_id: eventId,
+        user_id: activeProfile.id,
+        name: activeProfile.name,
+        hash: activeProfile.id,
+        promille: promilleValue
+      });
+    }
+  }
+
+  if (!createdInCloud) {
+    const localEvents = getLocalCustomEvents();
+    localEvents.push({
+      event_id: eventId,
+      event_name: name,
+      created_at: createdAt,
+      starts_at: toIsoOrNull(startDate),
+      ends_at: toIsoOrNull(endDate)
+    });
+    saveLocalCustomEvents(localEvents);
+
+    const drinks = await fetchDrinkLogsForWindow([activeProfile.id], startDate.toISOString(), endDate.toISOString());
+    const history = buildHistoryByHash(drinks)[activeProfile.id] || [];
+    const promilleValue = calculateBACAtTime(history, activeProfile, Date.now());
+
+    const localParticipants = getLocalParticipants();
+    localParticipants.push({
+      event_id: eventId,
+      user_id: activeProfile.id,
+      name: activeProfile.name,
+      hash: activeProfile.id,
+      promille: promilleValue
+    });
+    saveLocalParticipants(localParticipants);
+  }
+
+  setStatusText(info, `Event hash: ${eventId}`, false);
+  document.getElementById('customName').value = '';
+  document.getElementById('customStart').value = '';
+  document.getElementById('customEnd').value = '';
+
+  await loadMyCustomEvents();
+}
+
+async function joinCustomEvent() {
+  const hash = document.getElementById('joinHash').value.trim();
+  const status = document.getElementById('joinStatus');
+  setStatusText(status, '', false);
+  if (!hash || !sb) return;
+
+  const activeProfile = getActiveProfile();
+  if (!activeProfile) return;
+
+  const eventData = await fetchCustomEvent(hash);
+  if (!eventData || !eventData.starts_at || !eventData.ends_at) {
+    setStatusText(status, 'Hittade inte eventet.', true);
+    return;
+  }
+
+  if (sb) {
+    const existing = await sb.from('custom_event_participants')
+      .select('event_id')
+      .eq('event_id', hash)
+      .eq('user_id', activeProfile.id)
+      .limit(1);
+
+    if (existing.data && existing.data.length > 0) {
+      setStatusText(status, 'Du är redan med i eventet.', true);
+      return;
+    }
+  } else {
+    const localParticipants = getLocalParticipants();
+    if (localParticipants.some(p => p.event_id === hash && p.user_id === activeProfile.id)) {
+      setStatusText(status, 'Du är redan med i eventet.', true);
+      return;
+    }
+  }
+
+  const drinks = await fetchDrinkLogsForWindow([activeProfile.id], eventData.starts_at, eventData.ends_at);
+  const history = buildHistoryByHash(drinks)[activeProfile.id] || [];
+  const promilleValue = calculateBACAtTime(history, activeProfile, Date.now());
+
+  if (sb) {
+    await sb.from('custom_event_participants').insert({
+      event_id: hash,
+      user_id: activeProfile.id,
+      name: activeProfile.name,
+      hash: activeProfile.id,
+      promille: promilleValue
+    });
+  } else {
+    const localParticipants = getLocalParticipants();
+    localParticipants.push({
+      event_id: hash,
+      user_id: activeProfile.id,
+      name: activeProfile.name,
+      hash: activeProfile.id,
+      promille: promilleValue
+    });
+    saveLocalParticipants(localParticipants);
+  }
+
+  setStatusText(status, 'Du gick med i eventet.', false);
+  document.getElementById('joinHash').value = '';
+  await loadMyCustomEvents();
+}
 
 function getPresetEvents(year) {
   const midsummer = getMidsummerEve(year);
@@ -145,7 +495,9 @@ function getPresetEvents(year) {
     { id: 'wow', name: 'Way Out West', city: 'Goteborg', start: dateAt(year, 8, 7), end: dateAt(year, 8, 9, 23, 59) },
     { id: 'kulturkalaset', name: 'Kulturkalaset', city: 'Goteborg', start: dateAt(year, 8, 13), end: dateAt(year, 8, 17, 23, 59) },
     { id: 'stockholm-pride', name: 'Stockholm Pride', city: 'Stockholm', start: dateAt(year, 8, 4), end: dateAt(year, 8, 10, 23, 59) },
-    { id: 'kulturfestivalen', name: 'Kulturfestivalen (Stockholm)', city: 'Stockholm', start: dateAt(year, 8, 13), end: dateAt(year, 8, 17, 23, 59) }
+    { id: 'kulturfestivalen', name: 'Kulturfestivalen (Stockholm)', city: 'Stockholm', start: dateAt(year, 8, 13), end: dateAt(year, 8, 17, 23, 59) },
+    { id: 'studenten', name: 'Studenten (Sverige)', city: 'Sverige', start: dateAt(year, 6, 12), end: dateAt(year, 6, 12, 23, 59) },
+    { id: 'day-at-the-park', name: 'A Day at the Park', city: 'Sverige', start: dateAt(year, 7, 3), end: dateAt(year, 7, 4, 23, 59) }
   ];
 }
 
@@ -157,10 +509,10 @@ async function getSwedishPublicHolidays() {
     const holidays = await response.json();
     const nextYearResponse = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${nextYear}/SE`);
     const nextYearHolidays = await nextYearResponse.json();
-    
+
     const allHolidays = [...holidays, ...nextYearHolidays];
     const now = new Date();
-    
+
     return allHolidays
       .filter(holiday => {
         const holidayDate = new Date(holiday.date);
@@ -192,80 +544,28 @@ function getMidsummerEve(year) {
   return { month: 6, day: 20 };
 }
 
-async function loadCustomEvents() {
-  if (!sb) return [];
-  const { data } = await sb.from('events').select('id, hash, name, start_time, end_time, event_participants(player_hash)');
-  if (!data) return [];
-  return data.map(evt => ({
-    id: evt.id,
-    hash: evt.hash,
-    name: evt.name,
-    start: evt.start_time,
-    end: evt.end_time,
-    participants: evt.event_participants.map(p => p.player_hash)
-  }));
-}
-
-async function buildEventOptions() {
-  const select = document.getElementById('eventSelect');
-  select.innerHTML = '';
+async function getAllPresetEvents() {
   const year = new Date().getFullYear();
   const now = new Date();
-  
-  // Get preset events and filter out past ones
+  const windowEnd = new Date(now.getTime() + 150 * 24 * 60 * 60 * 1000);
   const presetEvents = getPresetEvents(year)
-    .filter(evt => evt.end >= now);
-  
-  // Get next year's preset events if we're close to year end
+    .filter(evt => evt.end >= now && evt.start <= windowEnd);
   const nextYearPresetEvents = getPresetEvents(year + 1)
-    .filter(evt => evt.end >= now);
-  
-  // Get public holidays from API
+    .filter(evt => evt.end >= now && evt.start <= windowEnd);
   const publicHolidays = await getSwedishPublicHolidays();
-  
-  // Combine all events, removing duplicates and filtering past events
   const allEvents = [...presetEvents, ...nextYearPresetEvents, ...publicHolidays]
-    .filter(evt => evt.end >= now)
+    .filter(evt => evt.end >= now && evt.start <= windowEnd)
     .sort((a, b) => a.start - b.start);
 
-  // Remove duplicates based on date and name
   const eventMap = new Map();
   allEvents.forEach(evt => {
-    const key = `${evt.name}-${evt.start.getTime()}`;
+    const key = `${evt.id}-${evt.start.getFullYear()}`;
     if (!eventMap.has(key)) {
-      eventMap.set(key, evt);
+      eventMap.set(key, { ...evt, key });
     }
   });
 
-  const presetGroup = document.createElement('optgroup');
-  presetGroup.label = 'Events (Sverige)';
-  
-  const customGroup = document.createElement('optgroup');
-  customGroup.label = 'Custom Events';
-  
-  // Add events to appropriate groups
-  Array.from(eventMap.values()).forEach(evt => {
-    const opt = document.createElement('option');
-    opt.value = `preset:${evt.id}`;
-    opt.textContent = `${evt.name}`;
-    presetGroup.appendChild(opt);
-  });
-
-  // Load and add custom events
-  const customEvents = await loadCustomEvents();
-  const customNow = new Date();
-  customEvents
-    .filter(evt => new Date(evt.end) >= customNow)
-    .forEach(evt => {
-      const opt = document.createElement('option');
-      opt.value = `custom:${evt.hash}`;
-      opt.textContent = `${evt.name} (${evt.hash})`;
-      customGroup.appendChild(opt);
-    });
-
-  select.appendChild(presetGroup);
-  select.appendChild(customGroup);
-  if (select.options.length > 0) select.selectedIndex = 0;
+  return Array.from(eventMap.values());
 }
 
 function formatRange(start, end) {
@@ -276,27 +576,60 @@ function formatRange(start, end) {
 
 function renderLeaderboard(entries) {
   const list = document.getElementById('eventLeaderboard');
-  list.innerHTML = '';
   if (entries.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga deltagare.</p>';
     return;
   }
+  const existingItems = new Map(Array.from(list.children).map(item => [item.dataset.playerId, item]));
   const ranked = entries.sort((a, b) => b.cl - a.cl);
   ranked.forEach((player, index) => {
-    const li = document.createElement('li');
-    const img = document.createElement('img');
-    img.className = 'profile-img';
+    let li = existingItems.get(player.id);
+    if (!li) {
+      li = document.createElement('li');
+      li.dataset.playerId = player.id;
+      const img = document.createElement('img');
+      img.className = 'profile-img';
+      li.appendChild(img);
+      const info = document.createElement('div');
+      info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#<span class="stat-value rank-value"></span> ${player.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${player.id}</span>`;
+      li.appendChild(info);
+      const stats = document.createElement('div');
+      stats.className = 'badge';
+      stats.innerHTML = `<span class="stat-value"></span> cl`;
+      li.appendChild(stats);
+    }
+
+    const img = li.querySelector('img.profile-img');
     img.src = player.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-    const info = document.createElement('div');
-    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#${index + 1} ${player.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${player.id}</span>`;
-    const stats = document.createElement('div');
-    stats.className = 'badge';
-    stats.innerText = `${player.cl.toFixed(1)} cl`;
-    li.appendChild(img);
-    li.appendChild(info);
-    li.appendChild(stats);
+    const rankValue = li.querySelector('.rank-value');
+    applyStatUpdate(rankValue, String(index + 1));
+    const statValue = li.querySelector('.badge .stat-value');
+    applyStatUpdate(statValue, player.cl.toFixed(1));
+
     list.appendChild(li);
+    existingItems.delete(player.id);
   });
+
+  existingItems.forEach(item => item.remove());
+}
+
+async function buildEventOptions() {
+  const select = document.getElementById('eventSelect');
+  select.innerHTML = '';
+  const allEvents = await getAllPresetEvents();
+
+  const presetGroup = document.createElement('optgroup');
+  presetGroup.label = 'Events (Sverige)';
+
+  allEvents.forEach(evt => {
+    const opt = document.createElement('option');
+    opt.value = `preset:${evt.key}`;
+    opt.textContent = `${evt.name}`;
+    presetGroup.appendChild(opt);
+  });
+
+  select.appendChild(presetGroup);
+  if (select.options.length > 0) select.selectedIndex = 0;
 }
 
 async function renderSelectedEvent() {
@@ -306,12 +639,12 @@ async function renderSelectedEvent() {
   if (!value || !sb) return;
 
   let startMs, endMs, participantHashes = [];
-  let eventName, eventCity = '', eventHash = '';
+  let eventName, eventCity = '';
 
   if (value.startsWith('preset:')) {
-    const id = value.split(':')[1];
-    const year = new Date().getFullYear();
-    const evt = getPresetEvents(year).find(e => e.id === id);
+    const key = value.split(':')[1];
+    const allEvents = await getAllPresetEvents();
+    const evt = allEvents.find(e => e.key === key);
     if (!evt) return;
     eventName = evt.name;
     eventCity = evt.city;
@@ -323,22 +656,12 @@ async function renderSelectedEvent() {
       .gte('consumed_at', new Date(startMs).toISOString())
       .lte('consumed_at', new Date(endMs).toISOString());
     if (drinks) participantHashes = Array.from(new Set(drinks.map(d => d.player_hash)));
-    eventMeta.innerText = `${eventName} - ${eventCity} (${formatRange(new Date(startMs), new Date(endMs))})`;
-  } else {
-    const hash = value.split(':')[1];
-    const customEvents = await loadCustomEvents();
-    const evt = customEvents.find(e => e.hash === hash);
-    if (!evt) return;
-    eventName = evt.name;
-    eventHash = evt.hash;
-    startMs = new Date(evt.start).getTime();
-    endMs = new Date(evt.end).getTime();
-    participantHashes = evt.participants;
-    eventMeta.innerText = `${eventName} (${eventHash}) - ${formatRange(new Date(startMs), new Date(endMs))}`;
+    setStatusText(eventMeta, `${eventName} - ${eventCity} (${formatRange(new Date(startMs), new Date(endMs))})`, false);
   }
 
   if (participantHashes.length === 0) {
     renderLeaderboard([]);
+    await renderLiveTopFive();
     return;
   }
 
@@ -361,30 +684,38 @@ async function renderSelectedEvent() {
   });
 
   renderLeaderboard(entries);
+  await renderLiveTopFive();
 }
 
-async function renderLiveTopFive() {
+async function renderLiveTopFive(allowedHashes = null) {
   if (!sb) return;
   const list = document.getElementById('liveTopFive');
-  list.innerHTML = '';
-  
+
   const yesterdayISO = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { data: recentDrinks } = await sb.from('drink_logs').select('*').gte('consumed_at', yesterdayISO);
-  
+  let drinksQuery = sb.from('drink_logs').select('*').gte('consumed_at', yesterdayISO);
+  if (Array.isArray(allowedHashes) && allowedHashes.length > 0) {
+    drinksQuery = drinksQuery.in('player_hash', allowedHashes);
+  }
+  const { data: recentDrinks } = await drinksQuery;
+
   if (!recentDrinks || recentDrinks.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga aktiva promille att visa.</p>';
     return;
   }
-  
-  const activeHashes = Array.from(new Set(recentDrinks.map(d => d.player_hash)));
+
+  let activeHashes = Array.from(new Set(recentDrinks.map(d => d.player_hash)));
+  if (Array.isArray(allowedHashes) && allowedHashes.length > 0) {
+    const allowedSet = new Set(allowedHashes);
+    activeHashes = activeHashes.filter(hash => allowedSet.has(hash));
+  }
   const { data: profiles } = await sb.from('profiles').select('*').in('player_hash', activeHashes);
-  
-  if(!profiles) return;
-  
+
+  if (!profiles) return;
+
   const ranked = profiles.map(p => {
     const pDrinks = recentDrinks.filter(d => d.player_hash === p.player_hash).map(d => ({
-       timestamp: new Date(d.consumed_at).getTime(),
-       grams: d.grams_alcohol
+      timestamp: new Date(d.consumed_at).getTime(),
+      grams: d.grams_alcohol
     }));
     const profileObj = { id: p.player_hash, weight: p.weight, gender: p.gender };
     const promille = calculateBACAtTime(pDrinks, profileObj, Date.now());
@@ -392,95 +723,61 @@ async function renderLiveTopFive() {
       profile: { name: p.display_name, id: p.player_hash, pic: p.avatar_url },
       promille
     };
-  }).filter(r => r.promille > 0).sort((a,b) => b.promille - a.promille).slice(0, 5);
+  }).filter(r => r.promille > 0).sort((a, b) => b.promille - a.promille).slice(0, 5);
 
   if (ranked.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga aktiva promille att visa.</p>';
     return;
   }
-
+  const existingItems = new Map(Array.from(list.children).map(item => [item.dataset.playerId, item]));
   ranked.forEach((entry, index) => {
-    const li = document.createElement('li');
-    const img = document.createElement('img');
-    img.className = 'profile-img';
+    let li = existingItems.get(entry.profile.id);
+    if (!li) {
+      li = document.createElement('li');
+      li.dataset.playerId = entry.profile.id;
+      const img = document.createElement('img');
+      img.className = 'profile-img';
+      li.appendChild(img);
+      const info = document.createElement('div');
+      info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#<span class="stat-value rank-value"></span> ${entry.profile.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${entry.profile.id}</span>`;
+      li.appendChild(info);
+      const stats = document.createElement('div');
+      stats.className = 'badge';
+      stats.innerHTML = `<span class="stat-value"></span> ‰`;
+      li.appendChild(stats);
+    }
+
+    const img = li.querySelector('img.profile-img');
     img.src = entry.profile.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-    const info = document.createElement('div');
-    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#${index + 1} ${entry.profile.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${entry.profile.id}</span>`;
-    const stats = document.createElement('div');
-    stats.className = 'badge';
-    stats.innerText = `${entry.promille.toFixed(2)} ‰`;
-    li.appendChild(img);
-    li.appendChild(info);
-    li.appendChild(stats);
+    const rankValue = li.querySelector('.rank-value');
+    applyStatUpdate(rankValue, String(index + 1));
+    const statValue = li.querySelector('.badge .stat-value');
+    applyStatUpdate(statValue, entry.promille.toFixed(2));
+
     list.appendChild(li);
+    existingItems.delete(entry.profile.id);
   });
+
+  existingItems.forEach(item => item.remove());
 }
 
-async function createCustomEvent() {
-  const name = document.getElementById('customName').value.trim();
-  const startValue = document.getElementById('customStart').value;
-  const endValue = document.getElementById('customEnd').value;
-  if (!name || !startValue || !endValue || !sb) return;
-
-  const start = new Date(startValue);
-  const end = new Date(endValue);
-  if (end <= start) return;
-
-  const participantsInput = document.getElementById('customParticipants').value.trim();
-  const hashes = participantsInput ? participantsInput.split(',').map(h => h.trim()).filter(Boolean) : [];
-  
-  const activeProfile = getActiveProfile();
-  if (activeProfile) hashes.push(activeProfile.id);
-  const uniqueParticipants = Array.from(new Set(hashes));
-
-  const hash = generateUniqueHash(6);
-
-  const { data: eventData, error: eventErr } = await sb.from('events').insert({
-    hash: hash,
-    name: name,
-    start_time: start.toISOString(),
-    end_time: end.toISOString()
-  }).select('id').single();
-
-  if (eventData) {
-    const pInserts = uniqueParticipants.map(ph => ({ event_id: eventData.id, player_hash: ph }));
-    await sb.from('event_participants').insert(pInserts);
-  }
-
-  document.getElementById('customHashInfo').innerText = `Event hash: ${hash}`;
-  document.getElementById('customName').value = '';
-  document.getElementById('customStart').value = '';
-  document.getElementById('customEnd').value = '';
-  document.getElementById('customParticipants').value = '';
-  await buildEventOptions();
-}
-
-async function joinCustomEvent() {
-  const hash = document.getElementById('joinHash').value.trim();
-  if (!hash || !sb) return;
-  
-  const { data: evt } = await sb.from('events').select('id').eq('hash', hash).single();
-  if (!evt) {
-    alert('Hittade inte eventet.');
-    return;
-  }
-  
-  const activeProfile = getActiveProfile();
-  if (activeProfile) {
-    await sb.from('event_participants').upsert({ event_id: evt.id, player_hash: activeProfile.id }, { onConflict: 'event_id, player_hash' });
-  }
-  
-  document.getElementById('joinHash').value = '';
-  await buildEventOptions();
-}
-
-async function initEvents() {
+async function initLeaderboard() {
   await buildEventOptions();
   await renderSelectedEvent();
   await renderLiveTopFive();
 }
 
+async function initEvents() {
+  await loadMyCustomEvents();
+  await initLeaderboard();
+}
+
+function refreshPage() {
+  window.location.reload();
+}
+
 initEvents();
+setInterval(loadMyCustomEvents, CUSTOM_EVENT_REFRESH_MS);
 setInterval(renderLiveTopFive, 60000);
 </script>
 </body>

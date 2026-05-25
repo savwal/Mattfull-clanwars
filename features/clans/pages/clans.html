@@ -25,6 +25,8 @@ li:last-child { border-bottom: none; }
 .profile-img { width: 50px; height: 50px; border-radius: 0; object-fit: cover; border: 3px solid #2C3E50; background: #fff; }
 .member-info { flex: 1; margin-left: 15px; }
 .member-stats { text-align: right; color: #9B59B6; font-size: 1.2em; font-family: 'Arial Black'; }
+.stat-value { transition: opacity 2s ease; display: inline-block; }
+.stat-bump { opacity: 0.35; }
 .clan-shield { display: block; margin: 0 auto 15px auto; width: 100px; height: 110px; background: #9B59B6; border: 6px solid #2C3E50; border-radius: 10px 10px 50px 50px; box-shadow: inset -10px -10px 0px rgba(0,0,0,0.2), 6px 6px 0px #2C3E50; }
 .highlight-text { font-size: 1.5em; color: #E74C3C; font-family: 'Arial Black', sans-serif; text-shadow: 1px 1px 0px #2C3E50; }
 .hash-text { display: inline-block; background: #2C3E50; color: #FFF; padding: 5px 10px; font-family: monospace; font-size: 1.2em; margin: 10px 0; letter-spacing: 2px; }
@@ -110,8 +112,8 @@ li:last-child { border-bottom: none; }
     <h1 id="clanTitle" style="margin: 0 0 5px 0; color: #2C3E50; font-family: 'Arial Black'; text-transform: uppercase;"></h1>
     <div class="hash-text" id="clanHashDisplay"></div>
     <p style="margin: 10px 0 0 0; font-weight: bold;">Klanens Totala Poäng:</p>
-    <div class="highlight-text" id="clanTotalElo">0.00 ‰</div>
-    <button onclick="leaveClan()" style="background: #E74C3C; color: #FFF; margin-top: 20px; width: auto; font-size: 12px; padding: 10px;">Lämna Klan</button>
+    <div class="highlight-text stat-value" id="clanTotalElo">0.00 ‰</div>
+    <button onclick="refreshClanUI()" style="background: #2ECC71; color: #FFF; margin-top: 20px; width: auto; font-size: 12px; padding: 10px;">Uppdatera medlemmar</button>
   </div>
   <div class="card">
     <h2 style="background: #FFCC00; color: #2C3E50;">Medlemmar</h2>
@@ -124,8 +126,15 @@ li:last-child { border-bottom: none; }
   <div class="card">
     <h2 style="background: #2A8CFF;">Klan War</h2>
     <button onclick="openClanWarModal()">Starta Klan War</button>
-    <button onclick="refreshClanUI()" style="background: #2ECC71; color: white; margin-top: 10px; width: auto; font-size: 12px; padding: 10px;">Uppdatera medlemmar</button>
   </div>
+</div>
+<div class="card">
+  <h2 style="background: #9B59B6;">Klan Leaderboard</h2>
+  <ul id="clanLeaderboard"></ul>
+</div>
+<div class="card">
+  <h2 style="background: #E74C3C;">Lämna Klan</h2>
+  <button onclick="leaveClan()" style="background: #E74C3C; color: #FFF;">Lämna Klan</button>
 </div>
 <div id="clanWarModal" class="modal">
   <div class="modal-content card">
@@ -141,6 +150,33 @@ li:last-child { border-bottom: none; }
 <script>
 let myClanHash = localStorage.getItem('myClanHash') || null;
 const activeProfile = getActiveProfile();
+let clanChannel = null;
+let clanChannelHash = null;
+
+function applyStatUpdate(element, text) {
+  if (!element) return;
+  if (element.textContent === text) return;
+  element.classList.add('stat-bump');
+  setTimeout(() => {
+    element.textContent = text;
+    element.classList.remove('stat-bump');
+  }, 50);
+}
+
+function initClanRealtime() {
+  if (!sb || !myClanHash) return;
+  if (clanChannel && clanChannelHash === myClanHash) return;
+  if (clanChannel) {
+    sb.removeChannel(clanChannel);
+    clanChannel = null;
+  }
+  clanChannelHash = myClanHash;
+  clanChannel = sb.channel(`clan_members_${myClanHash}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'clan_members', filter: `clan_id=eq.${myClanHash}` }, () => {
+      updateClanUI();
+    })
+    .subscribe();
+}
 
 async function loadOngoingEvent() {
   if (!sb) return;
@@ -186,6 +222,12 @@ async function updateClanUI() {
   if (!myClanHash || !sb) {
     noClanView.style.display = 'block';
     hasClanView.style.display = 'none';
+    if (clanChannel) {
+      sb.removeChannel(clanChannel);
+      clanChannel = null;
+      clanChannelHash = null;
+    }
+    await renderClanLeaderboard();
     return;
   }
 
@@ -196,6 +238,7 @@ async function updateClanUI() {
     myClanHash = null;
     noClanView.style.display = 'block';
     hasClanView.style.display = 'none';
+    await renderClanLeaderboard();
     return;
   }
 
@@ -203,20 +246,29 @@ async function updateClanUI() {
   hasClanView.style.display = 'block';
   document.getElementById('clanTitle').innerText = clanData.name;
   document.getElementById('clanHashDisplay').innerText = myClanHash;
+  initClanRealtime();
 
   // Load ongoing event
   await loadOngoingEvent();
 
   const { data: membersData } = await sb.from('clan_members')
-    .select('role, profiles(player_hash, display_name, avatar_url)')
+    .select('role, player_hash')
     .eq('clan_id', myClanHash);
 
   let totalElo = 0;
   const list = document.getElementById('clanMembers');
-  list.innerHTML = '';
+  const existingItems = new Map(Array.from(list.children).map(item => [item.dataset.memberId, item]));
 
-  if (membersData) {
-    const memberHashes = membersData.map(m => m.profiles.player_hash);
+  if (membersData && membersData.length > 0) {
+    const memberHashes = membersData.map(m => m.player_hash);
+    const { data: profileRows } = await sb.from('profiles')
+      .select('player_hash, display_name, avatar_url')
+      .in('player_hash', memberHashes);
+    const profilesByHash = (profileRows || []).reduce((acc, profile) => {
+      acc[profile.player_hash] = profile;
+      return acc;
+    }, {});
+
     const { data: drinksData } = await sb.from('drink_logs')
       .select('player_hash, grams_alcohol')
       .in('player_hash', memberHashes);
@@ -229,11 +281,12 @@ async function updateClanUI() {
     }
 
     let membersList = membersData.map(m => {
-      let grams = memberScores[m.profiles.player_hash] || 0;
+      const profile = profilesByHash[m.player_hash];
+      let grams = memberScores[m.player_hash] || 0;
       return {
-        id: m.profiles.player_hash,
-        name: m.profiles.display_name,
-        pic: m.profiles.avatar_url,
+        id: m.player_hash,
+        name: profile && profile.display_name ? profile.display_name : m.player_hash,
+        pic: profile && profile.avatar_url ? profile.avatar_url : null,
         role: m.role,
         elo: calculateCl(grams)
       };
@@ -241,24 +294,115 @@ async function updateClanUI() {
 
     membersList.sort((a, b) => b.elo - a.elo).forEach(member => {
       totalElo += member.elo;
-      const li = document.createElement('li');
-      if (member.id === activeProfile.id) li.style.background = 'rgba(46, 204, 113, 0.1)';
-      const img = document.createElement('img');
-      img.className = 'profile-img';
+      let li = existingItems.get(member.id);
+      if (!li) {
+        li = document.createElement('li');
+        li.dataset.memberId = member.id;
+        const img = document.createElement('img');
+        img.className = 'profile-img';
+        li.appendChild(img);
+        const info = document.createElement('div');
+        info.className = 'member-info';
+        li.appendChild(info);
+        const stats = document.createElement('div');
+        stats.className = 'member-stats';
+        stats.innerHTML = `<span class="stat-value"></span> <span style="font-size:12px; color:#2C3E50;">cl</span>`;
+        li.appendChild(stats);
+      }
+
+      li.style.background = member.id === activeProfile.id ? 'rgba(46, 204, 113, 0.1)' : '';
+      const img = li.querySelector('img.profile-img');
       img.src = member.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-      const info = document.createElement('div');
-      info.className = 'member-info';
+      const info = li.querySelector('.member-info');
       info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${member.name}</span><br><span style="font-size:0.8em; color:#7f8c8d;">${member.role}</span>`;
-      const stats = document.createElement('div');
-      stats.className = 'member-stats';
-      stats.innerHTML = `${member.elo.toFixed(1)} <span style="font-size:12px; color:#2C3E50;">cl</span>`;
-      li.appendChild(img);
-      li.appendChild(info);
-      li.appendChild(stats);
+      const statValue = li.querySelector('.stat-value');
+      applyStatUpdate(statValue, member.elo.toFixed(1));
+
       list.appendChild(li);
+      existingItems.delete(member.id);
     });
   }
-  document.getElementById('clanTotalElo').innerText = totalElo.toFixed(1) + " cl";
+  const totalEl = document.getElementById('clanTotalElo');
+  applyStatUpdate(totalEl, `${totalElo.toFixed(1)} cl`);
+  await renderClanLeaderboard();
+
+  existingItems.forEach(item => item.remove());
+}
+
+async function renderClanLeaderboard() {
+  const list = document.getElementById('clanLeaderboard');
+  if (!list) return;
+  const existingItems = new Map(Array.from(list.children).map(item => [item.dataset.clanId, item]));
+  if (!sb) {
+    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Ingen data att visa.</p>';
+    return;
+  }
+
+  const { data: clans } = await sb.from('clans').select('id, name');
+  if (!clans || clans.length === 0) {
+    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga klaner att visa.</p>';
+    return;
+  }
+
+  const { data: members } = await sb.from('clan_members').select('clan_id, player_hash');
+  if (!members || members.length === 0) {
+    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga klaner att visa.</p>';
+    return;
+  }
+
+  const memberHashes = Array.from(new Set(members.map(m => m.player_hash)));
+  const { data: drinks } = await sb.from('drink_logs')
+    .select('player_hash, grams_alcohol')
+    .in('player_hash', memberHashes);
+
+  const gramsByPlayer = {};
+  (drinks || []).forEach(d => {
+    gramsByPlayer[d.player_hash] = (gramsByPlayer[d.player_hash] || 0) + (d.grams_alcohol || 0);
+  });
+
+  const gramsByClan = {};
+  members.forEach(m => {
+    const grams = gramsByPlayer[m.player_hash] || 0;
+    gramsByClan[m.clan_id] = (gramsByClan[m.clan_id] || 0) + grams;
+  });
+
+  const ranked = clans.map(clan => ({
+    id: clan.id,
+    name: clan.name,
+    cl: calculateCl(gramsByClan[clan.id] || 0)
+  }))
+    .sort((a, b) => b.cl - a.cl)
+    .slice(0, 10);
+
+  if (ranked.length === 0) {
+    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga klaner att visa.</p>';
+    return;
+  }
+
+  ranked.forEach((clan, index) => {
+    let li = existingItems.get(clan.id);
+    if (!li) {
+      li = document.createElement('li');
+      li.dataset.clanId = clan.id;
+      const info = document.createElement('div');
+      info.className = 'member-info';
+      li.appendChild(info);
+      const stats = document.createElement('div');
+      stats.className = 'member-stats';
+      stats.innerHTML = `<span class="stat-value"></span> <span style="font-size:12px; color:#2C3E50;">cl</span>`;
+      li.appendChild(stats);
+    }
+
+    const info = li.querySelector('.member-info');
+    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#${index + 1} ${clan.name}</span><br><span style="font-size:0.8em; color:#7f8c8d;">${clan.id}</span>`;
+    const statValue = li.querySelector('.stat-value');
+    applyStatUpdate(statValue, clan.cl.toFixed(1));
+
+    list.appendChild(li);
+    existingItems.delete(clan.id);
+  });
+
+  existingItems.forEach(item => item.remove());
 }
 
 function refreshClanUI() {
@@ -269,9 +413,12 @@ async function createClan() {
   const name = document.getElementById('newClanName').value;
   if (!name || !sb) return;
   const newHash = generateUniqueHash();
-  
+ 
+  if (activeProfile) {
+    await syncProfileToSupabase(activeProfile);
+  }
   await sb.from('clans').insert({ id: newHash, name: name });
-  await sb.from('clan_members').insert({ clan_id: newHash, player_hash: activeProfile.id, role: 'Ledare' });
+  await sb.from('clan_members').upsert({ clan_id: newHash, player_hash: activeProfile.id, role: 'Ledare' });
   
   localStorage.setItem('myClanHash', newHash);
   myClanHash = newHash;
@@ -284,10 +431,14 @@ async function joinClan() {
   
   const { data: clanData } = await sb.from('clans').select('id').eq('id', hash).single();
   if (clanData) {
+    if (activeProfile) {
+      await syncProfileToSupabase(activeProfile);
+    }
     await sb.from('clan_members').upsert({ clan_id: hash, player_hash: activeProfile.id, role: 'Medlem' });
     localStorage.setItem('myClanHash', hash);
     myClanHash = hash;
     updateClanUI();
+    initClanRealtime();
   } else {
     alert('Klanen hittades inte!');
   }

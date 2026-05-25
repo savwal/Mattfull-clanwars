@@ -377,33 +377,51 @@ async function renderActiveBattles() {
   }
 }
 
+function buildDrinkHistory(drinkLogs) {
+  return (drinkLogs || []).map(d => {
+    const grams = Number.isFinite(d.grams_alcohol)
+      ? d.grams_alcohol
+      : parseFloat((d.volume_ml * (d.abv / 100) * 0.789).toFixed(1));
+    return {
+      name: d.drink_name,
+      volume: d.volume_ml,
+      abv: d.abv,
+      grams,
+      timestamp: new Date(d.consumed_at).getTime()
+    };
+  });
+}
+
 async function renderOpponentGraphData(canvasId, statsId, opponentHash, opponentProfile, battle) {
   try {
-    // Fetch opponent's drink logs during the battle period
-    const { data: drinkLogs } = await sb.from('drink_logs')
-      .select('*')
+    const { data: battleLogs } = await sb.from('drink_logs')
+      .select('drink_name, volume_ml, abv, grams_alcohol, consumed_at')
       .eq('player_hash', opponentHash)
       .gte('consumed_at', battle.start_time)
       .lte('consumed_at', battle.end_time)
       .order('consumed_at', { ascending: true });
-    
-    if (!drinkLogs || drinkLogs.length === 0) {
+
+    let history = buildDrinkHistory(battleLogs);
+
+    if (!history || history.length === 0) {
+      const { data: latestLog } = await sb.from('drink_logs')
+        .select('drink_name, volume_ml, abv, grams_alcohol, consumed_at')
+        .eq('player_hash', opponentHash)
+        .order('consumed_at', { ascending: false })
+        .limit(1);
+      history = buildDrinkHistory(latestLog);
+    }
+
+    if (!history || history.length === 0) {
       document.getElementById(statsId).innerHTML = '<p style="color:#7f8c8d;">Ingen dryckdata</p>';
       return false;
     }
     
-    // Convert database format to app format
-    const history = drinkLogs.map(d => ({
-      name: d.drink_name,
-      volume: d.volume_ml,
-      abv: d.abv,
-      grams: d.grams_alcohol,
-      timestamp: new Date(d.consumed_at)
-    }));
-    
     // Create time points for graph (every 30 minutes from start to now/end)
-    const startTime = new Date(battle.start_time);
-    const endTime = Math.min(new Date(battle.end_time), new Date());
+    const startTime = new Date(history[0].timestamp);
+    const endTime = battleLogs && battleLogs.length > 0
+      ? Math.min(new Date(battle.end_time), new Date())
+      : new Date();
     const labels = [];
     const dataPoints = [];
     
@@ -425,12 +443,16 @@ async function renderOpponentGraphData(canvasId, statsId, opponentHash, opponent
     // Display stats
     const totalGrams = history.reduce((sum, d) => sum + d.grams, 0);
     const maxBac = Math.max(...dataPoints);
+    const currentBac = calculateBACAtTime(history, opponentProfile, Date.now());
+    const lastDrink = history[history.length - 1];
     document.getElementById(statsId).innerHTML = `
       <p style="margin:3px 0;"><strong>Vikt:</strong> ${opponentProfile.weight} kg</p>
       <p style="margin:3px 0;"><strong>Kön:</strong> ${opponentProfile.gender === 'kvinna' ? 'Kvinna' : 'Man'}</p>
       <p style="margin:3px 0;"><strong>Funzone:</strong> ${opponentZones.redMax.toFixed(1)} ‰</p>
       <p style="margin:3px 0;"><strong>Total:</strong> ${totalGrams.toFixed(1)} g (${calculateCl(totalGrams).toFixed(1)} cl)</p>
       <p style="margin:3px 0;"><strong>Max promille:</strong> ${maxBac.toFixed(2)} ‰</p>
+      <p style="margin:3px 0;"><strong>Nuvarande promille:</strong> ${currentBac.toFixed(2)} ‰</p>
+      <p style="margin:3px 0;"><strong>Senaste dryck:</strong> ${lastDrink.name} (${lastDrink.volume} ml, ${lastDrink.abv}% abv)</p>
     `;
     
     // Render the chart

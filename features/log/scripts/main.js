@@ -3,6 +3,36 @@ let lastZoneName = null;
 let toastTimer = null;
 let lastNonZeroTime = Date.now();
 let graphResetCheckInterval = null;
+const ZERO_BAC_THRESHOLD = 0.005;
+const MAX_ABV = 100;
+const MAX_VOLUME = 1000;
+
+function getLastNonZeroKey(profileId) {
+  return `lastNonZeroTime_${profileId}`;
+}
+
+function getStoredLastNonZeroTime(profileId) {
+  if (!profileId) return null;
+  const value = localStorage.getItem(getLastNonZeroKey(profileId));
+  const parsed = value ? Number(value) : NaN;
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function setStoredLastNonZeroTime(profileId, value) {
+  if (!profileId) return;
+  localStorage.setItem(getLastNonZeroKey(profileId), String(value));
+}
+
+function validateDrinkInput(name, volume, abv) {
+  if (!name) return { ok: false, message: 'Välj en dryckstyp.' };
+  if (!Number.isFinite(volume) || volume <= 0 || volume > MAX_VOLUME) {
+    return { ok: false, message: 'Sluta ljug' };
+  }
+  if (!Number.isFinite(abv) || abv < 0 || abv > MAX_ABV) {
+    return { ok: false, message: 'Sluta ljug' };
+  }
+  return { ok: true };
+}
 
 function getZoneName(bac, zones) {
   if (bac <= zones.legalMax) return 'Tiger Woods zone';
@@ -22,6 +52,7 @@ function showZoneToast(message) {
   const toast = document.getElementById('zoneToast');
   if (!toast) return;
   toast.textContent = message;
+  toast.classList.toggle('error', message === 'Sluta ljug');
   toast.classList.add('show');
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
@@ -31,7 +62,21 @@ function showZoneToast(message) {
 
 document.addEventListener("DOMContentLoaded", () => {
   historyData = getDrinkHistory();
-  lastNonZeroTime = Date.now();
+  const profile = getActiveProfile();
+  const storedLastNonZero = profile ? getStoredLastNonZeroTime(profile.id) : null;
+  if (storedLastNonZero) {
+    lastNonZeroTime = storedLastNonZero;
+  } else if (profile && historyData.length > 0) {
+    const currentBAC = calculateBACAtTime(historyData, profile, Date.now());
+    if (currentBAC <= ZERO_BAC_THRESHOLD) {
+      lastNonZeroTime = historyData[historyData.length - 1].timestamp;
+    } else {
+      lastNonZeroTime = Date.now();
+    }
+    setStoredLastNonZeroTime(profile.id, lastNonZeroTime);
+  } else {
+    lastNonZeroTime = Date.now();
+  }
   const quickAddBubble = document.querySelector('.quick-add-bubble');
   if (quickAddBubble) {
     let ticking = false;
@@ -61,7 +106,11 @@ function addDrink() {
   const name = document.getElementById('name').value;
   const volume = parseFloat(document.getElementById('volume').value);
   const abv = parseFloat(document.getElementById('abv').value);
-  if (!name || isNaN(volume) || isNaN(abv)) return;
+  const validation = validateDrinkInput(name, volume, abv);
+  if (!validation.ok) {
+    showZoneToast(validation.message);
+    return;
+  }
   const grams = parseFloat((volume * (abv / 100) * 0.789).toFixed(1));
   saveEntry(name, volume, abv, grams);
 }
@@ -81,6 +130,10 @@ function ulta() {
 }
 
 function saveEntry(name, volume, abv, grams) {
+  if (volume > MAX_VOLUME || abv > MAX_ABV) {
+    showZoneToast('Ogiltig volym eller alkoholhalt.');
+    return;
+  }
   const now = new Date();
   const time = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
   historyData.push({ name, volume, abv, grams, time, timestamp: now.getTime() });
@@ -191,17 +244,25 @@ function checkGraphReset() {
   if (!profile) return;
   
   const currentBAC = calculateBACAtTime(historyData, profile, Date.now());
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+  const lastResetKey = `lastGraphReset_${profile.id}`;
+  const lastResetDate = localStorage.getItem(lastResetKey);
+  const today = now.toISOString().split('T')[0]; // YYYY-MM-DD format
   
   // If current BAC is above 0.00, update lastNonZeroTime
-  if (currentBAC > 0.01) {
+  if (currentBAC > ZERO_BAC_THRESHOLD) {
     lastNonZeroTime = Date.now();
+    setStoredLastNonZeroTime(profile.id, lastNonZeroTime);
   }
-  // If BAC is 0.00 and 2 hours have passed since last non-zero reading
-  else if (currentBAC <= 0.01 && (Date.now() - lastNonZeroTime) >= (2 * 60 * 60 * 1000)) {
-    // Reset graph - clear history
-    historyData = [];
-    saveDrinkHistory(historyData);
-    showZoneToast('Graf återställd efter 2 timmar med 0.00 promille!');
+  // Daily reset at 11:00 AM if BAC is 0.00 and hasn't reset today
+  else if (currentBAC <= ZERO_BAC_THRESHOLD && currentHour === 11 && lastResetDate !== today) {
+    // Reset the graph display by resetting lastNonZeroTime
+    lastNonZeroTime = Date.now();
+    setStoredLastNonZeroTime(profile.id, lastNonZeroTime);
+    localStorage.setItem(lastResetKey, today);
+    showZoneToast('Blodflödegraf återställd på 11:00 AM!');
     updateUI();
   }
 }
