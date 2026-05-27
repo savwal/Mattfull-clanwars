@@ -439,6 +439,9 @@ async function createClan() {
   const name = document.getElementById('newClanName').value;
   if (!name || !sb || !activeProfile) return;
   const newHash = generateUniqueHash();
+  if (typeof ensureSupabaseAuth === 'function') {
+    await ensureSupabaseAuth();
+  }
  
   await syncProfileToSupabase(activeProfile);
   
@@ -447,7 +450,9 @@ async function createClan() {
   
   localStorage.setItem('myClanHash', newHash);
   myClanHash = newHash;
-  updateClanUI();
+  document.getElementById('newClanName').value = '';
+  await updateClanUI();
+  initClanRealtime();
 }
 
 async function joinClan() {

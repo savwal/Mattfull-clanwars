@@ -100,14 +100,6 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   <div class="hash-text" id="myHashDisplay"></div>
 </div>
 <div class="card">
-  <h2>Öppna profil via hash</h2>
-  <div class="hash-actions">
-    <input type="text" id="hashLookup" placeholder="Klistra in hash">
-    <button onclick="openProfileByHash()" style="width: auto;">Öppna</button>
-  </div>
-  <p id="hashLookupStatus" style="font-weight: 900; color:#2C3E50;"></p>
-</div>
-<div class="card">
   <h2>Profil</h2>
   <div class="profile-pic-container">
     <img id="picPreview" src="">
@@ -115,7 +107,7 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
     <input type="file" id="picInput" class="file-input" accept="image/*">
   </div>
   <input type="text" id="profileName" placeholder="Namn">
-  <input type="number" id="profileWeight" placeholder="Vikt (kg)">
+  <input type="number" id="profileWeight" placeholder="Vikt (kg)" min="1">
   <select id="profileGender">
     <option value="man">Man</option>
     <option value="kvinna">Kvinna</option>
@@ -179,7 +171,12 @@ document.getElementById('picInput').addEventListener('change', function(e) {
 });
 function saveCurrentProfile() {
   currentProfile.name = document.getElementById('profileName').value;
-  currentProfile.weight = parseFloat(document.getElementById('profileWeight').value);
+  const weightValue = parseFloat(document.getElementById('profileWeight').value);
+  if (!Number.isFinite(weightValue) || weightValue <= 0) {
+    alert('Vikten måste vara positiv.');
+    return;
+  }
+  currentProfile.weight = weightValue;
   currentProfile.gender = document.getElementById('profileGender').value;
   currentProfile.funzone = parseFloat(document.getElementById('profileFunzone').value);
   saveProfile(currentProfile);
@@ -222,50 +219,6 @@ function renderHistory24h() {
     li.innerHTML = `<div><strong>${time}</strong>: ${item.name}<br><span style="color:#2C3E50;">${item.grams > 0 ? '+' : ''}${item.grams.toFixed(1)}g alkohol</span></div>`;
     list.appendChild(li);
   });
-}
-async function openProfileByHash() {
-  const hash = document.getElementById('hashLookup').value.trim();
-  const status = document.getElementById('hashLookupStatus');
-  if (!hash) return;
-
-  function setStatusText(message, isError) {
-    status.textContent = message;
-    status.classList.toggle('error-text', Boolean(isError));
-  }
-
-  status.classList.remove('error-text');
-  setStatusText('Söker...', false);
-  
-  // Check local profiles first
-  const profiles = getProfiles();
-  let target = profiles.find(p => p.id === hash);
-  
-  if (!target) {
-    const globalData = getGlobalData();
-    target = globalData.persons[hash];
-    if (target) {
-      saveProfile(target);
-    }
-  }
-  
-  // If not found locally, try to fetch from Supabase
-  if (!target && sb) {
-    target = await fetchProfileFromSupabase(hash);
-    if (target) {
-      // Save fetched profile locally for future use
-      saveProfile(target);
-    }
-  }
-  
-  if (target) {
-    switchProfile(target.id);
-    currentProfile = getActiveProfile();
-    renderProfileSelect();
-    populateForm();
-    setStatusText(`Öppnade profil: ${target.name}`, false);
-  } else {
-    setStatusText('Hittade ingen profil med den hashen.', true);
-  }
 }
 renderProfileSelect();
 populateForm();

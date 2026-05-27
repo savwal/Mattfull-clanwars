@@ -163,6 +163,49 @@ function parseDateInput(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function getLocalCustomEvents(profileId) {
+  if (!profileId) return [];
+  try {
+    const all = JSON.parse(localStorage.getItem(LOCAL_CUSTOM_EVENTS_KEY)) || {};
+    return Array.isArray(all[profileId]) ? all[profileId] : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveLocalCustomEvents(profileId, events) {
+  if (!profileId) return;
+  const safeEvents = Array.isArray(events) ? events : [];
+  let all = {};
+  try {
+    all = JSON.parse(localStorage.getItem(LOCAL_CUSTOM_EVENTS_KEY)) || {};
+  } catch (error) {
+    all = {};
+  }
+  all[profileId] = safeEvents;
+  localStorage.setItem(LOCAL_CUSTOM_EVENTS_KEY, JSON.stringify(all));
+}
+
+function upsertLocalCustomEvent(profileId, event) {
+  if (!profileId || !event) return [];
+  const events = getLocalCustomEvents(profileId);
+  const index = events.findIndex(item => item.event_id === event.event_id);
+  if (index >= 0) {
+    events[index] = { ...events[index], ...event };
+  } else {
+    events.push(event);
+  }
+  saveLocalCustomEvents(profileId, events);
+  return events;
+}
+
+function removeLocalCustomEvent(profileId, eventId) {
+  if (!profileId || !eventId) return [];
+  const events = getLocalCustomEvents(profileId).filter(evt => evt.event_id !== eventId);
+  saveLocalCustomEvents(profileId, events);
+  return events;
+}
+
 function setStatusText(element, message, isError) {
   if (!element) return;
   element.textContent = message;
@@ -252,9 +295,16 @@ async function loadMyCustomEvents() {
     renderMyCustomEvents([]);
     return [];
   }
-  const events = await fetchCustomEventsForUser(activeProfile.id);
-  renderMyCustomEvents(events);
-  return events;
+  const localEvents = getLocalCustomEvents(activeProfile.id);
+  const remoteEvents = await fetchCustomEventsForUser(activeProfile.id);
+  const remoteIds = new Set((remoteEvents || []).map(evt => evt.event_id));
+  const localOnly = (localEvents || []).filter(evt => !remoteIds.has(evt.event_id));
+  if (localOnly.length !== localEvents.length) {
+    saveLocalCustomEvents(activeProfile.id, localOnly);
+  }
+  const combined = [...localOnly, ...(remoteEvents || [])];
+  renderMyCustomEvents(combined);
+  return combined;
 }
 
 function openCustomEventPage(eventId) {

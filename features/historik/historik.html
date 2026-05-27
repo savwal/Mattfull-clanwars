@@ -169,24 +169,40 @@ function loadAllLogs() {
     return;
   }
 
+  const listContainer = document.getElementById('allLogsHistory');
+  const noLogsMessage = document.getElementById('noLogsMessage');
+
+  function renderLocalArchive() {
+    const archived = getArchivedDrinkHistory(profile.id) || [];
+    listContainer.innerHTML = '';
+    if (!archived || archived.length === 0) {
+      noLogsMessage.style.display = 'block';
+      return;
+    }
+    noLogsMessage.style.display = 'none';
+    archived.slice().reverse().forEach(item => {
+      const li = document.createElement('li');
+      const clValue = calculateCl(item.grams);
+      const timestamp = new Date(item.timestamp);
+      const dateLabel = timestamp.toLocaleDateString();
+      const timeLabel = timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      li.innerHTML = `<div><strong>${dateLabel} ${timeLabel}</strong></div><div>${clValue > 0 ? '+' : ''}${clValue.toFixed(1)}cl</div>`;
+      listContainer.appendChild(li);
+    });
+  }
+
   if (sb) {
     sb.from('drink_logs')
       .select('*')
       .eq('player_hash', profile.id)
       .order('consumed_at', { ascending: false })
       .then(({ data, error }) => {
-        const listContainer = document.getElementById('allLogsHistory');
-        const noLogsMessage = document.getElementById('noLogsMessage');
-        
         listContainer.innerHTML = '';
-        
         if (error || !data || data.length === 0) {
-          noLogsMessage.style.display = 'block';
+          renderLocalArchive();
           return;
         }
-        
         noLogsMessage.style.display = 'none';
-        
         data.forEach(item => {
           const li = document.createElement('li');
           const grams = Number.isFinite(item.grams_alcohol)
@@ -201,7 +217,7 @@ function loadAllLogs() {
         });
       });
   } else {
-    document.getElementById('noLogsMessage').style.display = 'block';
+    renderLocalArchive();
   }
 }
 

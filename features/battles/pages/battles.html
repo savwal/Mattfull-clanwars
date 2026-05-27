@@ -200,6 +200,17 @@ function closeBattleModal() {
   document.getElementById('battleModal').style.display = 'none';
 }
 
+async function syncProfileToSupabase(profile) {
+  if (!sb || !profile) return;
+  await sb.from('profiles').upsert({
+    player_hash: profile.id,
+    display_name: profile.name,
+    avatar_url: profile.pic,
+    weight: profile.weight || null,
+    gender: profile.gender || null
+  });
+}
+
 async function startBattle() {
   if (typeof ensureSupabaseAuth === 'function') {
     await ensureSupabaseAuth();
@@ -217,18 +228,29 @@ async function startBattle() {
   const now = new Date();
   const endTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-  let participants = [activeProfile.id];
+  let rawParticipants = [activeProfile.id];
 
   if (currentMode === 'Duos Battle') {
     const teammateHash = document.getElementById('teammateHash').value.trim();
     const opponentHash1 = document.getElementById('opponentHash1').value.trim();
     const opponentHash2 = document.getElementById('opponentHash2').value.trim();
     if (!teammateHash || !opponentHash1 || !opponentHash2) return;
-    participants.push(teammateHash, opponentHash1, opponentHash2);
+    rawParticipants.push(teammateHash, opponentHash1, opponentHash2);
   } else if (currentMode === 'Solo Battle') {
     const opponentHash = document.getElementById('opponentHash').value.trim();
     if (!opponentHash) return;
-    participants.push(opponentHash);
+    rawParticipants.push(opponentHash);
+  }
+
+  const participants = Array.from(new Set(rawParticipants));
+
+  if (currentMode === 'Solo Battle' && participants.length !== 2) {
+    alert("Du kan inte utmana dig själv!");
+    return;
+  }
+  if (currentMode === 'Duos Battle' && participants.length !== 4) {
+    alert("Alla hashkoder måste vara unika!");
+    return;
   }
 
   participants = Array.from(new Set(participants));
@@ -244,6 +266,8 @@ async function startBattle() {
     }));
     await sb.from('profiles').upsert(newProfiles);
   }
+
+  await syncProfileToSupabase(activeProfile);
 
   const { data: newBattle, error } = await sb.from('battles').insert({
     battle_type: currentMode,
@@ -262,7 +286,6 @@ async function startBattle() {
     closeBattleModal();
     await fetchActiveBattles();
   } else if (error) {
-    console.error(error);
     alert("Ett fel inträffade.");
   }
 }
