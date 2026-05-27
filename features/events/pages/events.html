@@ -225,15 +225,21 @@ async function syncProfileToSupabase(profile) {
 
 async function fetchCustomEventsForUser(userId) {
   if (!userId || !sb) return [];
-  
-  const { data } = await sb.from('custom_event_participants')
-    .select('event_id, custom_events(event_id, event_name, created_at, starts_at, ends_at)')
-    .eq('user_id', userId);
+
+  const { data } = await sb.from('event_participants')
+    .select('event_id, events(id, name, created_at, start_time, end_time)')
+    .eq('player_hash', userId);
 
   const eventMap = new Map();
   (data || []).forEach(row => {
-    if (row.custom_events && row.custom_events.event_id) {
-      eventMap.set(row.custom_events.event_id, row.custom_events);
+    if (row.events && row.events.id) {
+      eventMap.set(row.events.id, {
+        event_id: row.events.id,
+        event_name: row.events.name,
+        created_at: row.events.created_at,
+        starts_at: row.events.start_time,
+        ends_at: row.events.end_time
+      });
     }
   });
 
@@ -242,12 +248,18 @@ async function fetchCustomEventsForUser(userId) {
 
 async function fetchCustomEvent(eventId) {
   if (!eventId || !sb) return null;
-  const { data, error } = await sb.from('custom_events')
-    .select('event_id, event_name, created_at, starts_at, ends_at')
-    .eq('event_id', eventId)
+  const { data, error } = await sb.from('events')
+    .select('id, name, created_at, start_time, end_time')
+    .eq('id', eventId)
     .single();
-  if (!error && data) return data;
-  return null;
+  if (error || !data) return null;
+  return {
+    event_id: data.id,
+    event_name: data.name,
+    created_at: data.created_at,
+    starts_at: data.start_time,
+    ends_at: data.end_time
+  };
 }
 
 function formatCustomRange(startsAt, endsAt) {
@@ -344,21 +356,18 @@ async function createCustomEvent() {
 
   await syncProfileToSupabase(activeProfile);
 
-  const { error: eventError } = await sb.from('custom_events').insert({
-    event_id: eventId,
-    event_name: name,
+  const { error: eventError } = await sb.from('events').insert({
+    id: eventId,
+    name: name,
     created_at: createdAt,
-    starts_at: toIsoOrNull(startDate),
-    ends_at: toIsoOrNull(endDate)
+    start_time: startDate.toISOString(),
+    end_time: endDate.toISOString()
   });
 
   if (!eventError) {
-    await sb.from('custom_event_participants').insert({
+    await sb.from('event_participants').insert({
       event_id: eventId,
-      user_id: activeProfile.id,
-      name: activeProfile.name,
-      hash: activeProfile.id,
-      promille: 0
+      player_hash: activeProfile.id
     });
   } else {
     setStatusText(info, 'Kunde inte skapa event.', true);
@@ -389,10 +398,10 @@ async function joinCustomEvent() {
     return;
   }
 
-  const { data: existing } = await sb.from('custom_event_participants')
+  const { data: existing } = await sb.from('event_participants')
     .select('event_id')
     .eq('event_id', hash)
-    .eq('user_id', activeProfile.id)
+    .eq('player_hash', activeProfile.id)
     .limit(1);
 
   if (existing && existing.length > 0) {
@@ -402,12 +411,9 @@ async function joinCustomEvent() {
 
   await syncProfileToSupabase(activeProfile);
 
-  await sb.from('custom_event_participants').insert({
+  await sb.from('event_participants').insert({
     event_id: hash,
-    user_id: activeProfile.id,
-    name: activeProfile.name,
-    hash: activeProfile.id,
-    promille: 0
+    player_hash: activeProfile.id
   });
 
   setStatusText(status, 'Du gick med i eventet!', false);

@@ -166,6 +166,16 @@ let realtimeChannel = null;
 function openBattleModal(title) {
   currentMode = title;
   document.getElementById('modalTitle').innerText = title;
+  const startButton = document.querySelector('#battleModal button[onclick="startBattle()"]');
+  if (startButton) {
+    if (title === 'Solo Battle') {
+      startButton.textContent = 'Starta single battle';
+    } else if (title === 'Duos Battle') {
+      startButton.textContent = 'Starta duos battle';
+    } else {
+      startButton.textContent = 'Starta';
+    }
+  }
   renderBattleFields(title);
   document.getElementById('battleModal').style.display = 'block';
 }
@@ -229,6 +239,8 @@ async function startBattle() {
   const endTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
   let rawParticipants = [activeProfile.id];
+  let opponentHash = null;
+  let duosTargets = null;
 
   if (currentMode === 'Duos Battle') {
     const teammateHash = document.getElementById('teammateHash').value.trim();
@@ -236,8 +248,9 @@ async function startBattle() {
     const opponentHash2 = document.getElementById('opponentHash2').value.trim();
     if (!teammateHash || !opponentHash1 || !opponentHash2) return;
     rawParticipants.push(teammateHash, opponentHash1, opponentHash2);
+    duosTargets = { teammateHash, opponentHash1, opponentHash2 };
   } else if (currentMode === 'Solo Battle') {
-    const opponentHash = document.getElementById('opponentHash').value.trim();
+    opponentHash = document.getElementById('opponentHash').value.trim();
     if (!opponentHash) return;
     rawParticipants.push(opponentHash);
   }
@@ -252,8 +265,6 @@ async function startBattle() {
     alert("Alla hashkoder måste vara unika!");
     return;
   }
-
-  participants = Array.from(new Set(participants));
 
   const { data: validProfiles } = await sb.from('profiles').select('player_hash').in('player_hash', participants);
   const validHashes = validProfiles ? validProfiles.map(p => p.player_hash) : [];
@@ -285,6 +296,13 @@ async function startBattle() {
     await sb.from('battle_participants').insert(pInserts);
     closeBattleModal();
     await fetchActiveBattles();
+    if (currentMode === 'Solo Battle' && opponentHash) {
+      window.location.href = `./single_battle.html?hash=${encodeURIComponent(opponentHash)}`;
+    }
+    if (currentMode === 'Duos Battle' && duosTargets) {
+      const { teammateHash, opponentHash1, opponentHash2 } = duosTargets;
+      window.location.href = `./duos_battle.html?teammate=${encodeURIComponent(teammateHash)}&opponent1=${encodeURIComponent(opponentHash1)}&opponent2=${encodeURIComponent(opponentHash2)}`;
+    }
   } else if (error) {
     alert("Ett fel inträffade.");
   }
@@ -425,6 +443,7 @@ function buildDrinkHistory(drinkLogs) {
     };
   });
 }
+
 
 async function renderOpponentGraphData(canvasId, statsId, opponentHash, opponentProfile, battle) {
   try {

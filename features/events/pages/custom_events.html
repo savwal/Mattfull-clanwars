@@ -25,6 +25,24 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 .error-text { color: #E74C3C !important; font-weight: 700; }
 .leaderboard-info { margin-left: 10px; }
 .event-meta { font-weight: 900; color: #2C3E50; }
+#eventLeaderboard li { justify-content: flex-start; gap: 10px; }
+#eventLeaderboard .badge { margin-left: auto; }
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  border: 3px solid #2C3E50;
+  background: #FFF;
+  color: #2C3E50;
+  font-weight: 900;
+  box-shadow: 2px 2px 0px #2C3E50;
+}
+#eventParticipants li { justify-content: flex-start; }
+#eventParticipants .leaderboard-info { text-align: left; }
+#eventParticipants .profile-img { margin-right: 10px; }
 </style>
 <link rel="stylesheet" href="../../shared/styles/nav.css">
 </head>
@@ -189,15 +207,19 @@ function renderLeaderboard(entries) {
   }
   entries.forEach((player, index) => {
     const li = document.createElement('li');
+    const rank = document.createElement('span');
+    rank.className = 'rank-badge';
+    rank.textContent = `#${index + 1}`;
     const img = document.createElement('img');
     img.className = 'profile-img';
     img.src = player.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
     const info = document.createElement('div');
     info.className = 'leaderboard-info';
-    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#${index + 1} ${player.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${player.id}</span>`;
+    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${player.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${player.id}</span>`;
     const stats = document.createElement('div');
     stats.className = 'badge';
     stats.innerText = `${player.promille.toFixed(2)} ‰`;
+    li.appendChild(rank);
     li.appendChild(img);
     li.appendChild(info);
     li.appendChild(stats);
@@ -279,16 +301,16 @@ async function loadCustomEventLeaderboard() {
 
   const entries = participants.map(p => {
     const profile = profileMap[p.hash];
-    if (!profile || !profile.weight || !profile.gender) return null;
     const history = historyByHash[p.hash] || [];
-    const promilleValue = calculateBACAtTime(history, profile, Date.now());
+    const hasStats = profile && profile.weight && profile.gender;
+    const promilleValue = hasStats ? calculateBACAtTime(history, profile, Date.now()) : 0;
     return {
       id: p.hash,
-      name: profile.name,
-      pic: profile.pic,
+      name: profile ? profile.name : p.hash,
+      pic: profile ? profile.pic : null,
       promille: promilleValue
     };
-  }).filter(entry => entry && entry.promille > 0).sort((a, b) => b.promille - a.promille).slice(0, 5);
+  }).sort((a, b) => b.promille - a.promille);
 
   renderLeaderboard(entries);
   renderParticipants(participants, profileMap);
