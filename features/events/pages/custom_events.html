@@ -23,6 +23,7 @@ li:last-child { border-bottom: none; }
 button { padding: 14px 20px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; border-radius: 0; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
 button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
 .error-text { color: #E74C3C !important; font-weight: 700; }
+.leaderboard-info { margin-left: 10px; }
 .event-meta { font-weight: 900; color: #2C3E50; }
 </style>
 <link rel="stylesheet" href="../../shared/styles/nav.css">
@@ -91,7 +92,7 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 </nav>
 
 <div class="card">
-  <h2 id="eventTitle">Custom Event</h2>
+  <h2 id="eventTitle">Laddar event...</h2>
   <p id="eventMeta" class="event-meta"></p>
   <button onclick="window.location.href='./events.html'" style="width:auto;">Tillbaka</button>
 </div>
@@ -134,21 +135,31 @@ function buildHistoryByHash(drinks) {
 
 async function fetchCustomEvent(eventId) {
   if (!sb || !eventId) return null;
-  const { data, error } = await sb.from('custom_events')
-    .select('event_id, event_name, created_at, starts_at, ends_at')
-    .eq('event_id', eventId)
+  const { data, error } = await sb.from('events')
+    .select('id, name, created_at, start_time, end_time')
+    .eq('id', eventId)
     .single();
   if (error) return null;
-  return data;
+  return {
+    event_id: data.id,
+    event_name: data.name,
+    created_at: data.created_at,
+    starts_at: data.start_time,
+    ends_at: data.end_time
+  };
 }
 
 async function fetchCustomParticipants(eventId) {
   if (!sb || !eventId) return [];
-  const { data, error } = await sb.from('custom_event_participants')
-    .select('event_id, user_id, name, hash, promille')
+  const { data, error } = await sb.from('event_participants')
+    .select('event_id, player_hash')
     .eq('event_id', eventId);
   if (error || !data) return [];
-  return data;
+  return data.map(row => ({
+    event_id: row.event_id,
+    user_id: row.player_hash,
+    hash: row.player_hash
+  }));
 }
 
 async function fetchProfilesByHashes(hashes) {
@@ -159,13 +170,13 @@ async function fetchProfilesByHashes(hashes) {
   return data || [];
 }
 
-async function fetchDrinkLogsForWindow(hashes, startIso, endIso) {
-  if (!sb || hashes.length === 0 || !startIso || !endIso) return [];
+async function fetchRecentDrinksForHashes(hashes) {
+  if (!sb || hashes.length === 0) return [];
+  const yesterdayISO = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { data } = await sb.from('drink_logs')
     .select('player_hash, grams_alcohol, volume_ml, abv, consumed_at')
     .in('player_hash', hashes)
-    .gte('consumed_at', startIso)
-    .lte('consumed_at', endIso);
+    .gte('consumed_at', yesterdayISO);
   return data || [];
 }
 
@@ -182,6 +193,7 @@ function renderLeaderboard(entries) {
     img.className = 'profile-img';
     img.src = player.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
     const info = document.createElement('div');
+    info.className = 'leaderboard-info';
     info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#${index + 1} ${player.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${player.id}</span>`;
     const stats = document.createElement('div');
     stats.className = 'badge';
@@ -200,22 +212,20 @@ function renderParticipants(participants, profileMap) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga deltagare.</p>';
     return;
   }
-  participants.forEach((p, index) => {
+  participants.forEach((p) => {
     const profile = profileMap[p.hash];
     const li = document.createElement('li');
     const img = document.createElement('img');
     img.className = 'profile-img';
     img.src = (profile && profile.pic) || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
     const info = document.createElement('div');
-    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${profile ? profile.name : p.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${p.hash}</span>`;
+    info.className = 'leaderboard-info';
+    const displayName = profile ? profile.name : p.hash;
+    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${displayName}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${p.hash}</span>`;
     li.appendChild(img);
     li.appendChild(info);
     list.appendChild(li);
   });
-}
-
-function refreshPage() {
-  window.location.reload();
 }
 
 async function loadCustomEventLeaderboard() {
@@ -243,13 +253,13 @@ async function loadCustomEventLeaderboard() {
   }
 
   const event = await fetchCustomEvent(eventId);
-  if (!event || !event.starts_at || !event.ends_at) {
-    setStatusText(meta, 'Eventet saknar giltigt start- eller slutdatum.', true);
+  if (!event) {
+    setStatusText(meta, 'Kunde inte ladda eventet.', true);
     return;
   }
 
   title.textContent = event.event_name;
-  setStatusText(meta, `${event.event_id} - ${new Date(event.starts_at).toLocaleString()} till ${new Date(event.ends_at).toLocaleString()}`, false);
+  setStatusText(meta, `Hash: ${event.event_id} | ${new Date(event.starts_at).toLocaleString()} - ${new Date(event.ends_at).toLocaleString()}`, false);
 
   const hashes = participants.map(p => p.hash || p.user_id);
   const profiles = await fetchProfilesByHashes(hashes);
@@ -264,22 +274,21 @@ async function loadCustomEventLeaderboard() {
     };
   });
 
-  const drinks = await fetchDrinkLogsForWindow(hashes, event.starts_at, event.ends_at);
+  const drinks = await fetchRecentDrinksForHashes(hashes);
   const historyByHash = buildHistoryByHash(drinks);
 
   const entries = participants.map(p => {
     const profile = profileMap[p.hash];
+    if (!profile || !profile.weight || !profile.gender) return null;
     const history = historyByHash[p.hash] || [];
-    const promilleValue = profile && profile.weight && profile.gender
-      ? calculateBACAtTime(history, profile, Date.now())
-      : (p.promille || 0);
+    const promilleValue = calculateBACAtTime(history, profile, Date.now());
     return {
       id: p.hash,
-      name: profile ? profile.name : p.name,
-      pic: profile ? profile.pic : '',
+      name: profile.name,
+      pic: profile.pic,
       promille: promilleValue
     };
-  }).sort((a, b) => b.promille - a.promille);
+  }).filter(entry => entry && entry.promille > 0).sort((a, b) => b.promille - a.promille).slice(0, 5);
 
   renderLeaderboard(entries);
   renderParticipants(participants, profileMap);

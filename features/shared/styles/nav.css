@@ -21,6 +21,12 @@ html {
   transition: all 0.3s ease;
 }
 
+.main-nav a:hover,
+.main-nav a.active {
+  background: #FFCC00;
+  color: #2C3E50;
+}
+
 @media (max-width: 700px) {
   .main-nav {
     position: static;
@@ -104,8 +110,8 @@ html {
 
       .mobile-bottom-menu .menu-item:hover,
       .mobile-bottom-menu .menu-item.active {
-        background: #000;
-        color: #fff;
+        background: #FFCC00;
+        color: #2C3E50;
       }
 
       .mobile-bottom-menu::after {
@@ -115,15 +121,7 @@ html {
   }
 
   .mobile-bottom-menu::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 26px;
-    pointer-events: none;
-    background: linear-gradient(270deg, #fff 0%, rgba(255, 255, 255, 0) 100%);
-    transition: all 0.3s ease;
+    content: none;
   }
 
   .mobile-bottom-menu .menu-item {
@@ -136,6 +134,12 @@ html {
     justify-content: center;
     gap: 4px;
     transition: all 0.3s ease;
+  }
+
+  .mobile-bottom-menu .menu-item:hover,
+  .mobile-bottom-menu .menu-item.active {
+    background: #FFCC00;
+    color: #2C3E50;
   }
 
   .mobile-bottom-menu .menu-icon {

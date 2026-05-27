@@ -5,8 +5,9 @@ let lastNonZeroTime = Date.now();
 let graphResetCheckInterval = null;
 let drinkReminderTimer = null;
 const ZERO_BAC_THRESHOLD = 0.005;
-const MAX_ABV = 100;
+const MAX_ABV = 98;
 const MAX_VOLUME = 1000;
+const ZERO_BAC_RESET_MS = 2 * 60 * 60 * 1000;
 
 function getLastNonZeroKey(profileId) {
   return `lastNonZeroTime_${profileId}`;
@@ -263,6 +264,13 @@ function removeDrink(index) {
   updateUI();
 }
 
+function archiveCurrentHistory(profileId) {
+  if (!profileId || !Array.isArray(historyData) || historyData.length === 0) return;
+  appendArchivedDrinkHistory(profileId, historyData);
+  historyData = [];
+  saveDrinkHistory(historyData);
+}
+
 function checkGraphReset() {
   const profile = getActiveProfile();
   if (!profile) return;
@@ -279,6 +287,15 @@ function checkGraphReset() {
   if (currentBAC > ZERO_BAC_THRESHOLD) {
     lastNonZeroTime = Date.now();
     setStoredLastNonZeroTime(profile.id, lastNonZeroTime);
+  }
+  else if (historyData.length > 0 && Date.now() - lastNonZeroTime >= ZERO_BAC_RESET_MS) {
+    archiveCurrentHistory(profile.id);
+    lastNonZeroTime = Date.now();
+    setStoredLastNonZeroTime(profile.id, lastNonZeroTime);
+    localStorage.setItem(lastResetKey, today);
+    scheduleDrinkReminder(getLatestDrinkTimestamp());
+    showZoneToast('Blodflödegraf återställd efter 2h 0.00 ‰.');
+    updateUI();
   }
   // Daily reset at 11:00 AM if BAC is 0.00 and hasn't reset today
   else if (currentBAC <= ZERO_BAC_THRESHOLD && currentHour === 11 && lastResetDate !== today) {

@@ -233,7 +233,7 @@ async function updateClanUI() {
     return;
   }
 
-  const { data: myMembership } = await sb.from('clan_members')
+  const { data: myMembership, error: membershipError } = await sb.from('clan_members')
     .select('clan_id')
     .eq('player_hash', activeProfile.id)
     .maybeSingle();
@@ -241,7 +241,7 @@ async function updateClanUI() {
   if (myMembership && myMembership.clan_id) {
     myClanHash = myMembership.clan_id;
     localStorage.setItem('myClanHash', myClanHash);
-  } else {
+  } else if (!membershipError && myClanHash) {
     myClanHash = null;
     localStorage.removeItem('myClanHash');
   }
@@ -439,15 +439,29 @@ async function createClan() {
   const name = document.getElementById('newClanName').value;
   if (!name || !sb || !activeProfile) return;
   const newHash = generateUniqueHash();
+  if (typeof ensureSupabaseAuth === 'function') {
+    await ensureSupabaseAuth();
+  }
  
   await syncProfileToSupabase(activeProfile);
-  
-  await sb.from('clans').insert({ id: newHash, name: name });
-  await sb.from('clan_members').upsert({ clan_id: newHash, player_hash: activeProfile.id, role: 'Ledare' });
-  
+
+  const { error: clanError } = await sb.from('clans').insert({ id: newHash, name: name });
+  if (clanError) {
+    alert('Kunde inte skapa klanen. Forsok igen.');
+    return;
+  }
+
+  const { error: memberError } = await sb.from('clan_members').upsert({ clan_id: newHash, player_hash: activeProfile.id, role: 'Ledare' });
+  if (memberError) {
+    alert('Klanen skapades, men du kunde inte laggas till. Forsok igen.');
+    return;
+  }
+
   localStorage.setItem('myClanHash', newHash);
   myClanHash = newHash;
-  updateClanUI();
+  document.getElementById('newClanName').value = '';
+  await updateClanUI();
+  initClanRealtime();
 }
 
 async function joinClan() {

@@ -200,6 +200,17 @@ function closeBattleModal() {
   document.getElementById('battleModal').style.display = 'none';
 }
 
+async function syncProfileToSupabase(profile) {
+  if (!sb || !profile) return;
+  await sb.from('profiles').upsert({
+    player_hash: profile.id,
+    display_name: profile.name,
+    avatar_url: profile.pic,
+    weight: profile.weight || null,
+    gender: profile.gender || null
+  });
+}
+
 async function startBattle() {
   if (typeof ensureSupabaseAuth === 'function') {
     await ensureSupabaseAuth();
@@ -217,33 +228,42 @@ async function startBattle() {
   const now = new Date();
   const endTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-  let participants = [activeProfile.id];
+  let rawParticipants = [activeProfile.id];
 
   if (currentMode === 'Duos Battle') {
     const teammateHash = document.getElementById('teammateHash').value.trim();
     const opponentHash1 = document.getElementById('opponentHash1').value.trim();
     const opponentHash2 = document.getElementById('opponentHash2').value.trim();
     if (!teammateHash || !opponentHash1 || !opponentHash2) return;
-    participants.push(teammateHash, opponentHash1, opponentHash2);
+    rawParticipants.push(teammateHash, opponentHash1, opponentHash2);
   } else if (currentMode === 'Solo Battle') {
     const opponentHash = document.getElementById('opponentHash').value.trim();
     if (!opponentHash) return;
-    participants.push(opponentHash);
+    rawParticipants.push(opponentHash);
   }
 
-  participants = Array.from(new Set(participants));
+  const participants = Array.from(new Set(rawParticipants));
 
-  const { data: validProfiles } = await sb.from('profiles').select('player_hash').in('player_hash', participants);
+  if (currentMode === 'Solo Battle' && participants.length !== 2) {
+    alert("Du kan inte utmana dig själv!");
+    return;
+  }
+  if (currentMode === 'Duos Battle' && participants.length !== 4) {
+    alert("Alla hashkoder måste vara unika!");
+    return;
+  }
+
+  const opponents = participants.filter(p => p !== activeProfile.id);
+  const { data: validProfiles } = await sb.from('profiles').select('player_hash').in('player_hash', opponents);
   const validHashes = validProfiles ? validProfiles.map(p => p.player_hash) : [];
-  const missingHashes = participants.filter(p => !validHashes.includes(p));
-  
+  const missingHashes = opponents.filter(p => !validHashes.includes(p));
+
   if (missingHashes.length > 0) {
-    const newProfiles = missingHashes.map(h => ({ 
-      player_hash: h, 
-      display_name: h === activeProfile.id ? activeProfile.name : h 
-    }));
-    await sb.from('profiles').upsert(newProfiles);
+    alert(`Kunde inte hitta motståndare med hash: ${missingHashes.join(', ')}`);
+    return;
   }
+
+  await syncProfileToSupabase(activeProfile);
 
   const { data: newBattle, error } = await sb.from('battles').insert({
     battle_type: currentMode,
@@ -262,7 +282,6 @@ async function startBattle() {
     closeBattleModal();
     await fetchActiveBattles();
   } else if (error) {
-    console.error(error);
     alert("Ett fel inträffade.");
   }
 }
@@ -470,7 +489,6 @@ async function renderOpponentGraphData(canvasId, statsId, opponentHash, opponent
     return true;
     
   } catch (error) {
-    console.error('Error fetching graph:', error);
     document.getElementById(statsId).innerHTML = '<p style="color:#E74C3C;">Fel vid hämtning</p>';
     return false;
   }
@@ -541,7 +559,6 @@ async function viewBattleGraphs(battle) {
     }
     
   } catch (error) {
-    console.error('Error viewing graph:', error);
     document.getElementById('graphLoadingIndicator').innerHTML = '<p style="color:#E74C3C;">Fel vid hämtning av stridsgraf.</p>';
   }
 }

@@ -36,12 +36,19 @@ async function syncDrinkToSupabase(profileId, drink) {
 async function removeDrinkFromSupabase(profileId, drinkName, timestamp) {
   if (!sb) return;
   const drinkTime = new Date(timestamp).toISOString();
-  const { error } = await sb.from('drink_logs')
+  const { error: deleteError } = await sb.from('drinks_logs')
     .delete()
     .eq('player_hash', profileId)
     .eq('drink_name', drinkName)
     .eq('consumed_at', drinkTime);
-  if (error) console.error('Error removing drink from cloud:', error);
+  if (!deleteError) return;
+
+  const { error: fallbackError } = await sb.from('drink_logs')
+    .delete()
+    .eq('player_hash', profileId)
+    .eq('drink_name', drinkName)
+    .eq('consumed_at', drinkTime);
+  if (fallbackError) console.error('Error removing drink from cloud:', fallbackError);
 }
 
 async function fetchProfileFromSupabase(hash) {
@@ -169,6 +176,36 @@ function saveDrinkHistory(history) {
   
   allHistory[profile.id] = history;
   localStorage.setItem('drinkHistory_all', JSON.stringify(allHistory));
+}
+
+function getArchivedDrinkHistory(profileId) {
+  if (!profileId) return [];
+  try {
+    const allArchive = JSON.parse(localStorage.getItem('drinkHistory_archive_all')) || {};
+    return allArchive[profileId] || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveArchivedDrinkHistory(profileId, history) {
+  if (!profileId) return;
+  let allArchive = {};
+  try {
+    allArchive = JSON.parse(localStorage.getItem('drinkHistory_archive_all')) || {};
+  } catch (e) {
+    allArchive = {};
+  }
+  allArchive[profileId] = history || [];
+  localStorage.setItem('drinkHistory_archive_all', JSON.stringify(allArchive));
+}
+
+function appendArchivedDrinkHistory(profileId, entries) {
+  if (!profileId || !Array.isArray(entries) || entries.length === 0) return [];
+  const existing = getArchivedDrinkHistory(profileId);
+  const merged = existing.concat(entries);
+  saveArchivedDrinkHistory(profileId, merged);
+  return merged;
 }
 function calculateCl(grams) {
   return grams / 7.89;
