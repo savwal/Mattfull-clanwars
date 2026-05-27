@@ -226,6 +226,7 @@ async function loadOngoingEvent() {
 async function updateClanUI() {
   const noClanView = document.getElementById('noClanView');
   const hasClanView = document.getElementById('hasClanView');
+  const storedClanHash = localStorage.getItem('myClanHash') || null;
 
   if (!sb || !activeProfile) {
     noClanView.style.display = 'block';
@@ -233,7 +234,7 @@ async function updateClanUI() {
     return;
   }
 
-  const { data: myMembership } = await sb.from('clan_members')
+  const { data: myMembership, error: membershipError } = await sb.from('clan_members')
     .select('clan_id')
     .eq('player_hash', activeProfile.id)
     .maybeSingle();
@@ -241,9 +242,13 @@ async function updateClanUI() {
   if (myMembership && myMembership.clan_id) {
     myClanHash = myMembership.clan_id;
     localStorage.setItem('myClanHash', myClanHash);
+  } else if (storedClanHash) {
+    myClanHash = storedClanHash;
   } else {
     myClanHash = null;
-    localStorage.removeItem('myClanHash');
+    if (!membershipError) {
+      localStorage.removeItem('myClanHash');
+    }
   }
 
   if (!myClanHash) {
@@ -466,7 +471,8 @@ async function joinClan() {
     
     localStorage.setItem('myClanHash', hash);
     myClanHash = hash;
-    updateClanUI();
+    document.getElementById('joinClanHash').value = '';
+    await updateClanUI();
     initClanRealtime();
   } else {
     alert('Klanen hittades inte!');
