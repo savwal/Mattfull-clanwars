@@ -142,7 +142,6 @@ li:last-child { border-bottom: none; }
 const CUSTOM_EVENT_ID_LENGTH = 4;
 const CUSTOM_EVENT_REFRESH_MS = 30000;
 const CUSTOM_EVENT_MAX_RANGE_DAYS = 7;
-const LOCAL_CUSTOM_EVENTS_KEY = 'custom_events_local';
 
 function applyStatUpdate(element, text) {
   if (!element) return;
@@ -227,20 +226,14 @@ async function syncProfileToSupabase(profile) {
 async function fetchCustomEventsForUser(userId) {
   if (!userId || !sb) return [];
   
-  const { data } = await sb.from('event_participants')
-    .select('event_id, events(id, name, created_at, start_time, end_time)')
-    .eq('player_hash', userId);
+  const { data } = await sb.from('custom_event_participants')
+    .select('event_id, custom_events(event_id, event_name, created_at, starts_at, ends_at)')
+    .eq('user_id', userId);
 
   const eventMap = new Map();
   (data || []).forEach(row => {
-    if (row.events && row.events.id) {
-      eventMap.set(row.events.id, {
-        event_id: row.events.id,
-        event_name: row.events.name,
-        created_at: row.events.created_at,
-        starts_at: row.events.start_time,
-        ends_at: row.events.end_time
-      });
+    if (row.custom_events && row.custom_events.event_id) {
+      eventMap.set(row.custom_events.event_id, row.custom_events);
     }
   });
 
@@ -249,19 +242,11 @@ async function fetchCustomEventsForUser(userId) {
 
 async function fetchCustomEvent(eventId) {
   if (!eventId || !sb) return null;
-  const { data, error } = await sb.from('events')
-    .select('id, name, created_at, start_time, end_time')
-    .eq('id', eventId)
+  const { data, error } = await sb.from('custom_events')
+    .select('event_id, event_name, created_at, starts_at, ends_at')
+    .eq('event_id', eventId)
     .single();
-  if (!error && data) {
-    return {
-      event_id: data.id,
-      event_name: data.name,
-      created_at: data.created_at,
-      starts_at: data.start_time,
-      ends_at: data.end_time
-    };
-  }
+  if (!error && data) return data;
   return null;
 }
 
@@ -359,49 +344,24 @@ async function createCustomEvent() {
 
   await syncProfileToSupabase(activeProfile);
 
-  const localEvent = {
+  const { error: eventError } = await sb.from('custom_events').insert({
     event_id: eventId,
     event_name: name,
     created_at: createdAt,
     starts_at: toIsoOrNull(startDate),
     ends_at: toIsoOrNull(endDate)
-  };
-  upsertLocalCustomEvent(activeProfile.id, localEvent);
-  renderMyCustomEvents(getLocalCustomEvents(activeProfile.id));
-
-  if (!sb) {
-    setStatusText(info, `Event skapat lokalt! Hash: ${eventId}`, false);
-    document.getElementById('customName').value = '';
-    document.getElementById('customStart').value = '';
-    document.getElementById('customEnd').value = '';
-    return;
-  }
-
-  const { error: eventError } = await sb.from('events').insert({
-    id: eventId,
-    name: name,
-    created_at: createdAt,
-    start_time: toIsoOrNull(startDate),
-    end_time: toIsoOrNull(endDate)
   });
 
   if (!eventError) {
-    const { error: participantError } = await sb.from('event_participants').insert({
+    await sb.from('custom_event_participants').insert({
       event_id: eventId,
-      player_hash: activeProfile.id
+      user_id: activeProfile.id,
+      name: activeProfile.name,
+      hash: activeProfile.id,
+      promille: 0
     });
-    
-    if (participantError) {
-      console.error(participantError);
-      setStatusText(info, 'Kunde inte lägga till deltagare.', true);
-      await loadMyCustomEvents();
-      return;
-    }
-    removeLocalCustomEvent(activeProfile.id, eventId);
   } else {
-    console.error(eventError);
     setStatusText(info, 'Kunde inte skapa event.', true);
-    await loadMyCustomEvents();
     return;
   }
 
@@ -423,10 +383,16 @@ async function joinCustomEvent() {
   const activeProfile = getActiveProfile();
   if (!activeProfile) return;
 
-  const { data: existing } = await sb.from('event_participants')
+  const eventData = await fetchCustomEvent(hash);
+  if (!eventData) {
+    setStatusText(status, 'Hittade inte eventet.', true);
+    return;
+  }
+
+  const { data: existing } = await sb.from('custom_event_participants')
     .select('event_id')
     .eq('event_id', hash)
-    .eq('player_hash', activeProfile.id)
+    .eq('user_id', activeProfile.id)
     .limit(1);
 
   if (existing && existing.length > 0) {
@@ -436,18 +402,13 @@ async function joinCustomEvent() {
 
   await syncProfileToSupabase(activeProfile);
 
-  const { error: participantError } = await sb.from('event_participants').insert({
+  await sb.from('custom_event_participants').insert({
     event_id: hash,
-    player_hash: activeProfile.id
+    user_id: activeProfile.id,
+    name: activeProfile.name,
+    hash: activeProfile.id,
+    promille: 0
   });
-
-  if (participantError) {
-    console.error(participantError);
-    const message = participantError.message || '';
-    const isMissingEvent = message.includes('event_participants_event_id_fkey') || message.toLowerCase().includes('foreign key');
-    setStatusText(status, isMissingEvent ? 'Hittade inte eventet.' : 'Kunde inte gå med i eventet.', true);
-    return;
-  }
 
   setStatusText(status, 'Du gick med i eventet!', false);
   document.getElementById('joinHash').value = '';

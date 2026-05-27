@@ -110,8 +110,8 @@ html {
 
       .mobile-bottom-menu .menu-item:hover,
       .mobile-bottom-menu .menu-item.active {
-        background: #FFCC00;
-        color: #2C3E50;
+        background: #000;
+        color: #fff;
       }
 
       .mobile-bottom-menu::after {
