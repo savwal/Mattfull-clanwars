@@ -23,35 +23,11 @@ button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: u
 button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
 button.danger { background: #E74C3C; width: auto; color: white; padding: 8px 16px; font-size: 14px; margin-left: 10px; box-shadow: 3px 3px 0px #2C3E50; border: 3px solid #2C3E50; }
 button.magic { background: #9B59B6; color: white; margin-top: 15px; }
-.quick-add-bubble {
-  position: fixed;
-  left: 16px;
-  bottom: calc(110px + env(safe-area-inset-bottom));
-  width: auto;
-  padding: 12px 16px;
-  border-radius: 999px;
-  z-index: 1200;
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.quick-add-icon {
-  font-size: 18px;
-  line-height: 1;
-}
-.quick-add-bubble.is-compact {
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  justify-content: center;
-}
-.quick-add-bubble.is-compact .quick-add-label {
-  display: none;
-}
-.quick-add-bubble.is-compact .quick-add-icon {
-  font-size: 22px;
-}
+.quick-add-bubble { position: fixed; left: 26px; bottom: calc(110px + env(safe-area-inset-bottom)); width: auto; padding: 12px 16px; border-radius: 999px; z-index: 3000; margin: 0; display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #FFCC00, #FFD700); }
+.quick-add-icon { font-size: 18px; line-height: 1; }
+.quick-add-bubble.is-compact { width: 44px; height: 44px; padding: 0; justify-content: center; }
+.quick-add-bubble.is-compact .quick-add-label { display: none; }
+.quick-add-bubble.is-compact .quick-add-icon { font-size: 22px; }
 ul { list-style: none; padding: 0; margin: 0; }
 li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
 canvas { max-height: 300px; margin-top: 10px; }
@@ -169,10 +145,6 @@ canvas { max-height: 300px; margin-top: 10px; }
 </div>
 <div class="card">
   <h2>Manuellt registrera</h2>
-  <button onclick="openDrinkModal()" class="quick-add-bubble" style="background: linear-gradient(135deg, #FFCC00, #FFD700);">
-    <span class="quick-add-icon">+</span>
-    <span class="quick-add-label">Registrera snabbt</span>
-  </button>
   <select id="name" style="width: 100%;">
     <option value="">Välj dryck...</option>
     <option value="Öl">Öl</option>
@@ -208,6 +180,10 @@ canvas { max-height: 300px; margin-top: 10px; }
     <div id="modalContentContainer" class="logger-tile-grid"></div>
   </div>
 </div>
+<button onclick="openDrinkModal()" class="quick-add-bubble">
+  <span class="quick-add-icon">+</span>
+  <span class="quick-add-label">Registrera snabbt</span>
+</button>
 <script src="features/shared/scripts/gdpr.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="features/shared/scripts/shared.js"></script>

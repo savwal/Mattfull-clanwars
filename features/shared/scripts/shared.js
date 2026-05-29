@@ -88,23 +88,30 @@ initApp();
 
 function enablePageTransitions() {
   const isStandalonePwa = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  if (!isStandalonePwa) return;
-
   document.body.classList.add('pwa-transitions');
 
+  let readyApplied = false;
   const ready = () => {
+    if (readyApplied) return;
+    readyApplied = true;
+    document.body.classList.remove('page-leaving');
     document.body.classList.add('page-ready');
   };
 
+  const scheduleReady = () => {
+    requestAnimationFrame(() => requestAnimationFrame(ready));
+    window.setTimeout(ready, 500);
+  };
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(ready), { once: true });
+    document.addEventListener('DOMContentLoaded', scheduleReady, { once: true });
   } else {
-    requestAnimationFrame(ready);
+    scheduleReady();
   }
 
+  window.addEventListener('load', scheduleReady, { once: true });
   window.addEventListener('pageshow', () => {
-    document.body.classList.remove('page-leaving');
-    document.body.classList.add('page-ready');
+    scheduleReady();
   });
 
   document.addEventListener('click', event => {
