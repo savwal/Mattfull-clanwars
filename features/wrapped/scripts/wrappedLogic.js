@@ -76,7 +76,7 @@ async function loadWrapped(playerHash, type) {
   });
 
   const totalCl = totalVolumeMl / 10;
-  const alcoholCl = calculateCl(totalGrams);
+  const alcoholCl = Math.abs(calculateCl(totalGrams));
 
   document.getElementById('wrappedTitle').innerText = type === 'yearly' ? 'Årets Wrapped 🥂' : 'Månadens Wrapped 🔥';
   document.getElementById('wrappedGrams').innerText = `${totalCl.toFixed(1)} cl totalt dryckesvolym`;

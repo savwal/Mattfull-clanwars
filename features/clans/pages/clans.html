@@ -36,7 +36,9 @@ li:last-child { border-bottom: none; }
 
 #clanLeaderboard li {
   justify-content: flex-start;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
 }
 
 #clanLeaderboard .rank-badge {
@@ -51,15 +53,30 @@ li:last-child { border-bottom: none; }
   color: #2C3E50;
   font-weight: 900;
   box-shadow: 2px 2px 0px #2C3E50;
+  flex: 0 0 auto;
 }
 
 #clanLeaderboard .leaderboard-info {
   margin-left: 0;
+  flex: 1;
   text-align: left;
+  min-width: 0;
 }
 
-#clanLeaderboard .profile-img {
-  margin-right: 0;
+#clanLeaderboard .leader-name {
+  display: block;
+  font-size: 1.05em;
+  color: #2C3E50;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.08;
+}
+
+#clanLeaderboard .leader-hash {
+  display: block;
+  font-size: 0.8em;
+  color: #7f8c8d;
+  word-break: break-word;
 }
 
 #clanLeaderboard .badge {
@@ -70,6 +87,8 @@ li:last-child { border-bottom: none; }
   font-weight: 900;
   background: #FFCC00;
   color: #111;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 </style>
 <link rel="stylesheet" href="../../shared/styles/nav.css">
@@ -364,7 +383,7 @@ async function updateClanUI() {
         name: profile && profile.display_name ? profile.display_name : m.player_hash,
         pic: profile && profile.avatar_url ? profile.avatar_url : null,
         role: m.role,
-        elo: calculateCl(grams)
+        elo: Math.abs(calculateCl(grams))
       };
     });
 
@@ -392,14 +411,14 @@ async function updateClanUI() {
       const info = li.querySelector('.member-info');
       info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${member.name}</span><br><span style="font-size:0.8em; color:#7f8c8d;">${member.role}</span>`;
       const statValue = li.querySelector('.stat-value');
-      applyStatUpdate(statValue, member.elo.toFixed(1));
+      applyStatUpdate(statValue, Math.abs(member.elo).toFixed(1));
 
       list.appendChild(li);
       existingItems.delete(member.id);
     });
   }
   const totalEl = document.getElementById('clanTotalElo');
-  applyStatUpdate(totalEl, `${totalElo.toFixed(1)} cl`);
+  applyStatUpdate(totalEl, `${Math.abs(totalElo).toFixed(1)} cl`);
   await renderClanLeaderboard();
 
   existingItems.forEach(item => item.remove());
@@ -408,7 +427,6 @@ async function updateClanUI() {
 async function renderClanLeaderboard() {
   const list = document.getElementById('clanLeaderboard');
   if (!list) return;
-  const existingItems = new Map(Array.from(list.children).map(item => [item.dataset.clanId, item]));
   if (!sb) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Ingen data att visa.</p>';
     return;
@@ -445,7 +463,7 @@ async function renderClanLeaderboard() {
   const ranked = clans.map(clan => ({
     id: clan.id,
     name: clan.name,
-    cl: calculateCl(gramsByClan[clan.id] || 0)
+    cl: Math.abs(calculateCl(gramsByClan[clan.id] || 0))
   }))
     .sort((a, b) => b.cl - a.cl)
     .slice(0, 10);
@@ -455,44 +473,36 @@ async function renderClanLeaderboard() {
     return;
   }
 
+  list.innerHTML = '';
   ranked.forEach((clan, index) => {
-    let li = existingItems.get(clan.id);
-    if (!li) {
-      li = document.createElement('li');
-      li.dataset.clanId = clan.id;
-      const rank = document.createElement('span');
-      rank.className = 'rank-badge';
-      rank.textContent = `#${index + 1}`;
-      const img = document.createElement('img');
-      img.className = 'profile-img';
-      img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-      const info = document.createElement('div');
-      info.className = 'leaderboard-info';
-      const badge = document.createElement('div');
-      badge.className = 'badge';
-      badge.innerHTML = `<span class="stat-value"></span> cl`;
+    const li = document.createElement('li');
+    const rank = document.createElement('span');
+    rank.className = 'rank-badge';
+    rank.textContent = `#${index + 1}`;
 
-      li.appendChild(rank);
-      li.appendChild(img);
-      li.appendChild(info);
-      li.appendChild(badge);
-    }
+    const info = document.createElement('div');
+    info.className = 'leaderboard-info';
+    const name = document.createElement('span');
+    name.className = 'leader-name';
+    name.textContent = clan.name;
+    const hash = document.createElement('span');
+    hash.className = 'leader-hash';
+    hash.textContent = clan.id;
 
-    const rankEl = li.querySelector('.rank-badge');
-    rankEl.textContent = `#${index + 1}`;
-    const info = li.querySelector('.leaderboard-info');
-    const clanName = clan.name.length > 14
-      ? `${clan.name.slice(0, 14)}<br>${clan.name.slice(14)}`
-      : clan.name;
-    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50; display:inline-block;">${clanName}</span><br><span style="font-size:0.8em; color:#7f8c8d;">${clan.id}</span>`;
-    const statVal = li.querySelector('.stat-value');
-    applyStatUpdate(statVal, clan.cl.toFixed(1));
+    const badge = document.createElement('div');
+    badge.className = 'badge';
+    badge.innerHTML = `<span class="stat-value"></span> cl`;
 
+    info.appendChild(name);
+    info.appendChild(hash);
+    li.appendChild(rank);
+    li.appendChild(info);
+    li.appendChild(badge);
+
+    const statVal = badge.querySelector('.stat-value');
+    applyStatUpdate(statVal, Math.abs(clan.cl).toFixed(1));
     list.appendChild(li);
-    existingItems.delete(clan.id);
   });
-
-  existingItems.forEach(item => item.remove());
 }
 
 function refreshClanUI() {

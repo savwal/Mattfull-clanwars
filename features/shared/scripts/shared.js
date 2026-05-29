@@ -87,6 +87,11 @@ function initApp() {
 initApp();
 
 function enablePageTransitions() {
+  const isStandalonePwa = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (!isStandalonePwa) return;
+
+  document.body.classList.add('pwa-transitions');
+
   const ready = () => {
     document.body.classList.add('page-ready');
   };

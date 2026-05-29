@@ -168,12 +168,11 @@ canvas { max-height: 300px; margin-top: 10px; }
   </div>
 </div>
 <div class="card">
-  <h2>Lägret</h2>
-  <button onclick="openDrinkModal()" class="quick-add-bubble" style="background: linear-gradient(135deg, #FFCC00, #FFD700); left: 14px;">
+  <h2>Manuellt registrera</h2>
+  <button onclick="openDrinkModal()" class="quick-add-bubble" style="background: linear-gradient(135deg, #FFCC00, #FFD700);">
     <span class="quick-add-icon">+</span>
     <span class="quick-add-label">Registrera snabbt</span>
   </button>
-  <p style="text-align: center; font-weight: bold; color: #2C3E50; margin: 10px 0;">Eller manuellt:</p>
   <select id="name" style="width: 100%;">
     <option value="">Välj dryck...</option>
     <option value="Öl">Öl</option>
@@ -184,7 +183,7 @@ canvas { max-height: 300px; margin-top: 10px; }
   </select>
   <input type="number" id="volume" placeholder="Volym (ml, t.ex. 330)" min="1" max="1000" step="1">
   <input type="number" id="abv" placeholder="Alkoholhalt (%, t.ex. 5.0)" min="0" max="98" step="0.1">
-  <button onclick="addDrink()">Manuellt registrera</button>
+  <button onclick="addDrink()">Registrera</button>
 </div>
 <div class="card">
   <h2 style="background: #9B59B6;">Tactical Retreat</h2>

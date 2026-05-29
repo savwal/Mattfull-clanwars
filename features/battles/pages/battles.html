@@ -468,7 +468,7 @@ async function renderActiveBattles() {
 
     sortedHashes.forEach((hash, idx) => {
       const p = profilesData[hash];
-      const cl = calculateCl(scores[hash]).toFixed(1);
+      const cl = Math.abs(calculateCl(scores[hash])).toFixed(1);
       
       const pDiv = document.createElement('div');
       pDiv.style.display = 'flex';
@@ -497,6 +497,17 @@ async function renderActiveBattles() {
     });
 
     li.appendChild(statsContainer);
+
+    const graphButton = document.createElement('button');
+    graphButton.type = 'button';
+    graphButton.textContent = 'Öppna graf';
+    graphButton.style.background = '#2ECC71';
+    graphButton.style.color = '#FFF';
+    graphButton.style.width = 'auto';
+    graphButton.style.alignSelf = 'flex-end';
+    graphButton.style.marginTop = '10px';
+    graphButton.onclick = () => viewBattleGraphs(battle);
+    li.appendChild(graphButton);
 
     const endButton = document.createElement('button');
     endButton.type = 'button';

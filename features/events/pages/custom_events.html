@@ -245,7 +245,7 @@ function renderLeaderboard(entries) {
     info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${player.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${player.id}</span>`;
     const stats = document.createElement('div');
     stats.className = 'badge';
-    stats.innerText = `${player.promille.toFixed(2)} ‰`;
+    stats.innerText = `${Math.abs(player.promille).toFixed(2)} ‰`;
     li.appendChild(rank);
     li.appendChild(img);
     li.appendChild(info);
@@ -340,7 +340,7 @@ async function loadCustomEventLeaderboard() {
       id: p.hash,
       name: profile ? profile.name : p.hash,
       pic: profile ? profile.pic : null,
-      promille: promilleValue
+      promille: Math.abs(promilleValue)
     };
   }).sort((a, b) => b.promille - a.promille);
 

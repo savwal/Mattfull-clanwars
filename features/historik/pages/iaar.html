@@ -183,7 +183,7 @@ function generateTabs() {
     const profile = getActiveProfile();
     let dayHtml = '<div class="day-stats">';
     dayHtml += `<p>Datum: <strong>${displayLabel}</strong></p>`;
-    dayHtml += `<p>Totalt intag: <strong>${calculateCl(totalGrams).toFixed(1)} cl alkohol</strong></p>`;
+    dayHtml += `<p>Totalt intag: <strong>${Math.abs(calculateCl(totalGrams)).toFixed(1)} cl alkohol</strong></p>`;
     dayHtml += '</div>';
     
     dayHtml += '<h3 style="margin-top: 20px; font-weight: bold; color: #2C3E50;">Drycker denna dag:</h3>';
@@ -191,7 +191,7 @@ function generateTabs() {
     dayEntries.reverse().forEach(entry => {
       const time = new Date(entry.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
       const clValue = calculateCl(entry.grams);
-      dayHtml += `<li><div><strong>${time}</strong>: ${entry.name}</div><div>${clValue > 0 ? '+' : ''}${clValue.toFixed(1)}cl</div></li>`;
+      dayHtml += `<li><div><strong>${time}</strong>: ${entry.name}</div><div>${Math.abs(clValue).toFixed(1)}cl</div></li>`;
     });
     dayHtml += '</ul>';
     

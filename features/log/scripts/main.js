@@ -198,7 +198,7 @@ function updateUI() {
     const timestamp = new Date(item.timestamp);
     const dateLabel = timestamp.toLocaleDateString();
     const timeLabel = timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    li.innerHTML = `<div><strong>${dateLabel} ${timeLabel}</strong>: ${item.name} <br><span style="color:#2C3E50;">${clValue > 0 ? '+' : ''}${clValue.toFixed(1)}cl alkohol</span></div>`;
+    li.innerHTML = `<div><strong>${dateLabel} ${timeLabel}</strong>: ${item.name} <br><span style="color:#2C3E50;">${Math.abs(clValue).toFixed(1)}cl alkohol</span></div>`;
     const btn = document.createElement('button');
     btn.className = 'danger';
     btn.textContent = "X";
@@ -210,8 +210,8 @@ function updateUI() {
   if (total < 0) total = 0;
   
   const currentBACValue = calculateBACAtTime(historyData, profile, Date.now());
-  const currentBAC = currentBACValue.toFixed(2);
-  document.getElementById('totalCl').textContent = calculateCl(total).toFixed(1);
+  const currentBAC = Math.abs(currentBACValue).toFixed(2);
+  document.getElementById('totalCl').textContent = Math.abs(calculateCl(total)).toFixed(1);
   document.getElementById('promille').textContent = currentBAC;
   notifyZoneChange(getZoneName(currentBACValue, getZones(profile)));
 
@@ -230,7 +230,7 @@ function updateUI() {
   }
   timeline.forEach(point => {
     labels.push(point.label);
-    dataPoints.push(point.value.toFixed(2));
+    dataPoints.push(Math.abs(point.value).toFixed(2));
   });
 
   let currentLabel = null;

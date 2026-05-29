@@ -1,19 +1,15 @@
-  * {
-    transition: all 0.3s ease;
-  }
-
-  body > :not(.main-nav):not(.mobile-bottom-menu) {
+body.pwa-transitions > :not(.main-nav):not(.mobile-bottom-menu) {
     opacity: 0;
     transform: translateY(4px);
     transition: opacity 180ms ease, transform 180ms ease;
   }
 
-  body.page-ready > :not(.main-nav):not(.mobile-bottom-menu) {
+body.pwa-transitions.page-ready > :not(.main-nav):not(.mobile-bottom-menu) {
     opacity: 1;
     transform: translateY(0);
   }
 
-  body.page-leaving > :not(.main-nav):not(.mobile-bottom-menu) {
+body.pwa-transitions.page-leaving > :not(.main-nav):not(.mobile-bottom-menu) {
     opacity: 0;
     transform: translateY(-4px);
   }
@@ -101,7 +97,7 @@ html {
     padding-bottom: calc(72px + env(safe-area-inset-bottom));
   }
 
-  body > :not(.main-nav):not(.mobile-bottom-menu) {
+  body.pwa-transitions > :not(.main-nav):not(.mobile-bottom-menu) {
     transition: opacity 180ms ease, transform 180ms ease;
   }
 
@@ -206,12 +202,78 @@ html {
     max-height: calc(100vh - 24px);
   }
 
-  /* Leaderboard item layout */
-  .leaderboard-item { display: flex; align-items: center; gap: 12px; }
-  .rank-box { display: inline-flex; align-items: center; justify-content: center; min-width: 42px; height: 42px; border: 4px solid #2C3E50; background: #FFF; color: #2C3E50; font-weight: 900; box-shadow: 2px 2px 0px #2C3E50; }
-  .leader-avatar { width: 48px; height: 48px; object-fit: cover; border: 3px solid #2C3E50; }
-  .leader-info { flex: 1; text-align: left; }
-  .leader-value { font-weight: 900; color: #2C3E50; }
-  .leader-name { font-weight: 900; color: #2C3E50; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .leader-sub { color: #7f8c8d; font-size: 0.85em; display: block; overflow: hidden; text-overflow: ellipsis; }
+  /* Shared leaderboard item layout */
+  .leaderboard-item,
+  #weeklyLeaderboard li,
+  #liveStats li,
+  #eventLeaderboard li,
+  #clanLeaderboard li,
+  #liveTopFive li,
+  #myCustomEventsList li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: nowrap;
+  }
+
+  .rank-box,
+  .rank-badge,
+  .rank-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    height: 42px;
+    border: 4px solid #2C3E50;
+    background: #FFF;
+    color: #2C3E50;
+    font-weight: 900;
+    box-shadow: 2px 2px 0px #2C3E50;
+    flex: 0 0 auto;
+  }
+
+  .leader-avatar,
+  .profile-img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border: 3px solid #2C3E50;
+    flex: 0 0 auto;
+  }
+
+  .leader-info,
+  .leaderboard-info,
+  .friend-info,
+  .event-meta {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .leader-value,
+  .stat-pill,
+  .badge {
+    font-weight: 900;
+    color: #2C3E50;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    margin-left: auto;
+  }
+
+  .leader-name {
+    font-weight: 900;
+    color: #2C3E50;
+    display: block;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .leader-sub {
+    color: #7f8c8d;
+    font-size: 0.85em;
+    display: block;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
 }

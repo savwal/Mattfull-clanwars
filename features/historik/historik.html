@@ -271,7 +271,7 @@ function renderPastEventDrinks(eventKey) {
 
   const totalLi = document.createElement('li');
   totalLi.style.display = 'block';
-  totalLi.innerHTML = `<div style="font-weight: bold;">Totalt intag</div><div>${calculateCl(totalGrams).toFixed(1)} cl</div>`;
+  totalLi.innerHTML = `<div style="font-weight: bold;">Totalt intag</div><div>${Math.abs(calculateCl(totalGrams)).toFixed(1)} cl</div>`;
   list.appendChild(totalLi);
 
   eventData.drinks.forEach(drink => {
@@ -282,7 +282,7 @@ function renderPastEventDrinks(eventKey) {
     const timestamp = new Date(drink.consumed_at);
     const timeLabel = timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     const li = document.createElement('li');
-    li.innerHTML = `<div><strong>${timeLabel}</strong></div><div>${clValue > 0 ? '+' : ''}${clValue.toFixed(1)}cl</div>`;
+    li.innerHTML = `<div><strong>${timeLabel}</strong></div><div>${Math.abs(clValue).toFixed(1)}cl</div>`;
     list.appendChild(li);
   });
 }

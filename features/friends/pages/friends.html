@@ -21,14 +21,20 @@ button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: u
 button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
 button.magic { background: #2A8CFF; color: white; margin-top: 10px; }
 ul { list-style: none; padding: 0; margin: 0; }
-li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: flex-start; align-items: center; gap: 12px; font-weight: bold; flex-wrap: nowrap; }
 li:last-child { border-bottom: none; }
 .profile-img { width: 50px; height: 50px; border-radius: 0; object-fit: cover; border: 3px solid #2C3E50; background: #fff; }
-.friend-info { flex: 1; margin-left: 15px; }
+.friend-info { flex: 1; min-width: 0; margin-left: 0; }
+.friend-name { display: block; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.friend-hash { display: block; overflow-wrap: anywhere; word-break: break-word; }
+.friend-row-title { display: block; font-size: 1.1em; color: #2C3E50; }
+.friend-row-sub { display: block; font-size: 0.85em; color: #7f8c8d; }
 .view-toggle { display: flex; gap: 10px; flex-wrap: wrap; }
 .view-toggle button { width: auto; flex: 1 1 140px; }
 .hidden { display: none; }
-.stat-pill { font-weight: 900; color: #2C3E50; }
+.stat-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 76px; padding: 6px 10px; border: 3px solid #2C3E50; background: #FFCC00; box-shadow: 2px 2px 0px #2C3E50; font-weight: 900; color: #2C3E50; flex: 0 0 auto; white-space: nowrap; }
+.stat-pill .stat-value { margin-right: 4px; }
+.rank-box { display: inline-flex; align-items: center; justify-content: center; min-width: 42px; height: 42px; border: 4px solid #2C3E50; background: #E5E5E5; color: #2C3E50; font-weight: 900; box-shadow: 2px 2px 0px #2C3E50; flex: 0 0 auto; }
 .stat-value { transition: opacity 2s ease; display: inline-block; }
 .stat-bump { opacity: 0.35; }
 </style>
@@ -133,7 +139,7 @@ li:last-child { border-bottom: none; }
 <script src="../../shared/scripts/shared.js"></script>
 <script src="../../shared/scripts/calculator.js"></script>
 <script>
-let myFriends = JSON.parse(localStorage.getItem('myFriendsHashes')) || [];
+let myFriends = [];
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 let activeView = 'weekly';
 let friendsData = {};
@@ -156,7 +162,11 @@ function setFriendsView(view) {
 }
 
 async function fetchFriendsData() {
-  if (myFriends.length === 0 || !sb) return;
+  if (myFriends.length === 0 || !sb) {
+    friendsData = {};
+    return;
+  }
+
   const { data: profiles } = await sb.from('profiles').select('*').in('player_hash', myFriends);
   const sinceISO = new Date(Date.now() - WEEK_MS).toISOString();
   const { data: drinks } = await sb.from('drink_logs')
@@ -183,6 +193,27 @@ async function fetchFriendsData() {
       }
     });
   }
+}
+
+async function loadFriendsForActiveProfile() {
+  const activeProfile = getActiveProfile();
+  if (!activeProfile || !sb) {
+    myFriends = [];
+    friendsData = {};
+    return [];
+  }
+
+  const { data: friendRows } = await sb.from('friends')
+    .select('friend_hash')
+    .eq('player_hash', activeProfile.id)
+    .order('added_at', { ascending: true });
+
+  myFriends = (friendRows || [])
+    .map(row => row.friend_hash)
+    .filter(Boolean);
+
+  localStorage.setItem('myFriendsHashes', JSON.stringify(myFriends));
+  return myFriends;
 }
 
 function getFriendEntries() {
@@ -234,12 +265,16 @@ function renderWeeklyLeaderboard() {
     if (!li) {
       li = document.createElement('li');
       li.dataset.friendHash = friend.hash;
+      const rank = document.createElement('span');
+      rank.className = 'rank-box';
+      rank.innerHTML = '<span class="stat-value rank-value"></span>';
+      li.appendChild(rank);
       const img = document.createElement('img');
       img.className = 'profile-img';
       li.appendChild(img);
       const info = document.createElement('div');
       info.className = 'friend-info';
-      info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#<span class="stat-value rank-value"></span> ${friend.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${friend.hash}</span>`;
+      info.innerHTML = `<span class="friend-name" style="font-size:1.1em; color:#2C3E50;">${friend.name}</span><span class="friend-hash" style="font-size:0.85em; color:#7f8c8d;">${friend.hash}</span>`;
       li.appendChild(info);
       const stats = document.createElement('div');
       stats.className = 'stat-pill';
@@ -247,12 +282,16 @@ function renderWeeklyLeaderboard() {
       li.appendChild(stats);
     }
 
+    const rankBox = li.querySelector('.rank-box');
+    const rankValue = li.querySelector('.rank-value');
+    if (rankBox && !rankValue) {
+      rankBox.innerHTML = '<span class="stat-value rank-value"></span>';
+    }
     const img = li.querySelector('img.profile-img');
     img.src = friend.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-    const rankValue = li.querySelector('.rank-value');
     applyStatUpdate(rankValue, String(index + 1));
     const statValue = li.querySelector('.stat-pill .stat-value');
-    applyStatUpdate(statValue, friend.cl.toFixed(1));
+    applyStatUpdate(statValue, Math.abs(friend.cl).toFixed(1));
 
     list.appendChild(li);
     existingItems.delete(friend.hash);
@@ -268,19 +307,42 @@ function renderLiveStats() {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga vanner tillagda.</p>';
     return;
   }
+  const ranked = entries
+    .map(item => ({
+      hash: item.hash,
+      profile: item.profile,
+      promille: getLivePromille(item.profile)
+    }))
+    .filter(item => item.promille !== null && item.promille > 0)
+    .sort((a, b) => b.promille - a.promille)
+    .slice(0, 5);
+
+  if (ranked.length === 0) {
+    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga aktiva promille att visa.</p>';
+    return;
+  }
+
   const existingItems = new Map(Array.from(list.querySelectorAll('li')).map(item => [item.dataset.friendHash, item]));
-  entries.forEach(item => {
+  ranked.forEach((item, index) => {
     let li = existingItems.get(item.hash);
     if (!li) {
       li = document.createElement('li');
       li.dataset.friendHash = item.hash;
+
+      const rank = document.createElement('span');
+      rank.className = 'rank-box';
+      rank.innerHTML = '<span class="stat-value rank-value"></span>';
+      li.appendChild(rank);
+
       const img = document.createElement('img');
       img.className = 'profile-img';
       li.appendChild(img);
+
       const info = document.createElement('div');
       info.className = 'friend-info';
-      info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${item.profile.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${item.hash}</span>`;
+      info.innerHTML = `<span class="friend-row-title">${item.profile.name}</span><span class="friend-row-sub">${item.hash}</span>`;
       li.appendChild(info);
+
       const stats = document.createElement('div');
       stats.className = 'stat-pill';
       stats.innerHTML = `<span class="stat-value"></span> ‰`;
@@ -289,9 +351,12 @@ function renderLiveStats() {
 
     const img = li.querySelector('img.profile-img');
     img.src = item.profile.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+
+    const rankValue = li.querySelector('.rank-value');
+    applyStatUpdate(rankValue, String(index + 1));
+
     const statValue = li.querySelector('.stat-pill .stat-value');
-    const promille = getLivePromille(item.profile);
-    applyStatUpdate(statValue, promille === null ? '--' : promille.toFixed(2));
+    applyStatUpdate(statValue, Math.abs(item.promille).toFixed(2));
 
     list.appendChild(li);
     existingItems.delete(item.hash);
@@ -311,6 +376,8 @@ function renderViews() {
 async function updateFriendsUI() {
   const list = document.getElementById('friendsList');
   list.innerHTML = '';
+
+  await loadFriendsForActiveProfile();
   
   if (myFriends.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga vänner tillagda. Sök på deras Hashkod!</p>';
@@ -331,14 +398,18 @@ async function updateFriendsUI() {
     img.src = friend.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
     const info = document.createElement('div');
     info.className = 'friend-info';
-    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${friend.name}</span><br><span style="font-size:0.8em; color:#7f8c8d;">Hash: ${hash}</span>`;
+    info.innerHTML = `<span class="friend-name" style="font-size:1.1em; color:#2C3E50;">${friend.name}</span><span class="friend-hash" style="font-size:0.8em; color:#7f8c8d;">Hash: ${hash}</span>`;
     const delBtn = document.createElement('button');
     delBtn.innerText = "X";
     delBtn.style.cssText = "background: #E74C3C; color: white; width: auto; padding: 5px 10px; font-size: 12px; box-shadow: 2px 2px 0px #2C3E50;";
     delBtn.onclick = () => {
-      myFriends.splice(index, 1);
-      localStorage.setItem('myFriendsHashes', JSON.stringify(myFriends));
-      updateFriendsUI();
+      const activeProfile = getActiveProfile();
+      if (!activeProfile || !sb) return;
+      sb.from('friends')
+        .delete()
+        .eq('player_hash', activeProfile.id)
+        .eq('friend_hash', hash)
+        .then(() => updateFriendsUI());
     };
     li.appendChild(img);
     li.appendChild(info);
@@ -352,7 +423,9 @@ async function updateFriendsUI() {
 async function addFriend() {
   const hash = document.getElementById('friendHash').value.trim();
   if(!hash || !sb) return;
-  
+
+  await loadFriendsForActiveProfile();
+
   if(myFriends.includes(hash)) {
      alert("Du har redan lagt till denna vän!");
      return;
@@ -360,8 +433,6 @@ async function addFriend() {
   
   const { data } = await sb.from('profiles').select('player_hash').eq('player_hash', hash).single();
   if (data) {
-    myFriends.push(hash);
-    localStorage.setItem('myFriendsHashes', JSON.stringify(myFriends));
     document.getElementById('friendHash').value = '';
     
     const activeProfile = getActiveProfile();

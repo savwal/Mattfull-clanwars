@@ -35,7 +35,7 @@ function renderDrinkNameCounts(drinkCounts) {
 
 function renderGroupedLogItem(group, displayName) {
   const metrics = calculateDrinkMetrics(group.logs);
-  const totalCl = calculateCl(metrics.totalGrams);
+  const totalCl = Math.abs(calculateCl(metrics.totalGrams));
   const latestTimestamp = group.logs.length > 0 ? new Date(group.logs[0].consumed_at) : null;
   const latestLabel = latestTimestamp ? latestTimestamp.toLocaleString('sv-SE') : 'Okänt datum';
 
@@ -129,7 +129,7 @@ async function openHistoricalLogsPopup() {
       <div><strong>Antal player_hash:</strong> ${groupedLogs.length}</div>
       <div><strong>Antal loggar:</strong> ${overallMetrics.totalEntries}</div>
       <div><strong>Total volym:</strong> ${overallMetrics.totalVolumeMl} ml</div>
-      <div><strong>Total alkohol:</strong> ${calculateCl(overallMetrics.totalGrams).toFixed(1)} cl</div>
+      <div><strong>Total alkohol:</strong> ${Math.abs(calculateCl(overallMetrics.totalGrams)).toFixed(1)} cl</div>
     </div>
   `;
 

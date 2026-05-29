@@ -57,7 +57,7 @@ function buildGraphSeries(history, profile) {
   const currentBac = Number.isFinite(currentBacRaw) ? currentBacRaw : 0;
   for (let t = nowMs; t <= nowMs + horizonMs; t += stepMs) {
     const projected = t === nowMs ? currentBac : calculateBACAtTime(history, profile, t);
-    const bac = Number.isFinite(projected) ? projected : 0;
+    const bac = Number.isFinite(projected) ? Math.abs(projected) : 0;
     const label = new Date(t).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
     labels.push(label);
     dataPoints.push(Number(bac.toFixed(3)));
@@ -109,8 +109,8 @@ function renderStats(prefix, profile, history, series) {
     return;
   }
   const totalGrams = history.reduce((sum, d) => sum + d.grams, 0);
-  const maxBac = Math.max(...series.dataPoints);
-  const currentBac = calculateBACAtTime(history, profile, Date.now());
+  const maxBac = Math.abs(Math.max(...series.dataPoints));
+  const currentBac = Math.abs(calculateBACAtTime(history, profile, Date.now()));
   const lastDrink = history[history.length - 1];
   const zones = getZones(profile);
 
@@ -119,7 +119,7 @@ function renderStats(prefix, profile, history, series) {
     <p style="margin:3px 0;"><strong>Vikt:</strong> ${profile.weight} kg</p>
     <p style="margin:3px 0;"><strong>Kon:</strong> ${profile.gender === 'kvinna' ? 'Kvinna' : 'Man'}</p>
     <p style="margin:3px 0;"><strong>Funzone:</strong> ${zones.redMax.toFixed(1)} promille</p>
-    <p style="margin:3px 0;"><strong>Total:</strong> ${totalGrams.toFixed(1)} g (${calculateCl(totalGrams).toFixed(1)} cl)</p>
+    <p style="margin:3px 0;"><strong>Total:</strong> ${totalGrams.toFixed(1)} g (${Math.abs(calculateCl(totalGrams)).toFixed(1)} cl)</p>
     <p style="margin:3px 0;"><strong>Max promille:</strong> ${maxBac.toFixed(2)} promille</p>
     <p style="margin:3px 0;"><strong>Nuvarande promille:</strong> ${currentBac.toFixed(2)} promille</p>
     <p style="margin:3px 0;"><strong>Senaste dryck:</strong> ${lastDrink.name} (${lastDrink.volume} ml, ${lastDrink.abv}% abv)</p>
