@@ -31,6 +31,9 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 #opponentGraphCanvas { width: 100%; height: 400px !important; margin: 20px 0; }
 .duo-graphs-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
 @media (max-width: 768px) { .duo-graphs-container { grid-template-columns: 1fr; } }
+@media (display-mode: standalone) {
+  .duo-graphs-container { grid-template-columns: 1fr; }
+}
 .graph-card { background: #f0f0f0; padding: 15px; border: 2px solid #2C3E50; }
 .graph-card canvas { width: 100%; height: 350px !important; margin: 10px 0; }
 .graph-card h3 { margin: 0 0 10px 0; color: #2C3E50; font-family: 'Arial Black'; text-transform: uppercase; }
@@ -153,6 +156,7 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 <script src="../../shared/scripts/hash.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
 <script src="../../shared/scripts/shared.js"></script>
 <script src="../../shared/scripts/calculator.js"></script>
 <script src="../../log/scripts/graph.js"></script>
@@ -162,6 +166,43 @@ let myActiveBattles = [];
 let activeParticipants = new Set();
 let profilesData = {};
 let realtimeChannel = null;
+const LOCAL_ENDED_BATTLES_KEY = 'redlos_ended_battles';
+const BATTLE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+function getEndedBattleIds() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_ENDED_BATTLES_KEY)) || [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveEndedBattleIds(ids) {
+  localStorage.setItem(LOCAL_ENDED_BATTLES_KEY, JSON.stringify(ids));
+}
+
+function isBattleOlderThan24Hours(battle) {
+  if (!battle || !battle.created_at) return false;
+  const createdAt = new Date(battle.created_at).getTime();
+  if (!Number.isFinite(createdAt)) return false;
+  return Date.now() - createdAt >= BATTLE_MAX_AGE_MS;
+}
+
+function endBattleLocally(battleId) {
+  if (!battleId) return;
+  if (!confirm('Vill du ta bort denna aktiva strid lokalt?')) return;
+
+  const endedBattleIds = new Set(getEndedBattleIds());
+  endedBattleIds.add(battleId);
+  saveEndedBattleIds(Array.from(endedBattleIds));
+
+  myActiveBattles = myActiveBattles.filter(battle => battle.id !== battleId);
+  activeParticipants = new Set();
+  myActiveBattles.forEach(battle => {
+    (battle.battle_participants || []).forEach(participant => activeParticipants.add(participant.player_hash));
+  });
+  renderActiveBattles();
+}
 
 function openBattleModal(title) {
   currentMode = title;
@@ -210,6 +251,17 @@ function closeBattleModal() {
   document.getElementById('battleModal').style.display = 'none';
 }
 
+function getBattleTypeCandidates(mode) {
+  if (mode === 'Solo Battle') return ['Solo Battle', 'solo_battle', 'single_battle', 'solo', 'single'];
+  if (mode === 'Duos Battle') return ['Duos Battle', 'duos_battle', 'duos', 'duo'];
+  if (mode === 'Custom Battle Royale') return ['Custom Battle Royale', 'custom_battle_royale', 'custom'];
+  return [mode];
+}
+
+function normalizeHashInput(value) {
+  return (value || '').trim();
+}
+
 async function syncProfileToSupabase(profile) {
   if (!sb || !profile) return;
   await sb.from('profiles').upsert({
@@ -235,22 +287,21 @@ async function startBattle() {
   const activeProfile = getActiveProfile();
   if (!activeProfile) return;
 
-  const now = new Date();
-  const endTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const battleStartedAt = new Date().toISOString();
 
-  let rawParticipants = [activeProfile.id];
+  let rawParticipants = [normalizeHashInput(activeProfile.id)];
   let opponentHash = null;
   let duosTargets = null;
 
   if (currentMode === 'Duos Battle') {
-    const teammateHash = document.getElementById('teammateHash').value.trim();
-    const opponentHash1 = document.getElementById('opponentHash1').value.trim();
-    const opponentHash2 = document.getElementById('opponentHash2').value.trim();
+    const teammateHash = normalizeHashInput(document.getElementById('teammateHash').value);
+    const opponentHash1 = normalizeHashInput(document.getElementById('opponentHash1').value);
+    const opponentHash2 = normalizeHashInput(document.getElementById('opponentHash2').value);
     if (!teammateHash || !opponentHash1 || !opponentHash2) return;
     rawParticipants.push(teammateHash, opponentHash1, opponentHash2);
     duosTargets = { teammateHash, opponentHash1, opponentHash2 };
   } else if (currentMode === 'Solo Battle') {
-    opponentHash = document.getElementById('opponentHash').value.trim();
+    opponentHash = normalizeHashInput(document.getElementById('opponentHash').value);
     if (!opponentHash) return;
     rawParticipants.push(opponentHash);
   }
@@ -267,44 +318,51 @@ async function startBattle() {
   }
 
   const { data: validProfiles } = await sb.from('profiles').select('player_hash').in('player_hash', participants);
-  const validHashes = validProfiles ? validProfiles.map(p => p.player_hash) : [];
-  const missingHashes = participants.filter(p => !validHashes.includes(p));
-  
+  const validHashes = new Set((validProfiles || []).map(p => p.player_hash));
+  const missingHashes = participants.filter(p => !validHashes.has(p));
+
   if (missingHashes.length > 0) {
-    const newProfiles = missingHashes.map(h => ({ 
-      player_hash: h, 
-      display_name: h === activeProfile.id ? activeProfile.name : h 
-    }));
-    await sb.from('profiles').upsert(newProfiles);
+    alert(`Hash hittades inte i profiler: ${missingHashes.join(', ')}`);
+    return;
   }
 
   await syncProfileToSupabase(activeProfile);
 
-  const { data: newBattle, error } = await sb.from('battles').insert({
+  const battleId = crypto.randomUUID();
+  const { error: insertBattleError } = await sb.from('battles').insert({
+    id: battleId,
     battle_type: currentMode,
-    status: 'active',
-    start_time: now.toISOString(),
-    end_time: endTime.toISOString()
-  }).select('id').single();
+    status: 'pending',
+    created_at: battleStartedAt
+  });
 
-  if (newBattle) {
-    const pInserts = participants.map((p, idx) => ({
-      battle_id: newBattle.id,
-      player_hash: p,
-      team: currentMode === 'Duos Battle' ? (idx < 2 ? 1 : 2) : idx
-    }));
-    await sb.from('battle_participants').insert(pInserts);
-    closeBattleModal();
+  if (insertBattleError) {
+    alert('Kunde inte starta battle. Kontrollera hash och prova igen.');
+    return;
+  }
+
+  const pInserts = participants.map((p, idx) => ({
+    battle_id: battleId,
+    player_hash: p,
+    team: currentMode === 'Duos Battle' ? (idx < 2 ? 1 : 2) : idx + 1
+  }));
+
+  const { error: participantsError } = await sb.from('battle_participants').insert(pInserts);
+  if (participantsError) {
+    alert('Battle skapades men deltagare kunde inte läggas till.');
     await fetchActiveBattles();
-    if (currentMode === 'Solo Battle' && opponentHash) {
-      window.location.href = `./single_battle.html?hash=${encodeURIComponent(opponentHash)}`;
-    }
-    if (currentMode === 'Duos Battle' && duosTargets) {
-      const { teammateHash, opponentHash1, opponentHash2 } = duosTargets;
-      window.location.href = `./duos_battle.html?teammate=${encodeURIComponent(teammateHash)}&opponent1=${encodeURIComponent(opponentHash1)}&opponent2=${encodeURIComponent(opponentHash2)}`;
-    }
-  } else if (error) {
-    alert("Ett fel inträffade.");
+    closeBattleModal();
+    return;
+  }
+
+  closeBattleModal();
+  await fetchActiveBattles();
+  if (currentMode === 'Solo Battle' && opponentHash) {
+    window.location.href = `./single_battle.html?hash=${encodeURIComponent(opponentHash)}&battle_start=${encodeURIComponent(battleStartedAt)}`;
+  }
+  if (currentMode === 'Duos Battle' && duosTargets) {
+    const { teammateHash, opponentHash1, opponentHash2 } = duosTargets;
+    window.location.href = `./duos_battle.html?teammate=${encodeURIComponent(teammateHash)}&opponent1=${encodeURIComponent(opponentHash1)}&opponent2=${encodeURIComponent(opponentHash2)}&battle_start=${encodeURIComponent(battleStartedAt)}`;
   }
 }
 
@@ -315,8 +373,6 @@ async function fetchActiveBattles() {
   const activeProfile = getActiveProfile();
   if (!activeProfile || !sb) return;
 
-  const now = new Date().toISOString();
-  
   const { data: myParticipations } = await sb.from('battle_participants')
     .select('battle_id')
     .eq('player_hash', activeProfile.id);
@@ -329,16 +385,28 @@ async function fetchActiveBattles() {
   const battleIds = myParticipations.map(p => p.battle_id);
   
   const { data: battles } = await sb.from('battles')
-    .select(`id, battle_type, start_time, end_time, battle_participants(player_hash, team)`)
+    .select(`id, battle_type, status, created_at, battle_participants(player_hash, team)`)
     .in('id', battleIds)
-    .gt('end_time', now)
-    .eq('status', 'active');
+    .in('status', ['pending', 'active'])
+    .order('created_at', { ascending: false });
 
-  myActiveBattles = battles || [];
+  const endedBattleIds = new Set(getEndedBattleIds());
+  const visibleBattles = [];
+  (battles || []).forEach(battle => {
+    if (endedBattleIds.has(battle.id)) return;
+    if (isBattleOlderThan24Hours(battle)) {
+      endedBattleIds.add(battle.id);
+      return;
+    }
+    visibleBattles.push(battle);
+  });
+  saveEndedBattleIds(Array.from(endedBattleIds));
+
+  myActiveBattles = visibleBattles;
   
   activeParticipants = new Set();
   myActiveBattles.forEach(b => {
-    b.battle_participants.forEach(p => activeParticipants.add(p.player_hash));
+    (b.battle_participants || []).forEach(p => activeParticipants.add(p.player_hash));
   });
 
   if (activeParticipants.size > 0) {
@@ -365,18 +433,22 @@ async function renderActiveBattles() {
     const li = document.createElement('li');
     li.style.flexDirection = 'column';
     li.style.alignItems = 'flex-start';
+    li.style.gap = '10px';
     
     const title = document.createElement('div');
-    title.innerHTML = `<strong style="font-size:1.2em; color:#2C3E50;">${battle.battle_type || battle.type}</strong> <br><span style="font-size:0.8em; color:#7f8c8d;">Slutar: ${new Date(battle.end_time).toLocaleString()}</span>`;
+    title.innerHTML = `<strong style="font-size:1.2em; color:#2C3E50;">${battle.battle_type || battle.type}</strong> <br><span style="font-size:0.8em; color:#7f8c8d;">Skapad: ${new Date(battle.created_at).toLocaleString()}</span>`;
     li.appendChild(title);
     
     const statsContainer = document.createElement('div');
     statsContainer.style.width = '100%';
     statsContainer.style.marginTop = '10px';
 
-    const startIso = battle.start_time;
-    const endIso = battle.end_time;
-    const hashes = battle.battle_participants.map(p => p.player_hash);
+    const startIso = battle.created_at;
+    const endIso = new Date().toISOString();
+    const hashes = (battle.battle_participants || []).map(p => p.player_hash);
+    if (hashes.length === 0) {
+      continue;
+    }
     
     const { data: drinks } = await sb.from('drink_logs')
       .select('player_hash, grams_alcohol')
@@ -425,6 +497,18 @@ async function renderActiveBattles() {
     });
 
     li.appendChild(statsContainer);
+
+    const endButton = document.createElement('button');
+    endButton.type = 'button';
+    endButton.textContent = 'Avsluta strid';
+    endButton.style.background = '#E74C3C';
+    endButton.style.color = '#FFF';
+    endButton.style.width = 'auto';
+    endButton.style.alignSelf = 'flex-end';
+    endButton.style.marginTop = '10px';
+    endButton.onclick = () => endBattleLocally(battle.id);
+    li.appendChild(endButton);
+
     list.appendChild(li);
   }
 }
@@ -453,8 +537,8 @@ async function renderOpponentGraphData(canvasId, statsId, opponentHash, opponent
     const { data: battleLogs } = await sb.from('drink_logs')
       .select('drink_name, volume_ml, abv, grams_alcohol, consumed_at')
       .eq('player_hash', opponentHash)
-      .gte('consumed_at', battle.start_time)
-      .lte('consumed_at', battle.end_time)
+      .gte('consumed_at', battle.created_at)
+      .lte('consumed_at', new Date().toISOString())
       .order('consumed_at', { ascending: true });
 
     let history = buildDrinkHistory(battleLogs);
@@ -472,20 +556,37 @@ async function renderOpponentGraphData(canvasId, statsId, opponentHash, opponent
       document.getElementById(statsId).innerHTML = '<p style="color:#7f8c8d;">Ingen dryckdata</p>';
       return false;
     }
-    
+
     const startTime = new Date(history[0].timestamp);
-    const endTime = battleLogs && battleLogs.length > 0
-      ? Math.min(new Date(battle.end_time), new Date())
-      : new Date();
+    const endTime = new Date(Date.now() + 2 * 60 * 60 * 1000);
+    const currentTime = Date.now();
     const labels = [];
     const dataPoints = [];
-    
-    let currentTime = new Date(startTime);
-    while (currentTime <= endTime) {
-      const bac = calculateBACAtTime(history, opponentProfile, currentTime.getTime());
-      labels.push(currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }));
+
+    let timelineTime = new Date(startTime);
+    while (timelineTime <= endTime) {
+      const bac = calculateBACAtTime(history, opponentProfile, timelineTime.getTime());
+      labels.push(timelineTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }));
       dataPoints.push(bac);
-      currentTime = new Date(currentTime.getTime() + 30 * 60000); 
+      timelineTime = new Date(timelineTime.getTime() + 30 * 60000); 
+    }
+
+    let currentLabel = null;
+    if (labels.length > 0) {
+      const currentLabelIndex = Math.min(
+        labels.length - 1,
+        Math.max(0, Math.round((currentTime - startTime.getTime()) / (30 * 60000)))
+      );
+      currentLabel = labels[currentLabelIndex];
+    }
+
+    const chartCanvas = document.getElementById(canvasId);
+    if (chartCanvas) {
+      const minWidth = 700;
+      const pointWidth = 60;
+      const targetWidth = Math.max(minWidth, labels.length * pointWidth);
+      chartCanvas.style.width = `${targetWidth}px`;
+      chartCanvas.style.height = '300px';
     }
     
     const opponentZones = { 
@@ -508,7 +609,7 @@ async function renderOpponentGraphData(canvasId, statsId, opponentHash, opponent
       <p style="margin:3px 0;"><strong>Senaste dryck:</strong> ${lastDrink.name} (${lastDrink.volume} ml, ${lastDrink.abv}% abv)</p>
     `;
     
-    renderChart(canvasId, labels, dataPoints, opponentZones);
+    renderChart(canvasId, labels, dataPoints, opponentZones, { currentLabel });
     return true;
     
   } catch (error) {
@@ -571,15 +672,12 @@ async function viewBattleGraphs(battle) {
 
       if (!opp) return;
 
-      document.getElementById('graphModalTitle').textContent = `${me.display_name} vs ${opp.display_name}`;
-      document.getElementById('duoGraphTitle1').textContent = me.display_name;
-      document.getElementById('duoGraphTitle2').textContent = opp.display_name;
+      document.getElementById('graphModalTitle').textContent = opp.display_name;
       
       document.getElementById('graphLoadingIndicator').style.display = 'none';
-      document.getElementById('duoGraphsContainer').style.display = 'grid';
+      document.getElementById('singleGraphContainer').style.display = 'block';
       
-      await renderOpponentGraphData('opponentGraphCanvas1', 'graphStats1', me.player_hash, me, battle);
-      await renderOpponentGraphData('opponentGraphCanvas2', 'graphStats2', opp.player_hash, opp, battle);
+      await renderOpponentGraphData('opponentGraphCanvas', 'graphStats', opp.player_hash, opp, battle);
     }
     
   } catch (error) {

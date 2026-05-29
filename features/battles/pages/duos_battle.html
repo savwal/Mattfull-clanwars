@@ -18,6 +18,10 @@ h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #
 .duos-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 @media (max-width: 900px) { .duos-grid { grid-template-columns: 1fr; } }
 .teammate-card { grid-column: span 2; }
+@media (display-mode: standalone) {
+  .duos-grid { grid-template-columns: 1fr; }
+  .teammate-card { grid-column: span 1; }
+}
 .section-title { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #2C3E50; margin: 0 0 10px 0; }
 .profile-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .profile-meta { font-weight: 900; color: #2C3E50; }
@@ -151,6 +155,8 @@ h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/scripts/shared.js"></script>
 <script src="../../shared/scripts/calculator.js"></script>
@@ -161,7 +167,8 @@ const params = new URLSearchParams(window.location.search);
 const teammate = params.get('teammate');
 const opponent1 = params.get('opponent1');
 const opponent2 = params.get('opponent2');
-renderDuosBattle(teammate, opponent1, opponent2);
+const battleStart = params.get('battle_start');
+renderDuosBattle(teammate, opponent1, opponent2, battleStart);
 </script>
 </body>
 </html>

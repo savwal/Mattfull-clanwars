@@ -111,6 +111,8 @@ h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/scripts/shared.js"></script>
 <script src="../../shared/scripts/calculator.js"></script>
@@ -119,7 +121,8 @@ h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #
 <script>
 const params = new URLSearchParams(window.location.search);
 const hash = params.get('hash');
-renderSingleBattle(hash);
+const battleStart = params.get('battle_start');
+renderSingleBattle(hash, battleStart);
 </script>
 </body>
 </html>

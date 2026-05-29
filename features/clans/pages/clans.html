@@ -33,6 +33,44 @@ li:last-child { border-bottom: none; }
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
 .modal-content { background-color: #2A8CFF; color: white; margin: 30% auto; padding: 25px; border: 6px solid #2C3E50; box-shadow: 8px 8px 0px #2C3E50; border-radius: 0; width: 90%; max-width: 400px; text-align: center; position: relative; }
 .close-modal { color: #E74C3C; font-size: 32px; font-weight: bold; cursor: pointer; position: absolute; right: 15px; top: 10px; }
+
+#clanLeaderboard li {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+#clanLeaderboard .rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  border: 3px solid #2C3E50;
+  background: #E5E5E5;
+  color: #2C3E50;
+  font-weight: 900;
+  box-shadow: 2px 2px 0px #2C3E50;
+}
+
+#clanLeaderboard .leaderboard-info {
+  margin-left: 0;
+  text-align: left;
+}
+
+#clanLeaderboard .profile-img {
+  margin-right: 0;
+}
+
+#clanLeaderboard .badge {
+  margin-left: auto;
+  display: inline-block;
+  padding: 4px 8px;
+  border: 3px solid #2C3E50;
+  font-weight: 900;
+  background: #FFCC00;
+  color: #111;
+}
 </style>
 <link rel="stylesheet" href="../../shared/styles/nav.css">
 </head>
@@ -109,7 +147,7 @@ li:last-child { border-bottom: none; }
   <div class="card" style="text-align: center;">
     <h2 style="background: #E74C3C;">Klanens Läger</h2>
     <div class="clan-shield"></div>
-    <h1 id="clanTitle" style="margin: 0 0 5px 0; color: #2C3E50; font-family: 'Arial Black'; text-transform: uppercase;"></h1>
+    <h1 id="clanTitle" style="margin: 0 0 5px 0; color: #2C3E50; font-family: 'Arial Black'; text-transform: uppercase; white-space: normal; word-break: break-word; line-height: 1.05;"></h1>
     <div class="hash-text" id="clanHashDisplay"></div>
     <p style="margin: 10px 0 0 0; font-weight: bold;">Klanens Totala Poäng:</p>
     <div class="highlight-text stat-value" id="clanTotalElo">0.00 ‰</div>
@@ -161,6 +199,13 @@ function applyStatUpdate(element, text) {
     element.textContent = text;
     element.classList.remove('stat-bump');
   }, 50);
+}
+
+function formatClanTitle(name) {
+  if (!name) return '';
+  return name.length > 14
+    ? `${name.slice(0, 14)}<br>${name.slice(14)}`
+    : name;
 }
 
 function initClanRealtime() {
@@ -276,7 +321,7 @@ async function updateClanUI() {
 
   noClanView.style.display = 'none';
   hasClanView.style.display = 'block';
-  document.getElementById('clanTitle').innerText = clanData.name;
+  document.getElementById('clanTitle').innerHTML = formatClanTitle(clanData.name);
   document.getElementById('clanHashDisplay').innerText = myClanHash;
   initClanRealtime();
 
@@ -415,19 +460,33 @@ async function renderClanLeaderboard() {
     if (!li) {
       li = document.createElement('li');
       li.dataset.clanId = clan.id;
+      const rank = document.createElement('span');
+      rank.className = 'rank-badge';
+      rank.textContent = `#${index + 1}`;
+      const img = document.createElement('img');
+      img.className = 'profile-img';
+      img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
       const info = document.createElement('div');
-      info.className = 'member-info';
+      info.className = 'leaderboard-info';
+      const badge = document.createElement('div');
+      badge.className = 'badge';
+      badge.innerHTML = `<span class="stat-value"></span> cl`;
+
+      li.appendChild(rank);
+      li.appendChild(img);
       li.appendChild(info);
-      const stats = document.createElement('div');
-      stats.className = 'member-stats';
-      stats.innerHTML = `<span class="stat-value"></span> <span style="font-size:12px; color:#2C3E50;">cl</span>`;
-      li.appendChild(stats);
+      li.appendChild(badge);
     }
 
-    const info = li.querySelector('.member-info');
-    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#${index + 1} ${clan.name}</span><br><span style="font-size:0.8em; color:#7f8c8d;">${clan.id}</span>`;
-    const statValue = li.querySelector('.stat-value');
-    applyStatUpdate(statValue, clan.cl.toFixed(1));
+    const rankEl = li.querySelector('.rank-badge');
+    rankEl.textContent = `#${index + 1}`;
+    const info = li.querySelector('.leaderboard-info');
+    const clanName = clan.name.length > 14
+      ? `${clan.name.slice(0, 14)}<br>${clan.name.slice(14)}`
+      : clan.name;
+    info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50; display:inline-block;">${clanName}</span><br><span style="font-size:0.8em; color:#7f8c8d;">${clan.id}</span>`;
+    const statVal = li.querySelector('.stat-value');
+    applyStatUpdate(statVal, clan.cl.toFixed(1));
 
     list.appendChild(li);
     existingItems.delete(clan.id);

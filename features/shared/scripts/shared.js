@@ -85,6 +85,67 @@ function initApp() {
   localStorage.setItem('redlös_global', JSON.stringify(globalData));
 }
 initApp();
+
+function enablePageTransitions() {
+  const ready = () => {
+    document.body.classList.add('page-ready');
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(ready), { once: true });
+  } else {
+    requestAnimationFrame(ready);
+  }
+
+  window.addEventListener('pageshow', () => {
+    document.body.classList.remove('page-leaving');
+    document.body.classList.add('page-ready');
+  });
+
+  document.addEventListener('click', event => {
+    const link = event.target.closest('a[href]');
+    if (!link) return;
+    if (event.defaultPrevented) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (link.target && link.target !== '_self') return;
+
+    const url = new URL(link.href, window.location.href);
+    if (url.origin !== window.location.origin) return;
+    if (url.href === window.location.href) return;
+
+    event.preventDefault();
+    document.body.classList.add('page-leaving');
+    setTimeout(() => {
+      window.location.href = url.href;
+    }, 140);
+  }, true);
+
+  document.addEventListener('click', event => {
+    const button = event.target.closest('button[onclick]');
+    if (!button) return;
+    const handler = button.getAttribute('onclick') || '';
+    const navigationMatch = handler.match(/window\.location\.(?:href|assign)\s*=\s*(['"])(.*?)\1/);
+    if (!navigationMatch) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    document.body.classList.add('page-leaving');
+    setTimeout(() => {
+      window.location.href = navigationMatch[2];
+    }, 140);
+  }, true);
+
+  window.navigateWithTransition = function(url) {
+    if (!url) return;
+    document.body.classList.add('page-leaving');
+    setTimeout(() => {
+      window.location.href = url;
+    }, 140);
+  };
+}
+
+enablePageTransitions();
+
 function getGlobalData() {
   return JSON.parse(localStorage.getItem('redlös_global'));
 }

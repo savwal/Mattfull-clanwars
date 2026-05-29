@@ -28,7 +28,7 @@ li:last-child { border-bottom: none; }
 .modal-content { background-color: #FFFFFF; color: #2C3E50; margin: 20% auto; padding: 20px; border: 6px solid #2C3E50; box-shadow: 8px 8px 0px #2C3E50; border-radius: 0; width: 90%; max-width: 520px; text-align: center; position: relative; }
 .close-modal { color: #E74C3C; font-size: 32px; font-weight: bold; cursor: pointer; position: absolute; right: 15px; top: 10px; }
 </style>
-<link rel="stylesheet" href="../../features/shared/styles/nav.css">
+<link rel="stylesheet" href="../shared/styles/nav.css">
 </head>
 <body>
 <nav class="main-nav">
@@ -94,15 +94,13 @@ li:last-child { border-bottom: none; }
 <div class="card">
   <h2>Historik</h2>
   <p style="font-weight: bold; color: #2C3E50;">Välj en vy för din historik.</p>
-  <button class="tab-button active" onclick="showTab('historiskalogar', this)">Historiska Loggar</button>
+  <button type="button" class="tab-button active" onclick="openHistoricalLogsPopup()">Historiska Loggar</button>
   <button class="tab-button" onclick="showTab('pastevents', this)">Förflutna Events</button>
   <button class="tab-button" onclick="showTab('wrapped', this)">Wrapped</button>
   
   <div id="historiskalogar-tab" style="display: none;">
-    <div style="margin-top: 20px; text-align: left;">
-      <h3 style="font-weight: bold; color: #2C3E50; margin: 0 0 15px 0;">Mina registrerade drycker:</h3>
-      <ul id="allLogsHistory"></ul>
-      <p id="noLogsMessage" style="text-align: center; color: #2C3E50; font-weight: bold; margin-top: 20px;">du behöver börja dricka</p>
+    <div style="margin-top: 20px; text-align: center;">
+      <p style="font-weight: bold; color: #2C3E50; margin: 0;">Öppnar dina historiska loggar i en popup.</p>
     </div>
   </div>
   
@@ -113,7 +111,7 @@ li:last-child { border-bottom: none; }
   </div>
   
   <div id="wrapped-tab" style="display: none;">
-    <button onclick="window.location.href='../wrapped/pages/wrapped.html'" style="margin-top: 20px;">Wrapped (Coming Soon)</button>
+    <button onclick="window.location.href='../wrapped/pages/wrapped.html'" style="margin-top: 20px;">Se Wrapped</button>
   </div>
 </div>
 
@@ -127,9 +125,20 @@ li:last-child { border-bottom: none; }
   </div>
 </div>
 
-<script src="../../features/shared/scripts/shared.js"></script>
-<script src="../../features/shared/scripts/calculator.js"></script>
+<div id="historicalLogsModal" class="modal">
+  <div class="modal-content card">
+    <span class="close-modal" onclick="closeHistoricalLogsPopup()">&times;</span>
+    <h2 style="background: #2A8CFF;">Historiska Loggar</h2>
+    <div id="historicalLogsMeta" class="event-meta" style="margin: 10px 0;"></div>
+    <div id="historicalLogsSummary" style="margin: 10px 0 15px 0;"></div>
+    <ul id="historicalLogsList"></ul>
+  </div>
+</div>
+
+<script src="../shared/scripts/shared.js"></script>
+<script src="../shared/scripts/calculator.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="scripts/historicalLogsPopup.js"></script>
 <script>
 function showTab(tabName, element) {
   document.getElementById('historiskalogar-tab').style.display = 'none';
@@ -141,7 +150,6 @@ function showTab(tabName, element) {
 
   if (tabName === 'historiskalogar') {
     document.getElementById('historiskalogar-tab').style.display = 'block';
-    loadAllLogs();
   } else if (tabName === 'pastevents') {
     document.getElementById('pastevents-tab').style.display = 'block';
     loadPastEvents();
@@ -160,65 +168,6 @@ function openPastEventsModal() {
 function closePastEventsModal() {
   const modal = document.getElementById('pastEventsModal');
   if (modal) modal.style.display = 'none';
-}
-
-function loadAllLogs() {
-  const profile = getActiveProfile();
-  if (!profile) {
-    document.getElementById('noLogsMessage').style.display = 'block';
-    return;
-  }
-
-  const listContainer = document.getElementById('allLogsHistory');
-  const noLogsMessage = document.getElementById('noLogsMessage');
-
-  function renderLocalArchive() {
-    const archived = getArchivedDrinkHistory(profile.id) || [];
-    listContainer.innerHTML = '';
-    if (!archived || archived.length === 0) {
-      noLogsMessage.style.display = 'block';
-      return;
-    }
-    noLogsMessage.style.display = 'none';
-    archived.slice().reverse().forEach(item => {
-      const li = document.createElement('li');
-      const clValue = calculateCl(item.grams);
-      const timestamp = new Date(item.timestamp);
-      const dateLabel = timestamp.toLocaleDateString();
-      const timeLabel = timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-      li.innerHTML = `<div><strong>${dateLabel} ${timeLabel}</strong></div><div>${clValue > 0 ? '+' : ''}${clValue.toFixed(1)}cl</div>`;
-      listContainer.appendChild(li);
-    });
-  }
-
-  if (sb) {
-    sb.from('drink_logs')
-      .select('*')
-      .eq('player_hash', profile.id)
-      .order('consumed_at', { ascending: false })
-      .then(({ data, error }) => {
-        listContainer.innerHTML = '';
-        if (error || !data || data.length === 0) {
-          renderLocalArchive();
-          return;
-        }
-        noLogsMessage.style.display = 'none';
-        data.forEach(item => {
-          const li = document.createElement('li');
-          const grams = Number.isFinite(item.grams_alcohol)
-            ? item.grams_alcohol
-            : parseFloat((item.volume_ml * (item.abv / 100) * 0.789).toFixed(1));
-          const clValue = calculateCl(grams);
-          const timestamp = new Date(item.consumed_at);
-          const dateLabel = timestamp.toLocaleDateString();
-          const timeLabel = timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-          li.innerHTML = `<div><strong>${dateLabel} ${timeLabel}</strong></div><div>${clValue > 0 ? '+' : ''}${clValue.toFixed(1)}cl</div>`;
-          listContainer.appendChild(li);
-        });
-      });
-  } else {
-    renderLocalArchive();
-  }
 }
 
 async function loadPastEvents() {

@@ -1,7 +1,21 @@
 const chartInstances = {};
 
+// Ensure annotation plugin is registered for all pages using this shared graph renderer.
+if (typeof Chart !== 'undefined' && typeof Chart.register === 'function') {
+  const annotationPlugin = window['chartjs-plugin-annotation'] || window.ChartAnnotation;
+  if (annotationPlugin) {
+    try {
+      Chart.register(annotationPlugin);
+    } catch (error) {
+      // Plugin may already be registered; ignore duplicate registration failures.
+    }
+  }
+}
+
 function renderChart(canvasId, labels, dataPoints, zones, options = {}) {
-  const ctx = document.getElementById(canvasId).getContext('2d');
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
   
   if (chartInstances[canvasId]) {
     chartInstances[canvasId].destroy();

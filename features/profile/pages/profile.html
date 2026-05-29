@@ -114,7 +114,7 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   </select>
   <h3 style="margin-top:20px; font-family:'Arial Black';">Funzone gräns</h3>
   <input type="number" step="0.1" id="profileFunzone" placeholder="Funzone gräns (‰)">
-  <button onclick="saveCurrentProfile()" style="margin-top: 15px;">Spara Lokalt</button>
+  <button onclick="saveCurrentProfile()" style="margin-top: 15px;">Spara</button>
   <button onclick="logout()" style="margin-top: 15px; background: #E74C3C; color: white;">Logga Ut (Nollställ)</button>
 </div>
 
@@ -122,15 +122,16 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/scripts/shared.js"></script>
 <script>
-let currentProfile = getActiveProfile();
+let currentProfile = getActiveProfile() || null;
 function renderProfileSelect() {
   const select = document.getElementById('profileSelect');
   select.innerHTML = '';
+  const activeId = currentProfile ? currentProfile.id : null;
   getProfiles().forEach(p => {
     const opt = document.createElement('option');
     opt.value = p.id;
     opt.textContent = p.name;
-    if (p.id === currentProfile.id) opt.selected = true;
+    if (activeId && p.id === activeId) opt.selected = true;
     select.appendChild(opt);
   });
 }
@@ -141,6 +142,7 @@ function loadSelectedProfile() {
   populateForm();
 }
 function populateForm() {
+  currentProfile = getActiveProfile();
   if(!currentProfile) return;
   document.getElementById('myHashDisplay').innerText = currentProfile.id;
   document.getElementById('profileName').value = currentProfile.name;
@@ -155,7 +157,6 @@ function populateForm() {
     picPreview.style.display = 'none';
     picPreview.src = '';
   }
-  renderHistory24h();
 }
 document.getElementById('picInput').addEventListener('change', function(e) {
   const file = e.target.files[0];
@@ -181,7 +182,6 @@ function saveCurrentProfile() {
   currentProfile.funzone = parseFloat(document.getElementById('profileFunzone').value);
   saveProfile(currentProfile);
   renderProfileSelect();
-  renderHistory24h();
 }
 
 function logout() {
@@ -191,35 +191,6 @@ function logout() {
   }
 }
 
-function renderHistory24h() {
-  const history = getDrinkHistory();
-  const list = document.getElementById('history24h');
-  const meta = document.getElementById('historyMeta');
-  list.innerHTML = '';
-
-  if (!history || history.length === 0) {
-    meta.textContent = 'Inga loggade drycker ännu.';
-    return;
-  }
-
-  const firstTimestamp = history.reduce((min, item) => Math.min(min, item.timestamp), history[0].timestamp);
-  const windowEnd = firstTimestamp + (24 * 60 * 60 * 1000);
-  const windowItems = history.filter(item => item.timestamp >= firstTimestamp && item.timestamp <= windowEnd);
-  const firstDate = new Date(firstTimestamp);
-  meta.textContent = `Startdatum: ${firstDate.toLocaleDateString()}`;
-
-  if (windowItems.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga drycker i detta 24h-fönster.</p>';
-    return;
-  }
-
-  windowItems.forEach(item => {
-    const li = document.createElement('li');
-    const time = new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    li.innerHTML = `<div><strong>${time}</strong>: ${item.name}<br><span style="color:#2C3E50;">${item.grams > 0 ? '+' : ''}${item.grams.toFixed(1)}g alkohol</span></div>`;
-    list.appendChild(li);
-  });
-}
 renderProfileSelect();
 populateForm();
 </script>

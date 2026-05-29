@@ -2,17 +2,26 @@ const BATTLE_GRAPH_STEP_MINUTES = 30;
 
 function buildDrinkHistory(drinkLogs) {
   return (drinkLogs || []).map(d => {
-    const grams = Number.isFinite(d.grams_alcohol)
-      ? d.grams_alcohol
-      : parseFloat((d.volume_ml * (d.abv / 100) * 0.789).toFixed(1));
+    const timestamp = new Date(d.consumed_at).getTime();
+    const gramsValue = Number(d.grams_alcohol);
+    const volumeValue = Number(d.volume_ml);
+    const abvValue = Number(d.abv);
+    const gramsFromColumn = Number.isFinite(gramsValue) ? gramsValue : NaN;
+    const canDeriveGrams = Number.isFinite(volumeValue) && Number.isFinite(abvValue);
+    const gramsDerived = canDeriveGrams
+      ? parseFloat((volumeValue * (abvValue / 100) * 0.789).toFixed(1))
+      : NaN;
+    const grams = Number.isFinite(gramsFromColumn) ? gramsFromColumn : gramsDerived;
+
     return {
-      name: d.drink_name,
-      volume: d.volume_ml,
-      abv: d.abv,
+      name: d.drink_name || 'Okänd dryck',
+      volume: Number.isFinite(volumeValue) ? volumeValue : 0,
+      abv: Number.isFinite(abvValue) ? abvValue : 0,
       grams,
-      timestamp: new Date(d.consumed_at).getTime()
+      timestamp
     };
-  });
+  }).filter(entry => Number.isFinite(entry.timestamp) && Number.isFinite(entry.grams))
+    .sort((a, b) => a.timestamp - b.timestamp);
 }
 
 async function fetchProfileByHash(hash) {
@@ -24,30 +33,37 @@ async function fetchProfileByHash(hash) {
   return data || null;
 }
 
-async function fetchLatestDrinkByHash(hash) {
+async function fetchRecentDrinksByHash(hash, sinceISO = null) {
   if (!sb || !hash) return [];
+  const lookbackISO = sinceISO || new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
   const { data } = await sb.from('drink_logs')
     .select('drink_name, volume_ml, abv, grams_alcohol, consumed_at')
     .eq('player_hash', hash)
-    .order('consumed_at', { ascending: false })
-    .limit(1);
+    .gte('consumed_at', lookbackISO)
+    .order('consumed_at', { ascending: true });
   return data || [];
 }
 
 function buildGraphSeries(history, profile) {
   if (!history || history.length === 0) return null;
-  const startTime = new Date(history[0].timestamp);
-  const endTime = new Date();
+  const nowMs = Date.now();
+  const horizonMs = 2 * 60 * 60 * 1000;
+  const stepMs = 15 * 60 * 1000;
   const labels = [];
   const dataPoints = [];
-  let currentTime = new Date(startTime);
-  while (currentTime <= endTime) {
-    const bac = calculateBACAtTime(history, profile, currentTime.getTime());
-    labels.push(currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }));
-    dataPoints.push(bac);
-    currentTime = new Date(currentTime.getTime() + BATTLE_GRAPH_STEP_MINUTES * 60000);
+
+  // Graph starts at opponent's current promille and projects forward iteratively.
+  const currentBacRaw = calculateBACAtTime(history, profile, nowMs);
+  const currentBac = Number.isFinite(currentBacRaw) ? currentBacRaw : 0;
+  for (let t = nowMs; t <= nowMs + horizonMs; t += stepMs) {
+    const projected = t === nowMs ? currentBac : calculateBACAtTime(history, profile, t);
+    const bac = Number.isFinite(projected) ? projected : 0;
+    const label = new Date(t).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+    labels.push(label);
+    dataPoints.push(Number(bac.toFixed(3)));
   }
-  return { labels, dataPoints };
+
+  return { labels, dataPoints, currentLabel: labels[0] || null };
 }
 
 function setText(id, text) {
@@ -72,25 +88,31 @@ function hide(id) {
 
 function normalizeProfile(hash, profile) {
   const displayName = profile && profile.display_name ? profile.display_name : hash;
+  const funzone = profile && Number.isFinite(profile.funzone)
+    ? profile.funzone
+    : (profile && Number.isFinite(profile.funzone_limit) ? profile.funzone_limit : 1.0);
+  const weight = profile && Number.isFinite(Number(profile.weight)) ? Number(profile.weight) : 75;
+  const gender = profile && typeof profile.gender === 'string' ? profile.gender : 'man';
   return {
     player_hash: hash,
     display_name: displayName,
-    weight: profile && profile.weight ? profile.weight : 75,
-    gender: profile && profile.gender ? profile.gender : 'man',
-    funzone_limit: profile && profile.funzone_limit ? profile.funzone_limit : 1.0
+    weight,
+    gender,
+    funzone
   };
 }
 
 function renderStats(prefix, profile, history, series) {
+  if (!series || !Array.isArray(series.dataPoints) || series.dataPoints.length === 0) {
+    setText(`${prefix}Promille`, '0.00 promille');
+    setText(`${prefix}Status`, 'Ingen giltig dryckdata.');
+    return;
+  }
   const totalGrams = history.reduce((sum, d) => sum + d.grams, 0);
   const maxBac = Math.max(...series.dataPoints);
   const currentBac = calculateBACAtTime(history, profile, Date.now());
   const lastDrink = history[history.length - 1];
-  const zones = {
-    legalMax: 0.2,
-    redMax: profile.funzone_limit || 1.0,
-    greenMax: 3.0
-  };
+  const zones = getZones(profile);
 
   setText(`${prefix}Promille`, `${currentBac.toFixed(2)} promille`);
   setHtml(`${prefix}Stats`, `
@@ -103,10 +125,10 @@ function renderStats(prefix, profile, history, series) {
     <p style="margin:3px 0;"><strong>Senaste dryck:</strong> ${lastDrink.name} (${lastDrink.volume} ml, ${lastDrink.abv}% abv)</p>
   `);
 
-  renderChart(`${prefix}Canvas`, series.labels, series.dataPoints, zones);
+  renderChart(`${prefix}Canvas`, series.labels, series.dataPoints, zones, { currentLabel: series.currentLabel });
 }
 
-async function renderSingleBattle(hash) {
+async function renderSingleBattle(hash, battleStartISO = null) {
   hide('singleContent');
   show('singleLoading');
 
@@ -122,15 +144,15 @@ async function renderSingleBattle(hash) {
 
   setText('singleHash', hash);
 
-  const [profile, latestLog] = await Promise.all([
+  const [profile, recentLogs] = await Promise.all([
     fetchProfileByHash(hash),
-    fetchLatestDrinkByHash(hash)
+    fetchRecentDrinksByHash(hash, battleStartISO)
   ]);
 
   const normalizedProfile = normalizeProfile(hash, profile);
   setText('singleName', normalizedProfile.display_name);
 
-  const history = buildDrinkHistory(latestLog);
+  const history = buildDrinkHistory(recentLogs).filter(entry => !battleStartISO || entry.timestamp >= new Date(battleStartISO).getTime());
   if (!history || history.length === 0) {
     setText('singleStatus', 'Ingen dryckdata.');
     setText('singlePromille', '0.00 promille');
@@ -147,10 +169,10 @@ async function renderSingleBattle(hash) {
     return;
   }
 
-  renderStats('single', normalizedProfile, history, series);
-  setText('singleStatus', '');
   hide('singleLoading');
   show('singleContent');
+  renderStats('single', normalizedProfile, history, series);
+  setText('singleStatus', '');
 }
 
 async function renderDuosBattle(hash1, hash2) {
@@ -166,23 +188,23 @@ async function renderDuosBattle(hash1, hash2) {
   show('duosContent');
 }
 
-async function renderProfilePanel(prefix, hash) {
+async function renderProfilePanel(prefix, hash, battleStartISO = null) {
   if (!hash || !sb) {
     setText(`${prefix}Status`, 'Saknar hash.');
     setText(`${prefix}Promille`, '0.00 promille');
     return;
   }
 
-  const [profile, latestLog] = await Promise.all([
+  const [profile, recentLogs] = await Promise.all([
     fetchProfileByHash(hash),
-    fetchLatestDrinkByHash(hash)
+    fetchRecentDrinksByHash(hash, battleStartISO)
   ]);
 
   const normalized = normalizeProfile(hash, profile);
   setText(`${prefix}Name`, normalized.display_name);
   setText(`${prefix}Hash`, hash);
 
-  const history = buildDrinkHistory(latestLog);
+  const history = buildDrinkHistory(recentLogs).filter(entry => !battleStartISO || entry.timestamp >= new Date(battleStartISO).getTime());
   if (history.length > 0) {
     const series = buildGraphSeries(history, normalized);
     if (series) {
@@ -194,7 +216,7 @@ async function renderProfilePanel(prefix, hash) {
   }
 }
 
-async function renderDuosBattle(teammateHash, opponentHash1, opponentHash2) {
+async function renderDuosBattle(teammateHash, opponentHash1, opponentHash2, battleStartISO = null) {
   hide('duosContent');
   show('duosLoading');
 
@@ -208,13 +230,13 @@ async function renderDuosBattle(teammateHash, opponentHash1, opponentHash2) {
     return;
   }
 
+  hide('duosLoading');
+  show('duosContent');
   await Promise.all([
-    renderProfilePanel('teammate', teammateHash),
-    renderProfilePanel('opponent1', opponentHash1),
-    renderProfilePanel('opponent2', opponentHash2)
+    renderProfilePanel('teammate', teammateHash, battleStartISO),
+    renderProfilePanel('opponent1', opponentHash1, battleStartISO),
+    renderProfilePanel('opponent2', opponentHash2, battleStartISO)
   ]);
 
   setText('duosStatus', '');
-  hide('duosLoading');
-  show('duosContent');
 }

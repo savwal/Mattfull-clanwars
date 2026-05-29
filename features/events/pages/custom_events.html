@@ -112,6 +112,7 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 <div class="card">
   <h2 id="eventTitle">Laddar event...</h2>
   <p id="eventMeta" class="event-meta"></p>
+  <button id="leaveEventButton" onclick="leaveCustomEvent()" style="background:#E74C3C; color:#FFF; display:none;">Lämna event</button>
   <button onclick="window.location.href='./events.html'" style="width:auto;">Tillbaka</button>
 </div>
 
@@ -186,6 +187,32 @@ async function fetchProfilesByHashes(hashes) {
     .select('player_hash, display_name, avatar_url, weight, gender')
     .in('player_hash', hashes);
   return data || [];
+}
+
+async function leaveCustomEvent() {
+  const params = new URLSearchParams(window.location.search);
+  const eventId = params.get('event_id');
+  const activeProfile = getActiveProfile();
+
+  if (!sb || !eventId || !activeProfile) {
+    alert('Kunde inte lämna eventet.');
+    return;
+  }
+
+  if (!confirm('Vill du lämna eventet?')) return;
+
+  const { error } = await sb.from('event_participants')
+    .delete()
+    .eq('event_id', eventId)
+    .eq('player_hash', activeProfile.id);
+
+  if (error) {
+    console.error('Error leaving event:', error);
+    alert('Kunde inte lämna eventet.');
+    return;
+  }
+
+  window.location.href = './events.html';
 }
 
 async function fetchRecentDrinksForHashes(hashes) {
@@ -271,8 +298,13 @@ async function loadCustomEventLeaderboard() {
 
   if (!activeProfile || !participants.some(p => p.user_id === activeProfile.id)) {
     setStatusText(meta, 'Du är inte medlem i detta event.', true);
+    const leaveButton = document.getElementById('leaveEventButton');
+    if (leaveButton) leaveButton.style.display = 'none';
     return;
   }
+
+  const leaveButton = document.getElementById('leaveEventButton');
+  if (leaveButton) leaveButton.style.display = 'block';
 
   const event = await fetchCustomEvent(eventId);
   if (!event) {

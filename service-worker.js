@@ -64,7 +64,15 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request).then((response) => {
         if (response && response.ok) {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          // Only cache http/https requests (avoid chrome-extension:// and other schemes)
+          try {
+            const url = new URL(event.request.url);
+            if (url.protocol === 'http:' || url.protocol === 'https:') {
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
+            }
+          } catch (e) {
+            // If URL parsing fails, skip caching for safety
+          }
         }
         return response;
       })
