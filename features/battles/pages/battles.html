@@ -719,7 +719,21 @@ function closeGraphModal() {
 
 function initRealtime() {
   if (!sb) return;
-  realtimeChannel = sb.channel('public:drink_logs')
+  const activeProfile = getActiveProfile();
+  realtimeChannel = sb.channel('public:battles')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'battle_participants' }, payload => {
+      const targetHash = payload.new?.player_hash || payload.old?.player_hash;
+      if (activeProfile && targetHash === activeProfile.id) {
+        fetchActiveBattles();
+      }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'battles' }, payload => {
+      const battleId = payload.new?.id || payload.old?.id;
+      if (!battleId) return;
+      if (myActiveBattles.some(battle => battle.id === battleId)) {
+        fetchActiveBattles();
+      }
+    })
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'drink_logs' }, payload => {
       if (activeParticipants.has(payload.new.player_hash)) {
         renderActiveBattles();
