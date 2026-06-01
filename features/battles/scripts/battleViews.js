@@ -35,7 +35,16 @@ async function fetchProfileByHash(hash) {
 
 async function fetchRecentDrinksByHash(hash, sinceISO = null) {
   if (!sb || !hash) return [];
-  const lookbackISO = sinceISO || new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
+  const nowMs = Date.now();
+  const lookbackMs = nowMs - 24 * 60 * 60 * 1000;
+  let sinceMs = lookbackMs;
+  if (sinceISO) {
+    const parsed = new Date(sinceISO).getTime();
+    if (Number.isFinite(parsed)) {
+      sinceMs = Math.max(parsed, lookbackMs);
+    }
+  }
+  const lookbackISO = new Date(sinceMs).toISOString();
   const { data } = await sb.from('drink_logs')
     .select('drink_name, volume_ml, abv, grams_alcohol, consumed_at')
     .eq('player_hash', hash)

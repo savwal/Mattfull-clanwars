@@ -168,6 +168,7 @@ let profilesData = {};
 let realtimeChannel = null;
 const LOCAL_ENDED_BATTLES_KEY = 'redlos_ended_battles';
 const BATTLE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const ZERO_BAC_THRESHOLD = 0.005;
 
 function getEndedBattleIds() {
   try {
@@ -188,9 +189,22 @@ function isBattleOlderThan24Hours(battle) {
   return Date.now() - createdAt >= BATTLE_MAX_AGE_MS;
 }
 
-function endBattleLocally(battleId) {
+async function endBattleLocally(battleId) {
   if (!battleId) return;
-  if (!confirm('Vill du ta bort denna aktiva strid lokalt?')) return;
+  if (!confirm('Vill du avsluta denna strid?')) return;
+
+  if (typeof ensureSupabaseAuth === 'function') {
+    await ensureSupabaseAuth();
+  }
+
+  if (sb) {
+    const { error } = await sb.from('battles').delete().eq('id', battleId);
+    if (error) {
+      alert('Kunde inte avsluta striden. Prova igen.');
+      return;
+    }
+    await sb.from('battle_participants').delete().eq('battle_id', battleId);
+  }
 
   const endedBattleIds = new Set(getEndedBattleIds());
   endedBattleIds.add(battleId);
@@ -259,7 +273,7 @@ function getBattleTypeCandidates(mode) {
 }
 
 function normalizeHashInput(value) {
-  return (value || '').trim();
+  return (value || '').trim().replace(/^#+/, '');
 }
 
 async function syncProfileToSupabase(profile) {
@@ -357,13 +371,6 @@ async function startBattle() {
 
   closeBattleModal();
   await fetchActiveBattles();
-  if (currentMode === 'Solo Battle' && opponentHash) {
-    window.location.href = `./single_battle.html?hash=${encodeURIComponent(opponentHash)}&battle_start=${encodeURIComponent(battleStartedAt)}`;
-  }
-  if (currentMode === 'Duos Battle' && duosTargets) {
-    const { teammateHash, opponentHash1, opponentHash2 } = duosTargets;
-    window.location.href = `./duos_battle.html?teammate=${encodeURIComponent(teammateHash)}&opponent1=${encodeURIComponent(opponentHash1)}&opponent2=${encodeURIComponent(opponentHash2)}&battle_start=${encodeURIComponent(battleStartedAt)}`;
-  }
 }
 
 async function fetchActiveBattles() {
@@ -545,11 +552,15 @@ async function renderOpponentGraphData(canvasId, statsId, opponentHash, opponent
     if (typeof ensureSupabaseAuth === 'function') {
       await ensureSupabaseAuth();
     }
+    const nowMs = Date.now();
+    const lookbackMs = nowMs - 24 * 60 * 60 * 1000;
+    const battleStartMs = new Date(battle.created_at).getTime();
+    const sinceMs = Math.max(lookbackMs, Number.isFinite(battleStartMs) ? battleStartMs : lookbackMs);
     const { data: battleLogs } = await sb.from('drink_logs')
       .select('drink_name, volume_ml, abv, grams_alcohol, consumed_at')
       .eq('player_hash', opponentHash)
-      .gte('consumed_at', battle.created_at)
-      .lte('consumed_at', new Date().toISOString())
+      .gte('consumed_at', new Date(sinceMs).toISOString())
+      .lte('consumed_at', new Date(nowMs).toISOString())
       .order('consumed_at', { ascending: true });
 
     let history = buildDrinkHistory(battleLogs);
@@ -568,9 +579,13 @@ async function renderOpponentGraphData(canvasId, statsId, opponentHash, opponent
       return false;
     }
 
-    const startTime = new Date(history[0].timestamp);
+    const currentBac = calculateBACAtTime(history, opponentProfile, nowMs);
+    let startTime = new Date(Math.max(history[0].timestamp, sinceMs));
+    if (currentBac <= ZERO_BAC_THRESHOLD) {
+      startTime = new Date(nowMs);
+    }
     const endTime = new Date(Date.now() + 2 * 60 * 60 * 1000);
-    const currentTime = Date.now();
+    const currentTime = nowMs;
     const labels = [];
     const dataPoints = [];
 
@@ -608,7 +623,6 @@ async function renderOpponentGraphData(canvasId, statsId, opponentHash, opponent
     
     const totalGrams = history.reduce((sum, d) => sum + d.grams, 0);
     const maxBac = Math.max(...dataPoints);
-    const currentBac = calculateBACAtTime(history, opponentProfile, Date.now());
     const lastDrink = history[history.length - 1];
     document.getElementById(statsId).innerHTML = `
       <p style="margin:3px 0;"><strong>Vikt:</strong> ${opponentProfile.weight || 75} kg</p>

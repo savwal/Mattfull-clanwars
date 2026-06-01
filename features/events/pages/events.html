@@ -458,6 +458,14 @@ async function joinCustomEvent() {
     player_hash: activeProfile.id
   });
 
+  upsertLocalCustomEvent(activeProfile.id, {
+    event_id: eventData.event_id,
+    event_name: eventData.event_name,
+    created_at: eventData.created_at,
+    starts_at: eventData.starts_at,
+    ends_at: eventData.ends_at
+  });
+
   setStatusText(status, 'Du gick med i eventet!', false);
   document.getElementById('joinHash').value = '';
   await loadMyCustomEvents();

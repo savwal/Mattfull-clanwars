@@ -157,12 +157,12 @@ function saveEntry(name, volume, abv, grams) {
     showZoneToast('Ogiltig volym eller alkoholhalt.');
     return;
   }
+  const profile = getActiveProfile();
+  const prevBAC = profile ? calculateBACAtTime(historyData, profile, Date.now()) : 0;
   const now = new Date();
   const time = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
   historyData.push({ name, volume, abv, grams, time, timestamp: now.getTime() });
   // If previous BAC was effectively zero, treat this as a graph-reset event:
-  const profile = getActiveProfile();
-  const prevBAC = profile ? calculateBACAtTime(historyData.slice(0, -1), profile, Date.now()) : 0;
   if (prevBAC <= ZERO_BAC_THRESHOLD && grams > 0) {
     // Keep only the newly added drink locally so graph resets, but still sync new drink to cloud
     const newDrink = historyData[historyData.length - 1];

@@ -162,16 +162,27 @@ function setFriendsView(view) {
 }
 
 async function fetchFriendsData() {
-  if (myFriends.length === 0 || !sb) {
+  if (!sb) {
     friendsData = {};
     return;
   }
 
-  const { data: profiles } = await sb.from('profiles').select('*').in('player_hash', myFriends);
+  const activeProfile = getActiveProfile();
+  const leaderboardHashes = Array.from(new Set([
+    ...myFriends,
+    ...(activeProfile ? [activeProfile.id] : [])
+  ]));
+
+  if (leaderboardHashes.length === 0) {
+    friendsData = {};
+    return;
+  }
+
+  const { data: profiles } = await sb.from('profiles').select('*').in('player_hash', leaderboardHashes);
   const sinceISO = new Date(Date.now() - WEEK_MS).toISOString();
   const { data: drinks } = await sb.from('drink_logs')
     .select('*')
-    .in('player_hash', myFriends)
+    .in('player_hash', leaderboardHashes)
     .gte('consumed_at', sinceISO);
 
   friendsData = {};
@@ -182,6 +193,12 @@ async function fetchFriendsData() {
         drinks: []
       };
     });
+  }
+  if (activeProfile && !friendsData[activeProfile.id]) {
+    friendsData[activeProfile.id] = {
+      profile: { id: activeProfile.id, name: activeProfile.name, pic: activeProfile.pic, weight: activeProfile.weight, gender: activeProfile.gender },
+      drinks: []
+    };
   }
   if (drinks) {
     drinks.forEach(d => {
@@ -222,6 +239,17 @@ function getFriendEntries() {
     .map(hash => ({ hash, profile: friendsData[hash].profile }));
 }
 
+function getLeaderboardEntries() {
+  const activeProfile = getActiveProfile();
+  const hashes = Array.from(new Set([
+    ...myFriends,
+    ...(activeProfile ? [activeProfile.id] : [])
+  ]));
+  return hashes
+    .filter(hash => friendsData[hash])
+    .map(hash => ({ hash, profile: friendsData[hash].profile }));
+}
+
 function getHistoryForProfile(profileId) {
   if (friendsData[profileId]) return friendsData[profileId].drinks;
   return [];
@@ -245,7 +273,7 @@ function getLivePromille(profile) {
 
 function renderWeeklyLeaderboard() {
   const list = document.getElementById('weeklyLeaderboard');
-  const entries = getFriendEntries();
+  const entries = getLeaderboardEntries();
   if (entries.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga vanner tillagda.</p>';
     return;
@@ -302,7 +330,8 @@ function renderWeeklyLeaderboard() {
 
 function renderLiveStats() {
   const list = document.getElementById('liveStats');
-  const entries = getFriendEntries();
+  const entries = getLeaderboardEntries();
+  const activeProfile = getActiveProfile();
   if (entries.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga vanner tillagda.</p>';
     return;
@@ -313,7 +342,7 @@ function renderLiveStats() {
       profile: item.profile,
       promille: getLivePromille(item.profile)
     }))
-    .filter(item => item.promille !== null && item.promille > 0)
+    .filter(item => item.promille !== null && (item.promille > 0 || (activeProfile && item.hash === activeProfile.id)))
     .sort((a, b) => b.promille - a.promille)
     .slice(0, 5);
 
