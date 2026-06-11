@@ -14,7 +14,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; 
 .main-nav a:last-child { border-right: none; }
 .main-nav a:hover, .main-nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
-h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #2ECC71; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #2ECC71; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; text-align: left; }
 input, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
 input:focus { background: #f1f2f6; }
 button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
@@ -106,7 +106,7 @@ li:last-child { border-bottom: none; }
 <div class="card">
   <h2 style="background: #2A8CFF;">Lägg till Vän</h2>
   <div style="display: flex; gap: 10px;">
-    <input type="text" id="friendHash" placeholder="#HASHKOD">
+    <input type="text" id="friendHash" placeholder="Personlig kod">
     <button onclick="addFriend()" class="magic" style="width: auto; margin: 8px 0;">SÖK</button>
   </div>
 </div>
@@ -409,7 +409,7 @@ async function updateFriendsUI() {
   await loadFriendsForActiveProfile();
   
   if (myFriends.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga vänner tillagda. Sök på deras Hashkod!</p>';
+    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga vänner tillagda. Sök på deras personliga kod!</p>';
     renderViews();
     return;
   }
@@ -427,7 +427,7 @@ async function updateFriendsUI() {
     img.src = friend.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
     const info = document.createElement('div');
     info.className = 'friend-info';
-    info.innerHTML = `<span class="friend-name" style="font-size:1.1em; color:#2C3E50;">${friend.name}</span><span class="friend-hash" style="font-size:0.8em; color:#7f8c8d;">Hash: ${hash}</span>`;
+    info.innerHTML = `<span class="friend-name" style="font-size:1.1em; color:#2C3E50;">${friend.name}</span><span class="friend-hash" style="font-size:0.8em; color:#7f8c8d;">Kod: ${hash}</span>`;
     const delBtn = document.createElement('button');
     delBtn.innerText = "X";
     delBtn.style.cssText = "background: #E74C3C; color: white; width: auto; padding: 5px 10px; font-size: 12px; box-shadow: 2px 2px 0px #2C3E50;";
@@ -471,7 +471,7 @@ async function addFriend() {
     
     updateFriendsUI();
   } else {
-    alert("Kunde inte hitta en krigare med den hashen!");
+    alert("Kunde inte hitta en krigare med den personliga koden!");
   }
 }
 

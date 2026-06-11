@@ -14,7 +14,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; 
 .main-nav a:last-child { border-right: none; }
 .main-nav a:hover, .main-nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
-h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #9B59B6; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #9B59B6; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; text-align: left; }
 input, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
 input:focus { background: #f1f2f6; }
 button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
@@ -30,15 +30,18 @@ li:last-child { border-bottom: none; }
 .clan-shield { display: block; margin: 0 auto 15px auto; width: 100px; height: 110px; background: #9B59B6; border: 6px solid #2C3E50; border-radius: 10px 10px 50px 50px; box-shadow: inset -10px -10px 0px rgba(0,0,0,0.2), 6px 6px 0px #2C3E50; }
 .highlight-text { font-size: 1.5em; color: #E74C3C; font-family: 'Arial Black', sans-serif; text-shadow: 1px 1px 0px #2C3E50; }
 .hash-text { display: inline-block; background: #2C3E50; color: #FFF; padding: 5px 10px; font-family: monospace; font-size: 1.2em; margin: 10px 0; letter-spacing: 2px; }
-.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
 .modal-content { background-color: #2A8CFF; color: white; margin: 30% auto; padding: 25px; border: 6px solid #2C3E50; box-shadow: 8px 8px 0px #2C3E50; border-radius: 0; width: 90%; max-width: 400px; text-align: center; position: relative; }
 .close-modal { color: #E74C3C; font-size: 32px; font-weight: bold; cursor: pointer; position: absolute; right: 15px; top: 10px; }
 
 #clanLeaderboard li {
   justify-content: flex-start;
   align-items: center;
-  gap: 12px;
   flex-wrap: nowrap;
+}
+
+#clanLeaderboard li > * + * {
+  margin-left: 12px;
 }
 
 #clanLeaderboard .rank-badge {
@@ -159,7 +162,7 @@ li:last-child { border-bottom: none; }
   <input type="text" id="newClanName" placeholder="Ny Klan Namn">
   <button onclick="createClan()" style="background: #2ECC71; color: #FFF;">Skapa Ny Klan</button>
   <div style="margin: 20px 0; border-top: 4px dashed #2C3E50;"></div>
-  <input type="text" id="joinClanHash" placeholder="Klan Hash (5 tecken)">
+  <input type="text" id="joinClanHash" placeholder="Klan kod (5 tecken)">
   <button onclick="joinClan()" style="background: #2A8CFF; color: #FFF;">Gå med i Klan</button>
 </div>
 <div id="hasClanView" style="display: none;">
@@ -169,7 +172,7 @@ li:last-child { border-bottom: none; }
     <h1 id="clanTitle" style="margin: 0 0 5px 0; color: #2C3E50; font-family: 'Arial Black'; text-transform: uppercase; white-space: normal; word-break: break-word; line-height: 1.05;"></h1>
     <div class="hash-text" id="clanHashDisplay"></div>
     <p style="margin: 10px 0 0 0; font-weight: bold;">Klanens Totala Poäng:</p>
-    <div class="highlight-text stat-value" id="clanTotalElo">0.00 ‰</div>
+    <div class="highlight-text stat-value" id="clanTotalElo">0.0 cl</div>
     <button onclick="refreshClanUI()" style="background: #2ECC71; color: #FFF; margin-top: 20px; width: auto; font-size: 12px; padding: 10px;">Uppdatera medlemmar</button>
   </div>
   <div class="card">
@@ -197,7 +200,7 @@ li:last-child { border-bottom: none; }
   <div class="modal-content card">
     <span class="close-modal" onclick="closeClanWarModal()">&times;</span>
     <h2 style="font-family: 'Arial Black'; color: #FFF; background: #2C3E50; margin: -25px -25px 20px -25px; padding: 15px; border-bottom: 4px solid #0984E3;">Klan War</h2>
-    <input type="text" id="opponentClanHash" placeholder="Ange motstandare klan hash">
+    <input type="text" id="opponentClanHash" placeholder="Ange motståndares klan kod">
     <button onclick="startClanWar()">Starta</button>
   </div>
 </div>
@@ -205,16 +208,39 @@ li:last-child { border-bottom: none; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/scripts/shared.js"></script>
 <script>
-let myClanHash = localStorage.getItem('myClanHash') || null;
-const activeProfile = getActiveProfile();
-let clanChannel = null;
-let clanChannelHash = null;
+var myClanHash = localStorage.getItem('myClanHash') || null;
+var activeProfile = getActiveProfile();
+var clanChannel = null;
+var clanChannelHash = null;
+var clanMemberHashes = {};
+
+function getClanScorePeriod() {
+  var now = new Date();
+  var day = now.getDate();
+  var year = now.getFullYear();
+  var month = now.getMonth();
+  var startYear, startMonth, endYear, endMonth;
+  if (day >= 25) {
+    startYear = year;
+    startMonth = month;
+    endYear = month === 11 ? year + 1 : year;
+    endMonth = month === 11 ? 0 : month + 1;
+  } else {
+    startYear = month === 0 ? year - 1 : year;
+    startMonth = month === 0 ? 11 : month - 1;
+    endYear = year;
+    endMonth = month;
+  }
+  var start = new Date(startYear, startMonth, 25, 0, 0, 0, 0).toISOString();
+  var end = new Date(endYear, endMonth, 24, 23, 59, 59, 999).toISOString();
+  return { start: start, end: end };
+}
 
 function applyStatUpdate(element, text) {
   if (!element) return;
   if (element.textContent === text) return;
   element.classList.add('stat-bump');
-  setTimeout(() => {
+  setTimeout(function() {
     element.textContent = text;
     element.classList.remove('stat-bump');
   }, 50);
@@ -223,7 +249,7 @@ function applyStatUpdate(element, text) {
 function formatClanTitle(name) {
   if (!name) return '';
   return name.length > 14
-    ? `${name.slice(0, 14)}<br>${name.slice(14)}`
+    ? name.slice(0, 14) + '<br>' + name.slice(14)
     : name;
 }
 
@@ -235,9 +261,16 @@ function initClanRealtime() {
     clanChannel = null;
   }
   clanChannelHash = myClanHash;
-  clanChannel = sb.channel(`clan_members_${myClanHash}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'clan_members', filter: `clan_id=eq.${myClanHash}` }, () => {
+  clanChannel = sb.channel('clan_ui_' + myClanHash)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'clan_members', filter: 'clan_id=eq.' + myClanHash }, function() {
       updateClanUI();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'drink_logs' }, function(payload) {
+      // Only react to drinks logged by a current clan member — not every user in the DB.
+      var hash = (payload.new && payload.new.player_hash) || (payload.old && payload.old.player_hash);
+      if (hash && clanMemberHashes[hash]) {
+        updateClanUI();
+      }
     })
     .subscribe();
 }
@@ -255,32 +288,27 @@ async function syncProfileToSupabase(profile) {
 
 async function loadOngoingEvent() {
   if (!sb) return;
-  
-  const now = new Date().toISOString();
-  const eventCard = document.getElementById('ongoingEventCard');
-  const eventContent = document.getElementById('ongoingEventContent');
-  
+  var now = new Date().toISOString();
+  var eventCard = document.getElementById('ongoingEventCard');
+  var eventContent = document.getElementById('ongoingEventContent');
   try {
-    const { data: events } = await sb.from('events')
+    var result = await sb.from('events')
       .select('id, name, start_time, end_time, hash')
       .lte('start_time', now)
       .gte('end_time', now);
-    
+    var events = result.data;
     if (!events || events.length === 0) {
       eventCard.style.display = 'none';
       return;
     }
-    
-    const event = events[0];
-    const startDate = new Date(event.start_time);
-    const endDate = new Date(event.end_time);
-    
-    eventContent.innerHTML = `
-      <p style="font-weight: bold; color: #2C3E50; margin: 10px 0;">${event.name}</p>
-      <p style="margin: 5px 0; color: #7f8c8d;">Börjar: ${startDate.toLocaleString()}</p>
-      <p style="margin: 5px 0; color: #7f8c8d;">Slutar: ${endDate.toLocaleString()}</p>
-      <p style="margin: 10px 0; font-size: 0.9em; color: #2C3E50;">Ditt klans medlemmar kan delta i detta event!</p>
-    `;
+    var event = events[0];
+    var startDate = new Date(event.start_time);
+    var endDate = new Date(event.end_time);
+    eventContent.innerHTML =
+      '<p style="font-weight: bold; color: #2C3E50; margin: 10px 0;">' + event.name + '</p>' +
+      '<p style="margin: 5px 0; color: #7f8c8d;">Börjar: ' + startDate.toLocaleString() + '</p>' +
+      '<p style="margin: 5px 0; color: #7f8c8d;">Slutar: ' + endDate.toLocaleString() + '</p>' +
+      '<p style="margin: 10px 0; font-size: 0.9em; color: #2C3E50;">Ditt klans medlemmar kan delta i detta event!</p>';
     eventCard.style.display = 'block';
   } catch (error) {
     eventCard.style.display = 'none';
@@ -288,9 +316,9 @@ async function loadOngoingEvent() {
 }
 
 async function updateClanUI() {
-  const noClanView = document.getElementById('noClanView');
-  const hasClanView = document.getElementById('hasClanView');
-  const storedClanHash = localStorage.getItem('myClanHash') || null;
+  var noClanView = document.getElementById('noClanView');
+  var hasClanView = document.getElementById('hasClanView');
+  var storedClanHash = localStorage.getItem('myClanHash') || null;
 
   if (!sb || !activeProfile) {
     noClanView.style.display = 'block';
@@ -298,10 +326,12 @@ async function updateClanUI() {
     return;
   }
 
-  const { data: myMembership, error: membershipError } = await sb.from('clan_members')
+  var membershipResult = await sb.from('clan_members')
     .select('clan_id')
     .eq('player_hash', activeProfile.id)
     .maybeSingle();
+  var myMembership = membershipResult.data;
+  var membershipError = membershipResult.error;
 
   if (myMembership && myMembership.clan_id) {
     myClanHash = myMembership.clan_id;
@@ -327,8 +357,10 @@ async function updateClanUI() {
     return;
   }
 
-  const { data: clanData, error: clanErr } = await sb.from('clans').select('*').eq('id', myClanHash).single();
-  
+  var clanResult = await sb.from('clans').select('*').eq('id', myClanHash).single();
+  var clanData = clanResult.data;
+  var clanErr = clanResult.error;
+
   if (clanErr || !clanData) {
     localStorage.removeItem('myClanHash');
     myClanHash = null;
@@ -346,38 +378,55 @@ async function updateClanUI() {
 
   await loadOngoingEvent();
 
-  const { data: membersData } = await sb.from('clan_members')
+  var membersResult = await sb.from('clan_members')
     .select('role, player_hash')
     .eq('clan_id', myClanHash);
+  var membersData = membersResult.data;
 
-  let totalElo = 0;
-  const list = document.getElementById('clanMembers');
-  const existingItems = new Map(Array.from(list.children).map(item => [item.dataset.memberId, item]));
+  // Cache member hashes so the realtime drink_logs handler can ignore non-members.
+  clanMemberHashes = {};
+  (membersData || []).forEach(function(m) { clanMemberHashes[m.player_hash] = true; });
+
+  var totalElo = 0;
+  var list = document.getElementById('clanMembers');
+  var existingItems = {};
+  var items = list.querySelectorAll('li[data-member-id]');
+  for (var i = 0; i < items.length; i++) {
+    existingItems[items[i].getAttribute('data-member-id')] = items[i];
+  }
 
   if (membersData && membersData.length > 0) {
-    const memberHashes = membersData.map(m => m.player_hash);
-    const { data: profileRows } = await sb.from('profiles')
+    var memberHashes = membersData.map(function(m) { return m.player_hash; });
+
+    var profilesResult = await sb.from('profiles')
       .select('player_hash, display_name, avatar_url')
       .in('player_hash', memberHashes);
-    const profilesByHash = (profileRows || []).reduce((acc, profile) => {
-      acc[profile.player_hash] = profile;
-      return acc;
-    }, {});
+    var profileRows = profilesResult.data || [];
+    var profilesByHash = {};
+    profileRows.forEach(function(profile) {
+      profilesByHash[profile.player_hash] = profile;
+    });
 
-    const { data: drinksData } = await sb.from('drink_logs')
+    var period = getClanScorePeriod();
+    var drinksResult = await sb.from('drink_logs')
       .select('player_hash, grams_alcohol')
-      .in('player_hash', memberHashes);
+      .in('player_hash', memberHashes)
+      .gte('consumed_at', period.start)
+      .lte('consumed_at', period.end);
+    var drinksData = drinksResult.data;
 
-    let memberScores = {};
+    var memberScores = {};
     if (drinksData) {
-      drinksData.forEach(d => {
-        memberScores[d.player_hash] = (memberScores[d.player_hash] || 0) + (d.grams_alcohol || 0);
+      drinksData.forEach(function(d) {
+        if (!memberScores[d.player_hash]) memberScores[d.player_hash] = 0;
+        // Count consumption only; "ulta" (negative grams) never lowers a clan score.
+        if (d.grams_alcohol > 0) memberScores[d.player_hash] += d.grams_alcohol;
       });
     }
 
-    let membersList = membersData.map(m => {
-      const profile = profilesByHash[m.player_hash];
-      let grams = memberScores[m.player_hash] || 0;
+    var membersList = membersData.map(function(m) {
+      var profile = profilesByHash[m.player_hash];
+      var grams = memberScores[m.player_hash] || 0;
       return {
         id: m.player_hash,
         name: profile && profile.display_name ? profile.display_name : m.player_hash,
@@ -387,86 +436,111 @@ async function updateClanUI() {
       };
     });
 
-    membersList.sort((a, b) => b.elo - a.elo).forEach(member => {
+    membersList.sort(function(a, b) { return b.elo - a.elo; });
+
+    membersList.forEach(function(member) {
       totalElo += member.elo;
-      let li = existingItems.get(member.id);
+      var li = existingItems[member.id];
       if (!li) {
         li = document.createElement('li');
-        li.dataset.memberId = member.id;
-        const img = document.createElement('img');
+        li.setAttribute('data-member-id', member.id);
+        var img = document.createElement('img');
         img.className = 'profile-img';
         li.appendChild(img);
-        const info = document.createElement('div');
+        var info = document.createElement('div');
         info.className = 'member-info';
         li.appendChild(info);
-        const stats = document.createElement('div');
+        var stats = document.createElement('div');
         stats.className = 'member-stats';
-        stats.innerHTML = `<span class="stat-value"></span> <span style="font-size:12px; color:#2C3E50;">cl</span>`;
+        stats.innerHTML = '<span class="stat-value"></span> <span style="font-size:12px; color:#2C3E50;">cl</span>';
         li.appendChild(stats);
       }
 
       li.style.background = member.id === activeProfile.id ? 'rgba(46, 204, 113, 0.1)' : '';
-      const img = li.querySelector('img.profile-img');
+      var img = li.querySelector('img.profile-img');
       img.src = member.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-      const info = li.querySelector('.member-info');
-      info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${member.name}</span><br><span style="font-size:0.8em; color:#7f8c8d;">${member.role}</span>`;
-      const statValue = li.querySelector('.stat-value');
+      var info = li.querySelector('.member-info');
+      info.innerHTML = '<span style="font-size:1.1em; color:#2C3E50;">' + member.name + '</span><br><span style="font-size:0.8em; color:#7f8c8d;">' + member.role + '</span>';
+      var statValue = li.querySelector('.stat-value');
       applyStatUpdate(statValue, Math.abs(member.elo).toFixed(1));
 
       list.appendChild(li);
-      existingItems.delete(member.id);
+      delete existingItems[member.id];
     });
   }
-  const totalEl = document.getElementById('clanTotalElo');
-  applyStatUpdate(totalEl, `${Math.abs(totalElo).toFixed(1)} cl`);
-  await renderClanLeaderboard();
 
-  existingItems.forEach(item => item.remove());
+  var totalEl = document.getElementById('clanTotalElo');
+  applyStatUpdate(totalEl, Math.abs(totalElo).toFixed(1) + ' cl');
+
+  Object.keys(existingItems).forEach(function(id) {
+    existingItems[id].remove();
+  });
+
+  await renderClanLeaderboard();
 }
 
 async function renderClanLeaderboard() {
-  const list = document.getElementById('clanLeaderboard');
+  var list = document.getElementById('clanLeaderboard');
   if (!list) return;
   if (!sb) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Ingen data att visa.</p>';
     return;
   }
 
-  const { data: clans } = await sb.from('clans').select('id, name');
+  var clansResult = await sb.from('clans').select('id, name');
+  var clans = clansResult.data;
   if (!clans || clans.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga klaner att visa.</p>';
     return;
   }
 
-  const { data: members } = await sb.from('clan_members').select('clan_id, player_hash');
+  var membersResult = await sb.from('clan_members').select('clan_id, player_hash');
+  var members = membersResult.data;
   if (!members || members.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga klaner att visa.</p>';
     return;
   }
 
-  const memberHashes = Array.from(new Set(members.map(m => m.player_hash)));
-  const { data: drinks } = await sb.from('drink_logs')
+  var memberHashes = [];
+  var seen = {};
+  members.forEach(function(m) {
+    if (!seen[m.player_hash]) {
+      seen[m.player_hash] = true;
+      memberHashes.push(m.player_hash);
+    }
+  });
+
+  var period = getClanScorePeriod();
+  var drinksResult = await sb.from('drink_logs')
     .select('player_hash, grams_alcohol')
-    .in('player_hash', memberHashes);
+    .in('player_hash', memberHashes)
+    .gte('consumed_at', period.start)
+    .lte('consumed_at', period.end);
+  var drinks = drinksResult.data;
 
-  const gramsByPlayer = {};
-  (drinks || []).forEach(d => {
-    gramsByPlayer[d.player_hash] = (gramsByPlayer[d.player_hash] || 0) + (d.grams_alcohol || 0);
+  var gramsByPlayer = {};
+  if (drinks) {
+    drinks.forEach(function(d) {
+      if (!gramsByPlayer[d.player_hash]) gramsByPlayer[d.player_hash] = 0;
+      // Count consumption only; "ulta" (negative grams) never lowers a clan score.
+      if (d.grams_alcohol > 0) gramsByPlayer[d.player_hash] += d.grams_alcohol;
+    });
+  }
+
+  var gramsByClan = {};
+  members.forEach(function(m) {
+    var grams = gramsByPlayer[m.player_hash] || 0;
+    if (!gramsByClan[m.clan_id]) gramsByClan[m.clan_id] = 0;
+    gramsByClan[m.clan_id] += grams;
   });
 
-  const gramsByClan = {};
-  members.forEach(m => {
-    const grams = gramsByPlayer[m.player_hash] || 0;
-    gramsByClan[m.clan_id] = (gramsByClan[m.clan_id] || 0) + grams;
-  });
-
-  const ranked = clans.map(clan => ({
-    id: clan.id,
-    name: clan.name,
-    cl: Math.abs(calculateCl(gramsByClan[clan.id] || 0))
-  }))
-    .sort((a, b) => b.cl - a.cl)
-    .slice(0, 10);
+  var ranked = clans.map(function(clan) {
+    return {
+      id: clan.id,
+      name: clan.name,
+      cl: Math.abs(calculateCl(gramsByClan[clan.id] || 0))
+    };
+  }).sort(function(a, b) { return b.cl - a.cl; }).slice(0, 10);
 
   if (ranked.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga klaner att visa.</p>';
@@ -474,32 +548,28 @@ async function renderClanLeaderboard() {
   }
 
   list.innerHTML = '';
-  ranked.forEach((clan, index) => {
-    const li = document.createElement('li');
-    const rank = document.createElement('span');
+  ranked.forEach(function(clan, index) {
+    var li = document.createElement('li');
+    var rank = document.createElement('span');
     rank.className = 'rank-badge';
-    rank.textContent = `#${index + 1}`;
-
-    const info = document.createElement('div');
+    rank.textContent = '#' + (index + 1);
+    var info = document.createElement('div');
     info.className = 'leaderboard-info';
-    const name = document.createElement('span');
+    var name = document.createElement('span');
     name.className = 'leader-name';
     name.textContent = clan.name;
-    const hash = document.createElement('span');
-    hash.className = 'leader-hash';
-    hash.textContent = clan.id;
-
-    const badge = document.createElement('div');
+    var hashEl = document.createElement('span');
+    hashEl.className = 'leader-hash';
+    hashEl.textContent = clan.id;
+    var badge = document.createElement('div');
     badge.className = 'badge';
-    badge.innerHTML = `<span class="stat-value"></span> cl`;
-
+    badge.innerHTML = '<span class="stat-value"></span> cl';
     info.appendChild(name);
-    info.appendChild(hash);
+    info.appendChild(hashEl);
     li.appendChild(rank);
     li.appendChild(info);
     li.appendChild(badge);
-
-    const statVal = badge.querySelector('.stat-value');
+    var statVal = badge.querySelector('.stat-value');
     applyStatUpdate(statVal, Math.abs(clan.cl).toFixed(1));
     list.appendChild(li);
   });
@@ -509,19 +579,25 @@ function refreshClanUI() {
   updateClanUI();
 }
 
+// A player belongs to a single clan. Clear every existing membership before joining
+// another so the membership lookup (maybeSingle) never sees duplicate rows.
+async function clearMyClanMemberships() {
+  if (!sb || !activeProfile) return;
+  await sb.from('clan_members').delete().eq('player_hash', activeProfile.id);
+  await sb.from('clan_participants').delete().eq('player_hash', activeProfile.id);
+}
+
 async function createClan() {
-  const name = document.getElementById('newClanName').value;
+  var name = document.getElementById('newClanName').value;
   if (!name || !sb || !activeProfile) return;
-  const newHash = generateUniqueHash();
+  var newHash = generateUniqueHash();
   if (typeof ensureSupabaseAuth === 'function') {
     await ensureSupabaseAuth();
   }
- 
   await syncProfileToSupabase(activeProfile);
-  
   await sb.from('clans').insert({ id: newHash, name: name });
+  await clearMyClanMemberships();
   await sb.from('clan_members').upsert({ clan_id: newHash, player_hash: activeProfile.id, role: 'Ledare' });
-  
   localStorage.setItem('myClanHash', newHash);
   myClanHash = newHash;
   document.getElementById('newClanName').value = '';
@@ -530,14 +606,17 @@ async function createClan() {
 }
 
 async function joinClan() {
-  const hash = document.getElementById('joinClanHash').value.trim();
-  if(!hash || !sb || !activeProfile) return;
-  
-  const { data: clanData } = await sb.from('clans').select('id').eq('id', hash).single();
+  var hash = document.getElementById('joinClanHash').value.trim();
+  if (!hash || !sb || !activeProfile) return;
+  var clanResult = await sb.from('clans').select('id').eq('id', hash).single();
+  var clanData = clanResult.data;
   if (clanData) {
+    if (typeof ensureSupabaseAuth === 'function') {
+      await ensureSupabaseAuth();
+    }
     await syncProfileToSupabase(activeProfile);
+    await clearMyClanMemberships();
     await sb.from('clan_members').upsert({ clan_id: hash, player_hash: activeProfile.id, role: 'Medlem' });
-    
     localStorage.setItem('myClanHash', hash);
     myClanHash = hash;
     document.getElementById('joinClanHash').value = '';
@@ -549,12 +628,35 @@ async function joinClan() {
 }
 
 async function leaveClan() {
-  if (myClanHash && sb && activeProfile) {
-    await sb.from('clan_members').delete().match({ clan_id: myClanHash, player_hash: activeProfile.id });
+  if (!myClanHash || !sb || !activeProfile) {
+    localStorage.removeItem('myClanHash');
+    myClanHash = null;
+    await updateClanUI();
+    return;
+  }
+
+  var deleteMembers = await sb.from('clan_members')
+    .delete()
+    .match({ clan_id: myClanHash, player_hash: activeProfile.id });
+
+  await sb.from('clan_participants')
+    .delete()
+    .match({ clan_id: myClanHash, player_hash: activeProfile.id });
+
+  if (deleteMembers.error) {
+    alert('Kunde inte lämna klanen. Försök igen.');
+    return;
+  }
+
+  if (clanChannel) {
+    sb.removeChannel(clanChannel);
+    clanChannel = null;
+    clanChannelHash = null;
   }
   localStorage.removeItem('myClanHash');
   myClanHash = null;
-  updateClanUI();
+  await updateClanUI();
+  alert('Du har lämnat klanen.');
 }
 
 function openClanWarModal() {
@@ -562,13 +664,16 @@ function openClanWarModal() {
   document.getElementById('opponentClanHash').value = '';
   document.getElementById('clanWarModal').style.display = 'block';
 }
+
 function closeClanWarModal() {
   document.getElementById('clanWarModal').style.display = 'none';
 }
+
 async function startClanWar() {
-  const hash = document.getElementById('opponentClanHash').value.trim();
+  var hash = document.getElementById('opponentClanHash').value.trim();
   if (!hash || !sb) return;
-  const { data: clanData } = await sb.from('clans').select('id').eq('id', hash).single();
+  var clanResult = await sb.from('clans').select('id').eq('id', hash).single();
+  var clanData = clanResult.data;
   if (clanData && hash !== myClanHash) {
     await sb.from('battles').insert({ battle_type: 'Clan War', status: 'pending' });
     closeClanWarModal();

@@ -14,7 +14,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; 
 .main-nav a:last-child { border-right: none; }
 .main-nav a:hover, .main-nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
-h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #2A8CFF; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #2A8CFF; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; text-align: left; }
 input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 0; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
 input:focus, select:focus { background: #f1f2f6; }
 button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
@@ -96,7 +96,7 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   <button onclick="window.location.href='../../register/pages/register.html'" style="background: #2ECC71;">Ny Krigare</button>
 </div>
 <div class="card" style="text-align:center;">
-  <h2>Din Hash</h2>
+  <h2>Din personliga kod</h2>
   <div class="hash-text" id="myHashDisplay"></div>
 </div>
 <div class="card">
@@ -185,7 +185,7 @@ function saveCurrentProfile() {
 }
 
 function logout() {
-  if (confirm("Är du säker på att du vill logga ut? Detta tar bort all lokal data på denna enhet. (Din data finns fortfarande sparad på din Hash i databasen!)")) {
+  if (confirm("Är du säker på att du vill logga ut? Detta tar bort all lokal data på denna enhet. (Din data finns fortfarande sparad på din personliga kod i databasen!)")) {
     localStorage.clear();
     window.location.href = '../../register/pages/register.html';
   }

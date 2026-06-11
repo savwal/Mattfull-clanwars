@@ -14,7 +14,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; 
 .main-nav a:last-child { border-right: none; }
 .main-nav a:hover, .main-nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
-h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #E74C3C; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #E74C3C; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; text-align: left; }
 input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
 button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
 button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
@@ -163,7 +163,7 @@ li:last-child { border-bottom: none; }
 
 <div class="card">
   <h2 style="background: #2A8CFF;">Gå med i custom event</h2>
-  <input type="text" id="joinHash" placeholder="Event hash (4 tecken)">
+  <input type="text" id="joinHash" placeholder="Eventkod (4 tecken)">
   <button onclick="joinCustomEvent()">Gå med</button>
   <p id="joinStatus" style="font-weight: 900; color:#2C3E50;"></p>
 </div>
@@ -416,7 +416,7 @@ async function createCustomEvent() {
     return;
   }
 
-  setStatusText(info, `Event skapat! Hash: ${eventId}`, false);
+  setStatusText(info, `Event skapat! Kod: ${eventId}`, false);
   document.getElementById('customName').value = '';
   document.getElementById('customStart').value = '';
   document.getElementById('customEnd').value = '';
@@ -663,7 +663,8 @@ async function renderSelectedEvent() {
 
   const entries = (profiles || []).map(p => {
     const pDrinks = (drinks || []).filter(d => d.player_hash === p.player_hash);
-    const totalGrams = pDrinks.reduce((sum, d) => sum + (d.grams_alcohol || 0), 0);
+    // Count consumption only; "ulta" (negative grams) never lowers an event score.
+    const totalGrams = pDrinks.reduce((sum, d) => sum + (d.grams_alcohol > 0 ? d.grams_alcohol : 0), 0);
     return {
       id: p.player_hash,
       name: p.display_name,

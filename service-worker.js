@@ -1,4 +1,4 @@
-const CACHE_NAME = 'redlos-v5';
+const CACHE_NAME = 'redlos-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -42,8 +42,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  const isHtmlRequest = event.request.mode === 'navigate' || event.request.destination === 'document' || event.request.url.endsWith('.html');
-  if (isHtmlRequest) {
+  let requestUrl;
+  try {
+    requestUrl = new URL(event.request.url);
+  } catch (e) {
+    return;
+  }
+
+  const isSameOrigin = requestUrl.origin === self.location.origin;
+  const isHtmlRequest = event.request.mode === 'navigate' || event.request.destination === 'document' || requestUrl.pathname.endsWith('.html');
+  // Our own JS/CSS must always reflect the latest deploy, so it can never be served cache-first.
+  const isSameOriginCode = isSameOrigin && (
+    event.request.destination === 'script' ||
+    event.request.destination === 'style' ||
+    requestUrl.pathname.endsWith('.js') ||
+    requestUrl.pathname.endsWith('.css')
+  );
+
+  // Network-first for HTML and our own code: fetch fresh, fall back to cache only when offline.
+  if (isHtmlRequest || isSameOriginCode) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
         .then((response) => {
@@ -58,6 +75,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Cache-first for everything else (icons, fonts, versioned CDN libraries).
   event.respondWith(
     caches.match(event.request).then((cached) =>
       cached ||
@@ -65,13 +83,8 @@ self.addEventListener('fetch', (event) => {
         if (response && response.ok) {
           const copy = response.clone();
           // Only cache http/https requests (avoid chrome-extension:// and other schemes)
-          try {
-            const url = new URL(event.request.url);
-            if (url.protocol === 'http:' || url.protocol === 'https:') {
-              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
-            }
-          } catch (e) {
-            // If URL parsing fails, skip caching for safety
+          if (requestUrl.protocol === 'http:' || requestUrl.protocol === 'https:') {
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
           }
         }
         return response;

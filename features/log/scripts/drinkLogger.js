@@ -118,8 +118,12 @@ function renderDrinkList(containerId, categoryId) {
   container.appendChild(drinkList);
 }
 
+var _selectDrinkLock = false;
 function selectDrinkAndAdd(drink) {
-  const grams = parseFloat((drink.vol * (drink.abv / 100) * 0.789).toFixed(1));
+  if (_selectDrinkLock) return;
+  _selectDrinkLock = true;
+  setTimeout(function() { _selectDrinkLock = false; }, 1500);
+  var grams = parseFloat((drink.vol * (drink.abv / 100) * 0.789).toFixed(1));
   saveEntry(drink.name, drink.vol, drink.abv, grams);
   closeDrinkModal();
 }

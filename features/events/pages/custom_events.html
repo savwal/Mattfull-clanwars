@@ -14,7 +14,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; 
 .main-nav a:last-child { border-right: none; }
 .main-nav a:hover, .main-nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
-h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #2A8CFF; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #2A8CFF; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; text-align: left; }
 ul { list-style: none; padding: 0; margin: 0; }
 li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
 li:last-child { border-bottom: none; }
@@ -215,13 +215,14 @@ async function leaveCustomEvent() {
   window.location.href = './events.html';
 }
 
-async function fetchRecentDrinksForHashes(hashes) {
+async function fetchEventDrinksForHashes(hashes, startISO, endISO) {
   if (!sb || hashes.length === 0) return [];
-  const yesterdayISO = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { data } = await sb.from('drink_logs')
+  let query = sb.from('drink_logs')
     .select('player_hash, grams_alcohol, volume_ml, abv, consumed_at')
-    .in('player_hash', hashes)
-    .gte('consumed_at', yesterdayISO);
+    .in('player_hash', hashes);
+  if (startISO) query = query.gte('consumed_at', startISO);
+  if (endISO) query = query.lte('consumed_at', endISO);
+  const { data } = await query;
   return data || [];
 }
 
@@ -245,7 +246,7 @@ function renderLeaderboard(entries) {
     info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">${player.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${player.id}</span>`;
     const stats = document.createElement('div');
     stats.className = 'badge';
-    stats.innerText = `${Math.abs(player.promille).toFixed(2)} ‰`;
+    stats.innerText = `${Math.abs(player.cl).toFixed(1)} cl`;
     li.appendChild(rank);
     li.appendChild(img);
     li.appendChild(info);
@@ -313,7 +314,7 @@ async function loadCustomEventLeaderboard() {
   }
 
   title.textContent = event.event_name;
-  setStatusText(meta, `Hash: ${event.event_id} | ${new Date(event.starts_at).toLocaleString()} - ${new Date(event.ends_at).toLocaleString()}`, false);
+  setStatusText(meta, `Kod: ${event.event_id} | ${new Date(event.starts_at).toLocaleString()} - ${new Date(event.ends_at).toLocaleString()}`, false);
 
   const hashes = participants.map(p => p.hash || p.user_id);
   const profiles = await fetchProfilesByHashes(hashes);
@@ -328,21 +329,30 @@ async function loadCustomEventLeaderboard() {
     };
   });
 
-  const drinks = await fetchRecentDrinksForHashes(hashes);
-  const historyByHash = buildHistoryByHash(drinks);
+  // Rank by alcohol consumed within the event window, matching the preset-event boards.
+  const startISO = event.starts_at ? new Date(event.starts_at).toISOString() : null;
+  const endISO = event.ends_at ? new Date(event.ends_at).toISOString() : null;
+  const drinks = await fetchEventDrinksForHashes(hashes, startISO, endISO);
+
+  const gramsByHash = {};
+  drinks.forEach(d => {
+    const grams = Number.isFinite(Number(d.grams_alcohol))
+      ? Number(d.grams_alcohol)
+      : (Number(d.volume_ml) || 0) * ((Number(d.abv) || 0) / 100) * 0.789;
+    // Count consumption only; "ulta" (negative grams) never lowers an event score.
+    if (grams > 0) gramsByHash[d.player_hash] = (gramsByHash[d.player_hash] || 0) + grams;
+  });
 
   const entries = participants.map(p => {
     const profile = profileMap[p.hash];
-    const history = historyByHash[p.hash] || [];
-    const hasStats = profile && profile.weight && profile.gender;
-    const promilleValue = hasStats ? calculateBACAtTime(history, profile, Date.now()) : 0;
+    const grams = gramsByHash[p.hash] || 0;
     return {
       id: p.hash,
       name: profile ? profile.name : p.hash,
       pic: profile ? profile.pic : null,
-      promille: Math.abs(promilleValue)
+      cl: Math.abs(calculateCl(grams))
     };
-  }).sort((a, b) => b.promille - a.promille);
+  }).sort((a, b) => b.cl - a.cl);
 
   renderLeaderboard(entries);
   renderParticipants(participants, profileMap);

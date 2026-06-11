@@ -14,12 +14,12 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; 
 .main-nav a:last-child { border-right: none; }
 .main-nav a:hover, .main-nav a.active { background: #FFCC00; }
 .card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
-h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #E74C3C; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #E74C3C; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; text-align: left; }
 .logger-tile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; background-color: #D1EAFE; padding: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; }
 .logger-tile { border: 4px solid #2C3E50; background: #FFF; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-around; cursor: pointer; color: #2C3E50; font-weight: bold; text-align: center; box-shadow: 4px 4px 0px #2C3E50; min-height: 80px;}
 .logger-tile:last-child:nth-child(odd) { grid-column: span 2; }
 .logger-text { font-size: 1.1em; font-weight: 800; text-transform: uppercase; }
-.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
 .modal-content { background-color: #2A8CFF; color: white; margin: 30% auto; padding: 25px; border: 6px solid #2C3E50; box-shadow: 8px 8px 0px #2C3E50; border-radius: 0; width: 90%; max-width: 400px; text-align: center; position: relative; }
 .close-modal { color: #E74C3C; font-size: 32px; font-weight: bold; cursor: pointer; position: absolute; right: 15px; top: 10px; }
 input, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
@@ -153,6 +153,18 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
     </div>
   </div>
 </div>
+<script>
+if (!crypto.randomUUID) {
+  crypto.randomUUID = function() {
+    var bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    var hex = Array.from(bytes).map(function(b) { return b.toString(16).padStart(2, '0'); });
+    return hex[0]+hex[1]+hex[2]+hex[3]+'-'+hex[4]+hex[5]+'-'+hex[6]+hex[7]+'-'+hex[8]+hex[9]+'-'+hex[10]+hex[11]+hex[12]+hex[13]+hex[14]+hex[15];
+  };
+}
+</script>
 <script src="../../shared/scripts/hash.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3"></script>
@@ -239,9 +251,9 @@ function renderBattleFields(title) {
   const container = document.getElementById('battleFields');
   container.innerHTML = '';
   if (title === 'Duos Battle') {
-    container.appendChild(createBattleInput('teammateHash', 'Teammate hash'));
-    container.appendChild(createBattleInput('opponentHash1', 'Motståndare hash 1'));
-    container.appendChild(createBattleInput('opponentHash2', 'Motståndare hash 2'));
+    container.appendChild(createBattleInput('teammateHash', 'Teamkamrats personliga kod'));
+    container.appendChild(createBattleInput('opponentHash1', 'Motståndare 1 personliga kod'));
+    container.appendChild(createBattleInput('opponentHash2', 'Motståndare 2 personliga kod'));
   } else if (title === 'Custom Battle Royale') {
     const info = document.createElement('p');
     info.style.margin = '10px 0 0 0';
@@ -249,7 +261,7 @@ function renderBattleFields(title) {
     info.innerText = 'Custom Battle Royale är under utveckling.';
     container.appendChild(info);
   } else {
-    container.appendChild(createBattleInput('opponentHash', 'Ange motståndarens hash'));
+    container.appendChild(createBattleInput('opponentHash', 'Motståndarens personliga kod'));
   }
 }
 
@@ -327,7 +339,7 @@ async function startBattle() {
     return;
   }
   if (currentMode === 'Duos Battle' && participants.length !== 4) {
-    alert("Alla hashkoder måste vara unika!");
+    alert("Alla personliga koder måste vara unika!");
     return;
   }
 
@@ -336,7 +348,7 @@ async function startBattle() {
   const missingHashes = participants.filter(p => !validHashes.has(p));
 
   if (missingHashes.length > 0) {
-    alert(`Hash hittades inte i profiler: ${missingHashes.join(', ')}`);
+    alert(`Personlig kod hittades inte i profiler: ${missingHashes.join(', ')}`);
     return;
   }
 
@@ -657,7 +669,8 @@ async function viewBattleGraphs(battle) {
     const mode = battle.battle_type || battle.type;
 
     if (mode === 'Duos Battle') {
-      const myTeam = battle.battle_participants.find(p => p.player_hash === activeProfile.id)?.team;
+      const myParticipant = battle.battle_participants.find(function(p) { return p.player_hash === activeProfile.id; });
+      const myTeam = myParticipant ? myParticipant.team : null;
       const opponentTeam = myTeam === 1 ? 2 : 1;
       const opponents = battle.battle_participants.filter(p => p.team === opponentTeam).map(p => p.player_hash);
       
@@ -685,7 +698,8 @@ async function viewBattleGraphs(battle) {
       await renderOpponentGraphData('opponentGraphCanvas1', 'graphStats1', opp1.player_hash, opp1, battle);
       await renderOpponentGraphData('opponentGraphCanvas2', 'graphStats2', opp2.player_hash, opp2, battle);
     } else {
-      const opponent = battle.battle_participants.find(p => p.player_hash !== activeProfile.id)?.player_hash;
+      const opponentParticipant = battle.battle_participants.find(function(p) { return p.player_hash !== activeProfile.id; });
+      const opponent = opponentParticipant ? opponentParticipant.player_hash : null;
       if (!opponent) return;
 
       const { data: profiles } = await sb.from('profiles')
@@ -719,23 +733,43 @@ function closeGraphModal() {
 
 function initRealtime() {
   if (!sb) return;
-  const activeProfile = getActiveProfile();
-  realtimeChannel = sb.channel('public:battles')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'battle_participants' }, payload => {
-      const targetHash = payload.new?.player_hash || payload.old?.player_hash;
-      if (activeProfile && targetHash === activeProfile.id) {
+  var activeProfile = getActiveProfile();
+  if (!activeProfile) return;
+
+  realtimeChannel = sb.channel('battles_realtime_' + activeProfile.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'battle_participants' }, function(payload) {
+      var targetHash = payload.new && payload.new.player_hash;
+      if (targetHash && targetHash === activeProfile.id) {
         fetchActiveBattles();
       }
     })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'battles' }, payload => {
-      const battleId = payload.new?.id || payload.old?.id;
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'battle_participants' }, function(payload) {
+      var targetHash = payload.old && payload.old.player_hash;
+      if (targetHash && targetHash === activeProfile.id) {
+        fetchActiveBattles();
+      }
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'battles' }, function(payload) {
+      var battleId = payload.old && payload.old.id;
       if (!battleId) return;
-      if (myActiveBattles.some(battle => battle.id === battleId)) {
-        fetchActiveBattles();
+      var found = false;
+      for (var i = 0; i < myActiveBattles.length; i++) {
+        if (myActiveBattles[i].id === battleId) { found = true; break; }
       }
+      if (found) fetchActiveBattles();
     })
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'drink_logs' }, payload => {
-      if (activeParticipants.has(payload.new.player_hash)) {
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'battles' }, function(payload) {
+      var battleId = payload.new && payload.new.id;
+      if (!battleId) return;
+      var found = false;
+      for (var i = 0; i < myActiveBattles.length; i++) {
+        if (myActiveBattles[i].id === battleId) { found = true; break; }
+      }
+      if (found) fetchActiveBattles();
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'drink_logs' }, function(payload) {
+      var hash = payload.new && payload.new.player_hash;
+      if (hash && activeParticipants.has(hash)) {
         renderActiveBattles();
       }
     })
