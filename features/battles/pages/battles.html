@@ -776,6 +776,16 @@ function initRealtime() {
     .subscribe();
 }
 
+// Refresh hooks used by the shared resume/pull-to-refresh helpers.
+window.refreshPageData = function() { fetchActiveBattles(); };
+window.reconnectRealtime = function() {
+  if (realtimeChannel) {
+    try { sb.removeChannel(realtimeChannel); } catch (e) {}
+    realtimeChannel = null;
+  }
+  initRealtime();
+};
+
 if (typeof ensureSupabaseAuth === 'function') {
   ensureSupabaseAuth().finally(() => {
     fetchActiveBattles().then(() => initRealtime());
@@ -783,6 +793,10 @@ if (typeof ensureSupabaseAuth === 'function') {
 } else {
   fetchActiveBattles().then(() => initRealtime());
 }
+
+// Polling fallback in case the realtime socket drops (e.g. after the phone
+// was locked), so battle scores stay live without a hard refresh.
+setInterval(fetchActiveBattles, 20000);
 </script>
 </body>
 </html>

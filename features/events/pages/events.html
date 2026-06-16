@@ -389,6 +389,10 @@ async function createCustomEvent() {
   }
   const createdAt = new Date().toISOString();
 
+  if (typeof ensureSupabaseAuth === 'function') {
+    await ensureSupabaseAuth();
+  }
+
   await syncProfileToSupabase(activeProfile);
 
   const { error: eventError } = await sb.from('events').insert({
@@ -434,6 +438,12 @@ async function joinCustomEvent() {
   const activeProfile = getActiveProfile();
   if (!activeProfile) return;
 
+  // Make sure the auth token is valid (refreshing if it expired) before reading
+  // the event and inserting the participant row.
+  if (typeof ensureSupabaseAuth === 'function') {
+    await ensureSupabaseAuth();
+  }
+
   const eventData = await fetchCustomEvent(hash);
   if (!eventData) {
     setStatusText(status, 'Hittade inte eventet.', true);
@@ -453,10 +463,15 @@ async function joinCustomEvent() {
 
   await syncProfileToSupabase(activeProfile);
 
-  await sb.from('event_participants').insert({
+  const { error: joinError } = await sb.from('event_participants').insert({
     event_id: hash,
     player_hash: activeProfile.id
   });
+  if (joinError) {
+    console.error('Error joining event:', joinError);
+    setStatusText(status, 'Kunde inte gå med i eventet. Försök igen.', true);
+    return;
+  }
 
   upsertLocalCustomEvent(activeProfile.id, {
     event_id: eventData.event_id,
@@ -775,9 +790,16 @@ function refreshPage() {
   window.location.reload();
 }
 
+window.refreshPageData = function() {
+  loadMyCustomEvents();
+  renderSelectedEvent();
+};
+
 initEvents();
 setInterval(loadMyCustomEvents, CUSTOM_EVENT_REFRESH_MS);
-setInterval(renderLiveTopFive, 60000);
+// renderSelectedEvent re-queries drink_logs and also refreshes the live top 5,
+// keeping the leaderboard synced across users/devices without a hard refresh.
+setInterval(renderSelectedEvent, 20000);
 </script>
 </body>
 </html>

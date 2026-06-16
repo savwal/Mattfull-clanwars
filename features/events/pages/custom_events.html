@@ -358,7 +358,11 @@ async function loadCustomEventLeaderboard() {
   renderParticipants(participants, profileMap);
 }
 
+window.refreshPageData = function() { loadCustomEventLeaderboard(); };
+
 loadCustomEventLeaderboard();
+// Poll so the event creator sees new members joining without a hard refresh.
+setInterval(loadCustomEventLeaderboard, 15000);
 </script>
 </body>
 </html>

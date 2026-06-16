@@ -322,8 +322,21 @@ if ('serviceWorker' in navigator) {
 async function ensureSupabaseAuth() {
   if (!sb) return null;
   const { data: { session } } = await sb.auth.getSession();
-  if (session) return session;
-  
+  if (session) {
+    // Access tokens last ~1h. Refresh proactively when expired (or about to be)
+    // so database writes — joining events/clans, logging drinks — don't silently
+    // fail with an expired token an hour after the page loaded.
+    const expiresAtMs = session.expires_at ? session.expires_at * 1000 : 0;
+    if (expiresAtMs && expiresAtMs - Date.now() >= 60000) {
+      return session;
+    }
+    const { data: refreshed, error: refreshError } = await sb.auth.refreshSession();
+    if (!refreshError && refreshed && refreshed.session) {
+      return refreshed.session;
+    }
+    // Refresh failed (refresh token also expired) — fall through to a new sign-in.
+  }
+
   const { data, error } = await sb.auth.signInAnonymously();
   if (error) {
     console.error('Error signing in anonymously:', error);
@@ -372,3 +385,106 @@ async function showDrinkReminderNotification() {
   new Notification('redlös', options);
   return true;
 }
+
+// ---------------------------------------------------------------------------
+// PWA refresh helpers
+// Standalone PWAs can't be hard-refreshed and freeze their timers/realtime
+// sockets while the device is locked. When the app comes back to the
+// foreground we refetch data and re-open realtime channels so the UI is never
+// stuck on stale values. Pages opt in by defining window.refreshPageData and
+// (optionally) window.reconnectRealtime.
+// ---------------------------------------------------------------------------
+(function() {
+  function resumeRefresh() {
+    if (typeof window.reconnectRealtime === 'function') {
+      try { window.reconnectRealtime(); } catch (e) {}
+    }
+    if (typeof window.refreshPageData === 'function') {
+      try { window.refreshPageData(); } catch (e) {}
+    }
+  }
+
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') resumeRefresh();
+  });
+  window.addEventListener('pageshow', function(event) {
+    if (event.persisted) resumeRefresh();
+  });
+  window.addEventListener('focus', resumeRefresh);
+})();
+
+// ---------------------------------------------------------------------------
+// Pull-to-refresh: drag down from the top of the page to hard-refresh.
+// Needed because the native gesture is disabled in standalone PWA mode.
+// ---------------------------------------------------------------------------
+(function() {
+  if (!('ontouchstart' in window)) return;
+
+  var THRESHOLD = 80;
+  var startY = 0;
+  var distance = 0;
+  var pulling = false;
+  var indicator = null;
+
+  function anyModalOpen() {
+    var modals = document.querySelectorAll('.modal');
+    for (var i = 0; i < modals.length; i++) {
+      if (window.getComputedStyle(modals[i]).display !== 'none') return true;
+    }
+    return false;
+  }
+
+  function getIndicator() {
+    if (indicator) return indicator;
+    indicator = document.createElement('div');
+    indicator.setAttribute('aria-hidden', 'true');
+    indicator.style.cssText = 'position:fixed;top:0;left:0;right:0;height:0;overflow:hidden;' +
+      'display:flex;align-items:center;justify-content:center;' +
+      'background:#FFCC00;color:#2C3E50;font-weight:900;text-transform:uppercase;' +
+      'font-family:Arial,sans-serif;font-size:13px;letter-spacing:0.5px;' +
+      'border-bottom:4px solid #2C3E50;z-index:5000;pointer-events:none;';
+    document.body.appendChild(indicator);
+    return indicator;
+  }
+
+  function reset() {
+    if (indicator) indicator.style.height = '0';
+  }
+
+  document.addEventListener('touchstart', function(e) {
+    pulling = false;
+    if (e.touches.length !== 1) return;
+    if ((window.scrollY || document.documentElement.scrollTop || 0) > 0) return;
+    if (anyModalOpen()) return;
+    startY = e.touches[0].clientY;
+    distance = 0;
+    pulling = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function(e) {
+    if (!pulling) return;
+    distance = e.touches[0].clientY - startY;
+    if (distance <= 0) { reset(); return; }
+    var bar = getIndicator();
+    bar.style.height = Math.min(distance * 0.5, 60) + 'px';
+    bar.textContent = distance > THRESHOLD ? 'Släpp för att uppdatera' : 'Dra för att uppdatera';
+  }, { passive: true });
+
+  document.addEventListener('touchend', function() {
+    if (!pulling) return;
+    pulling = false;
+    if (distance > THRESHOLD) {
+      var bar = getIndicator();
+      bar.style.height = '60px';
+      bar.textContent = 'Uppdaterar...';
+      setTimeout(function() { window.location.reload(); }, 60);
+    } else {
+      reset();
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', function() {
+    pulling = false;
+    reset();
+  }, { passive: true });
+})();

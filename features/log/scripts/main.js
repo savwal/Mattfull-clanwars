@@ -387,3 +387,11 @@ function checkGraphReset() {
     updateUI();
   }
 }
+
+// Called by the shared resume/pull-to-refresh helpers when the app returns to
+// the foreground, so the graph and history reflect the latest data.
+window.refreshPageData = function() {
+  historyData = getDrinkHistory();
+  updateUI();
+  scheduleDrinkReminder(getLatestDrinkTimestamp());
+};

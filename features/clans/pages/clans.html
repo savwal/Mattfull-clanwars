@@ -173,7 +173,6 @@ li:last-child { border-bottom: none; }
     <div class="hash-text" id="clanHashDisplay"></div>
     <p style="margin: 10px 0 0 0; font-weight: bold;">Klanens Totala Poäng:</p>
     <div class="highlight-text stat-value" id="clanTotalElo">0.0 cl</div>
-    <button onclick="refreshClanUI()" style="background: #2ECC71; color: #FFF; margin-top: 20px; width: auto; font-size: 12px; padding: 10px;">Uppdatera medlemmar</button>
   </div>
   <div class="card">
     <h2 style="background: #FFCC00; color: #2C3E50;">Medlemmar</h2>
@@ -683,8 +682,19 @@ async function startClanWar() {
   }
 }
 
+// Refresh hooks used by the shared resume/pull-to-refresh helpers.
+window.refreshPageData = function() { updateClanUI(); };
+window.reconnectRealtime = function() {
+  if (clanChannel) {
+    try { sb.removeChannel(clanChannel); } catch (e) {}
+    clanChannel = null;
+    clanChannelHash = null;
+  }
+  initClanRealtime();
+};
+
 updateClanUI();
-setInterval(updateClanUI, 30000);
+setInterval(updateClanUI, 15000);
 </script>
 </body>
 </html>

@@ -268,7 +268,12 @@ function getWeeklyCl(profileId) {
 function getLivePromille(profile) {
   const history = getHistoryForProfile(profile.id);
   if (!profile.weight || !profile.gender) return null;
-  return calculateBACAtTime(history, profile, Date.now());
+  // Only the last 24h affects current promille, so trim before the BAC calc.
+  // This keeps calculateBACAtTime cheap and makes the value match the log graph
+  // (which is computed backwards from the same recent drink_logs entries).
+  const since = Date.now() - 24 * 60 * 60 * 1000;
+  const recent = history.filter(function(d) { return d.timestamp >= since; });
+  return calculateBACAtTime(recent, profile, Date.now());
 }
 
 function renderWeeklyLeaderboard() {
@@ -475,12 +480,18 @@ async function addFriend() {
   }
 }
 
+// Re-pull friends + their drink_logs and re-render the leaderboards in place
+// (diff-based renderers, so no flicker). Keeps every viewer's values in sync.
+async function refreshFriendsData() {
+  await loadFriendsForActiveProfile();
+  await fetchFriendsData();
+  renderViews();
+}
+
+window.refreshPageData = refreshFriendsData;
+
 updateFriendsUI();
-setInterval(() => {
-  if (activeView === 'live') {
-    renderLiveStats();
-  }
-}, 60000);
+setInterval(refreshFriendsData, 20000);
 </script>
 </body>
 </html>
