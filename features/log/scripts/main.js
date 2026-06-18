@@ -113,9 +113,15 @@ function getDisplayHistory() {
   return combined;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  historyData = getDrinkHistory();
+document.addEventListener('DOMContentLoaded', async function() {
   var profile = getActiveProfile();
+  // On a brand-new device the local store is empty — seed it once from the DB
+  // so the graph shows the old drinks. This never overwrites existing local
+  // data, so changing pages can't reset the graph.
+  if (profile && typeof restoreDrinkHistoryIfEmpty === 'function') {
+    try { await restoreDrinkHistoryIfEmpty(profile.id, profile); } catch (e) {}
+  }
+  historyData = getDrinkHistory();
   var storedLastNonZero = profile ? getStoredLastNonZeroTime(profile.id) : null;
   if (storedLastNonZero) {
     lastNonZeroTime = storedLastNonZero;

@@ -633,7 +633,15 @@ async function buildEventOptions() {
   });
 
   select.appendChild(presetGroup);
-  if (select.options.length > 0) select.selectedIndex = 0;
+  if (select.options.length === 0) return;
+
+  // Default to the event that is happening right now (now within its window) so
+  // the board opens on the event a freshly-logged drink will actually count
+  // toward. Falls back to the soonest upcoming event when none is active.
+  const now = Date.now();
+  const ongoing = allEvents.find(evt =>
+    evt.start && evt.end && evt.start.getTime() <= now && now <= evt.end.getTime());
+  select.value = ongoing ? `preset:${ongoing.key}` : select.options[0].value;
 }
 
 async function renderSelectedEvent() {
@@ -677,7 +685,10 @@ async function renderSelectedEvent() {
     .lte('consumed_at', new Date(endMs).toISOString());
 
   const entries = (profiles || []).map(p => {
-    const pDrinks = (drinks || []).filter(d => d.player_hash === p.player_hash);
+    // Actively re-check each drink's date against the event window so only
+    // drinks consumed during the selected event count toward its score.
+    const pDrinks = (drinks || []).filter(d =>
+      d.player_hash === p.player_hash && isDrinkWithinEventWindow(d.consumed_at, startMs, endMs));
     // Count consumption only; "ulta" (negative grams) never lowers an event score.
     const totalGrams = pDrinks.reduce((sum, d) => sum + (d.grams_alcohol > 0 ? d.grams_alcohol : 0), 0);
     return {
@@ -776,6 +787,12 @@ async function renderLiveTopFive(allowedHashes = null) {
   });
 
   existingItems.forEach(item => item.remove());
+
+  // Hard cap: never show more than the top 5, even if two overlapping async
+  // refreshes momentarily appended extra rows.
+  while (list.children.length > 5) {
+    list.removeChild(list.lastChild);
+  }
 }
 
 async function initLeaderboard() {
@@ -787,11 +804,44 @@ async function initLeaderboard() {
 async function initEvents() {
   await loadMyCustomEvents();
   await initLeaderboard();
+  initEventsRealtime();
 }
 
 function refreshPage() {
   window.location.reload();
 }
+
+// Realtime: re-render the selected event leaderboard the moment any drink is
+// logged, so the CL counter updates immediately like the Klan list instead of
+// only on the slow poll. renderSelectedEvent keeps its event-interval filter,
+// so a drink still only counts if it falls inside the event's time window.
+var eventsDrinkChannel = null;
+var eventsRefreshTimer = null;
+
+function scheduleEventsRefresh() {
+  if (eventsRefreshTimer) return;
+  eventsRefreshTimer = setTimeout(function() {
+    eventsRefreshTimer = null;
+    renderSelectedEvent();
+  }, 1200);
+}
+
+function initEventsRealtime() {
+  if (!sb || eventsDrinkChannel) return;
+  eventsDrinkChannel = sb.channel('events_drink_logs')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'drink_logs' }, function() {
+      scheduleEventsRefresh();
+    })
+    .subscribe();
+}
+
+window.reconnectRealtime = function() {
+  if (eventsDrinkChannel) {
+    sb.removeChannel(eventsDrinkChannel);
+    eventsDrinkChannel = null;
+  }
+  initEventsRealtime();
+};
 
 window.refreshPageData = function() {
   loadMyCustomEvents();

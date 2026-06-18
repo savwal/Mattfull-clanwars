@@ -34,21 +34,14 @@ async function syncDrinkToSupabase(profileId, drink) {
 }
 
 async function removeDrinkFromSupabase(profileId, drinkName, timestamp) {
-  if (!sb) return;
+  if (!sb || !profileId) return;
   const drinkTime = new Date(timestamp).toISOString();
-  const { error: deleteError } = await sb.from('drinks_logs')
+  const { error } = await sb.from('drink_logs')
     .delete()
     .eq('player_hash', profileId)
     .eq('drink_name', drinkName)
     .eq('consumed_at', drinkTime);
-  if (!deleteError) return;
-
-  const { error: fallbackError } = await sb.from('drink_logs')
-    .delete()
-    .eq('player_hash', profileId)
-    .eq('drink_name', drinkName)
-    .eq('consumed_at', drinkTime);
-  if (fallbackError) console.error('Error removing drink from cloud:', fallbackError);
+  if (error) console.error('Error removing drink from cloud:', error);
 }
 
 async function fetchProfileFromSupabase(hash) {
@@ -282,6 +275,121 @@ function appendArchivedDrinkHistory(profileId, entries) {
 }
 function calculateCl(grams) {
   return grams / 7.89;
+}
+
+// Active date guard for event leaderboards. A drink only counts toward an event
+// if it was actually consumed inside that event's time window. Used by both the
+// preset and custom event boards so a drink can never be attributed to the wrong
+// (or an inactive) event, even if a query returns a boundary/extra row.
+function isDrinkWithinEventWindow(consumedAt, startMs, endMs) {
+  const t = consumedAt instanceof Date ? consumedAt.getTime() : new Date(consumedAt).getTime();
+  if (!Number.isFinite(t)) return false;
+  if (Number.isFinite(startMs) && t < startMs) return false;
+  if (Number.isFinite(endMs) && t > endMs) return false;
+  return true;
+}
+
+// --- New-device drink history restore --------------------------------------
+// The log/graph lives in localStorage. On a brand-new device (or a reinstall,
+// or after logging in with a personal code) that store is empty even though the
+// DB already holds the drinks, so the graph would look blank. We restore them
+// ONCE — only when nothing is stored locally for this profile — so the old
+// drinks reappear. We never touch local data that already exists, so navigating
+// between pages can never reset the live session/graph.
+
+const DRINK_RESTORE_WINDOW_MS = 48 * 60 * 60 * 1000;
+const BAC_ZERO_THRESHOLD = 0.005;
+const SESSION_RESET_MS = 2 * 60 * 60 * 1000;
+
+async function fetchDrinkLogsFromSupabase(profileId, sinceISO) {
+  if (!sb || !profileId) return null; // null = couldn't fetch -> caller keeps local
+  try {
+    let query = sb.from('drink_logs')
+      .select('drink_name, volume_ml, abv, grams_alcohol, consumed_at')
+      .eq('player_hash', profileId)
+      .order('consumed_at', { ascending: true });
+    if (sinceISO) query = query.gte('consumed_at', sinceISO);
+    const result = await query;
+    if (result.error) return null;
+    return (result.data || []).map(d => {
+      const ts = new Date(d.consumed_at).getTime();
+      let grams = Number(d.grams_alcohol);
+      const vol = Number(d.volume_ml);
+      const abv = Number(d.abv);
+      if (!Number.isFinite(grams) && Number.isFinite(vol) && Number.isFinite(abv)) {
+        grams = parseFloat((vol * (abv / 100) * 0.789).toFixed(1));
+      }
+      return {
+        name: d.drink_name || 'Okänd dryck',
+        volume: Number.isFinite(vol) ? vol : 0,
+        abv: Number.isFinite(abv) ? abv : 0,
+        grams: Number.isFinite(grams) ? grams : 0,
+        time: new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: ts
+      };
+    }).filter(d => Number.isFinite(d.timestamp));
+  } catch (e) {
+    return null;
+  }
+}
+
+// True if, judging only by priorDrinks, BAC had been ~0 for at least the reset
+// window leading up to atTime. BAC is monotonic once the last drink has
+// absorbed, so a zero reading at atTime AND one reset-window earlier means it
+// stayed zero throughout — the same condition checkGraphReset uses.
+function bacResetBefore(priorDrinks, profile, atTime) {
+  if (!priorDrinks || priorDrinks.length === 0) return false;
+  if (typeof calculateBACAtTime !== 'function') return false;
+  const bacAt = Math.abs(calculateBACAtTime(priorDrinks, profile, atTime));
+  if (bacAt > BAC_ZERO_THRESHOLD) return false;
+  const bacBefore = Math.abs(calculateBACAtTime(priorDrinks, profile, atTime - SESSION_RESET_MS));
+  return bacBefore <= BAC_ZERO_THRESHOLD;
+}
+
+// Split an ascending list of drinks into the current graph session and the
+// archived remainder, mirroring the live reset rules so a freshly-restored
+// device shows what a continuously-running one would.
+function reconstructSession(drinks, profile) {
+  if (!drinks || drinks.length === 0) return { session: [], archived: [] };
+  let startIdx = 0;
+  for (let i = 1; i < drinks.length; i++) {
+    const prior = drinks.slice(startIdx, i);
+    if (bacResetBefore(prior, profile, drinks[i].timestamp)) {
+      startIdx = i;
+    }
+  }
+  const session = drinks.slice(startIdx);
+  // The most recent session may itself have expired (BAC ~0 for the reset
+  // window before now); if so it belongs in the archive, not on the graph.
+  if (session.length && bacResetBefore(session, profile, Date.now())) {
+    return { session: [], archived: drinks.slice() };
+  }
+  return { session: session, archived: drinks.slice(0, startIdx) };
+}
+
+// Restore drink history from the DB only when this device has none stored.
+// This is what makes the graph reappear after logging in on a new device while
+// keeping the old drinks. It is a one-time seed: if anything is already stored
+// locally we return immediately and never overwrite it.
+async function restoreDrinkHistoryIfEmpty(profileId, profile) {
+  if (!sb || !profileId) return false;
+  let allLocal;
+  try { allLocal = JSON.parse(localStorage.getItem('drinkHistory_all')) || {}; } catch (e) { allLocal = {}; }
+  const localCurrent = allLocal[profileId] || [];
+  const localArchive = (typeof getArchivedDrinkHistory === 'function') ? getArchivedDrinkHistory(profileId) : [];
+  if (localCurrent.length > 0 || localArchive.length > 0) return false; // already seeded
+
+  const sinceISO = new Date(Date.now() - DRINK_RESTORE_WINDOW_MS).toISOString();
+  const remote = await fetchDrinkLogsFromSupabase(profileId, sinceISO);
+  if (!remote || remote.length === 0) return false;
+
+  const split = reconstructSession(remote, profile);
+  allLocal[profileId] = split.session;
+  localStorage.setItem('drinkHistory_all', JSON.stringify(allLocal));
+  if (typeof saveArchivedDrinkHistory === 'function') {
+    saveArchivedDrinkHistory(profileId, split.archived);
+  }
+  return true;
 }
 
 if ('serviceWorker' in navigator) {

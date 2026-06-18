@@ -117,7 +117,10 @@ function renderStats(prefix, profile, history, series) {
     setText(`${prefix}Status`, 'Ingen giltig dryckdata.');
     return;
   }
-  const totalGrams = history.reduce((sum, d) => sum + d.grams, 0);
+  // "Total consumed" counts only positive grams, matching the log total and the
+  // clan/event/friend leaderboards. (Ulta still lowers BAC via calculateBACAtTime,
+  // which is the physiologically correct place for it.)
+  const totalGrams = history.reduce((sum, d) => sum + (d.grams > 0 ? d.grams : 0), 0);
   const maxBac = Math.abs(Math.max(...series.dataPoints));
   const currentBac = Math.abs(calculateBACAtTime(history, profile, Date.now()));
   const lastDrink = history[history.length - 1];
