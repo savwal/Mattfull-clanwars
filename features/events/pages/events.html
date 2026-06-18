@@ -720,7 +720,10 @@ async function renderLiveTopFive(allowedHashes = null) {
   const ranked = profiles.map(p => {
     const pDrinks = recentDrinks.filter(d => d.player_hash === p.player_hash).map(d => ({
       timestamp: new Date(d.consumed_at).getTime(),
-      grams: d.grams_alcohol
+      grams: d.grams_alcohol,
+      // abv drives getAbsorptionTime() so the leaderboard absorbs at the
+      // same pace as the log graph (omitting it defaults to the fastest rate).
+      abv: d.abv
     }));
     const profileObj = { id: p.player_hash, weight: p.weight, gender: p.gender };
     const promille = calculateBACAtTime(pDrinks, profileObj, Date.now());

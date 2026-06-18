@@ -205,7 +205,10 @@ async function fetchFriendsData() {
       if (friendsData[d.player_hash]) {
         friendsData[d.player_hash].drinks.push({
           timestamp: new Date(d.consumed_at).getTime(),
-          grams: d.grams_alcohol
+          grams: d.grams_alcohol,
+          // abv drives getAbsorptionTime() so the leaderboard absorbs at the
+          // same pace as the log graph (omitting it defaults to the fastest rate).
+          abv: d.abv
         });
       }
     });

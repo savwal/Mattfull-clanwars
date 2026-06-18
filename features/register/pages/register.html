@@ -38,15 +38,25 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 
 <div class="card">
   <h2>Ny Krigare</h2>
-  <input type="text" id="regHash" placeholder="Har du en personlig kod? Klistra in den här">
+
+  <p style="font-weight: 900; color:#2C3E50; margin: 14px 0 2px 0;">Har du redan ett konto?</p>
+  <p style="color:#4A4A4A; font-size: 15px; line-height: 1.4; margin: 0 0 4px 0;">Skriv in din personliga kod här och tryck på knappen för att logga in.</p>
+  <input type="text" id="regHash" placeholder="Personlig kod">
+
+  <p style="text-align:center; font-weight: 900; color:#2C3E50; margin: 16px 0 10px 0;">— eller —</p>
+
+  <p style="font-weight: 900; color:#2C3E50; margin: 0 0 2px 0;">Nya användare</p>
+  <p style="color:#4A4A4A; font-size: 15px; line-height: 1.4; margin: 0 0 4px 0;">Lämna fältet ovan tomt och fyll i dina uppgifter nedan för att skapa en ny profil.</p>
   <input type="text" id="regName" placeholder="Namn">
   <input type="number" id="regWeight" placeholder="Vikt (kg)" min="1">
   <select id="regGender">
     <option value="man">Man</option>
     <option value="kvinna">Kvinna</option>
   </select>
-  <input type="number" step="0.1" id="regFunzone" placeholder="Funzone gräns (‰) t.ex. 1.0">
-  <button onclick="registerProfile()">vamos</button>
+  <input type="number" step="0.1" id="regFunzone" placeholder="Funzone-gräns (‰) – t.ex. 1.0">
+  <p style="color:#4A4A4A; font-size: 15px; line-height: 1.4; margin: 0 0 8px 0;">Funzone-gränsen är promillenivån du siktar på – grafen blir grön när du når den.</p>
+
+  <button onclick="registerProfile()">Fortsätt</button>
   <p id="regStatus" style="font-weight: 900; color:#2C3E50;"></p>
 </div>
 <script src="../../shared/scripts/hash.js"></script>
