@@ -1,78 +1,32 @@
-function calculateDrinkMetrics(logs) {
-  return logs.reduce((accumulator, item) => {
-    const volumeMl = Number(item.volume_ml) || 0;
-    const abv = Number(item.abv) || 0;
-    const grams = Number.isFinite(Number(item.grams_alcohol))
-      ? Number(item.grams_alcohol)
-      : volumeMl * (abv / 100) * 0.789;
-    const drinkName = item.drink_name || 'Okänd dryck';
-
-    accumulator.totalEntries += 1;
-    accumulator.totalVolumeMl += volumeMl;
-    accumulator.totalGrams += grams;
-    accumulator.drinkCounts[drinkName] = (accumulator.drinkCounts[drinkName] || 0) + 1;
-    return accumulator;
-  }, {
-    totalEntries: 0,
-    totalVolumeMl: 0,
-    totalGrams: 0,
-    drinkCounts: {}
-  });
+// Resolve the grams of alcohol for a logged drink, falling back to the
+// volume/abv calculation when grams_alcohol was not stored. Values are only
+// read here — never modified — so what is shown matches what was logged.
+function resolveDrinkGrams(log) {
+  const grams = Number(log.grams_alcohol);
+  if (Number.isFinite(grams)) return grams;
+  const volumeMl = Number(log.volume_ml) || 0;
+  const abv = Number(log.abv) || 0;
+  return volumeMl * (abv / 100) * 0.789;
 }
 
-function renderDrinkNameCounts(drinkCounts) {
-  const entries = Object.entries(drinkCounts)
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], 'sv-SE'));
+function renderDrinkLogItem(log) {
+  const grams = resolveDrinkGrams(log);
+  const cl = Math.abs(calculateCl(grams));
+  const name = log.drink_name || 'Okänd dryck';
+  const volumeMl = Number(log.volume_ml) || 0;
+  const abv = Number(log.abv) || 0;
+  const consumed = log.consumed_at ? new Date(log.consumed_at) : null;
+  const whenLabel = consumed ? consumed.toLocaleString('sv-SE') : 'Okänt datum';
 
-  if (entries.length === 0) {
-    return '<div style="color:#7f8c8d; font-size:0.9em; margin-top:6px;">Inga dryckesnamn att visa.</div>';
-  }
-
-  return `<div style="margin-top:8px; display:grid; gap:4px;">
-    ${entries.map(([name, count]) => `<div style="font-size:0.9em; color:#2C3E50;"><strong>${name}</strong>: ${count} st</div>`).join('')}
-  </div>`;
-}
-
-function renderGroupedLogItem(group, displayName) {
-  const metrics = calculateDrinkMetrics(group.logs);
-  const totalCl = Math.abs(calculateCl(metrics.totalGrams));
-  const latestTimestamp = group.logs.length > 0 ? new Date(group.logs[0].consumed_at) : null;
-  const latestLabel = latestTimestamp ? latestTimestamp.toLocaleString('sv-SE') : 'Okänt datum';
-
-  return `<li style="display:block; text-align:left; margin-bottom:14px;">
-    <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
-      <div>
-        <div style="font-weight:900; color:#2C3E50;">${displayName}</div>
-        <div style="font-size:0.85em; color:#7f8c8d;">${group.playerHash}</div>
+  return `<li>
+    <div class="drink-log-item" style="width:100%;">
+      <div class="drink-log-info">
+        <span class="drink-log-name">${name}</span>
+        <span class="drink-log-sub">${volumeMl} ml · ${abv}% · ${whenLabel}</span>
       </div>
-      <div style="text-align:right; font-size:0.85em; color:#7f8c8d;">Senaste: ${latestLabel}</div>
+      <div class="drink-log-cl">${cl.toFixed(1)} cl</div>
     </div>
-    <div style="margin-top:8px; display:grid; gap:4px;">
-      <div><strong>Antal loggar:</strong> ${metrics.totalEntries}</div>
-      <div><strong>Total volym:</strong> ${metrics.totalVolumeMl} ml</div>
-      <div><strong>Total alkohol:</strong> ${totalCl.toFixed(1)} cl</div>
-      <div><strong>Totalt gram alkohol:</strong> ${metrics.totalGrams.toFixed(1)} g</div>
-    </div>
-    ${renderDrinkNameCounts(metrics.drinkCounts)}
   </li>`;
-}
-
-function groupLogsByPlayer(logs) {
-  const grouped = {};
-  (logs || []).forEach(item => {
-    const playerHash = item.player_hash || 'okänt';
-    if (!grouped[playerHash]) {
-      grouped[playerHash] = [];
-    }
-    grouped[playerHash].push(item);
-  });
-
-  return Object.keys(grouped)
-    .sort((left, right) => left.localeCompare(right, 'sv-SE'))
-    .map(playerHash => ({
-      playerHash,
-      logs: grouped[playerHash].sort((left, right) => new Date(right.consumed_at).getTime() - new Date(left.consumed_at).getTime())
-    }));
 }
 
 async function openHistoricalLogsPopup() {
@@ -83,23 +37,27 @@ async function openHistoricalLogsPopup() {
 
   if (!modal || !meta || !summary || !list) return;
   modal.style.display = 'block';
-  if (!sb) {
+
+  const profile = getActiveProfile();
+  if (!sb || !profile || !profile.id) {
     meta.textContent = 'Historiska loggar';
-    summary.innerHTML = '<p style="margin:0; color:#E74C3C; font-weight:bold;">Databasen kunde inte laddas.</p>';
+    summary.innerHTML = '<p style="margin:0; color:#E74C3C; font-weight:bold;">Kunde inte hitta din profil.</p>';
+    list.innerHTML = '';
     return;
   }
 
-  meta.textContent = 'Visar historiska loggar sorterade per player_hash';
-  summary.innerHTML = '<p style="margin:0; color:#7f8c8d; font-weight:bold;">Laddar historiska loggar...</p>';
+  meta.textContent = 'Dina registrerade drycker';
+  summary.innerHTML = '<p style="margin:0; color:#5a6570; font-weight:bold;">Laddar dina loggar...</p>';
   list.innerHTML = '';
 
   if (typeof ensureSupabaseAuth === 'function') {
     await ensureSupabaseAuth();
   }
 
+  // Locate every drink this user has logged via their player_hash.
   const { data, error } = await sb.from('drink_logs')
     .select('id, player_hash, drink_name, volume_ml, abv, grams_alcohol, consumed_at')
-    .order('player_hash', { ascending: true })
+    .eq('player_hash', profile.id)
     .order('consumed_at', { ascending: false });
 
   if (error) {
@@ -109,34 +67,21 @@ async function openHistoricalLogsPopup() {
 
   const logs = data || [];
   if (logs.length === 0) {
-    summary.innerHTML = '<p style="margin:0; color:#7f8c8d; font-weight:bold;">Inga historiska loggar att visa.</p>';
+    summary.innerHTML = '<p style="margin:0; color:#5a6570; font-weight:bold;">Du har inga registrerade drycker än.</p>';
     return;
   }
 
-  const groupedLogs = groupLogsByPlayer(logs);
-  const uniqueHashes = groupedLogs.map(group => group.playerHash);
-  const profiles = await sb.from('profiles')
-    .select('player_hash, display_name')
-    .in('player_hash', uniqueHashes);
-  const profileMap = (profiles.data || []).reduce((accumulator, profile) => {
-    accumulator[profile.player_hash] = profile.display_name;
-    return accumulator;
-  }, {});
+  const totalGrams = logs.reduce((sum, log) => sum + resolveDrinkGrams(log), 0);
+  const totalCl = Math.abs(calculateCl(totalGrams));
 
-  const overallMetrics = calculateDrinkMetrics(logs);
   summary.innerHTML = `
     <div style="display:grid; gap:8px; text-align:left;">
-      <div><strong>Antal player_hash:</strong> ${groupedLogs.length}</div>
-      <div><strong>Antal loggar:</strong> ${overallMetrics.totalEntries}</div>
-      <div><strong>Total volym:</strong> ${overallMetrics.totalVolumeMl} ml</div>
-      <div><strong>Total alkohol:</strong> ${Math.abs(calculateCl(overallMetrics.totalGrams)).toFixed(1)} cl</div>
+      <div><strong>Antal loggar:</strong> ${logs.length}</div>
+      <div><strong>Total alkohol:</strong> ${totalCl.toFixed(1)} cl</div>
     </div>
   `;
 
-  list.innerHTML = groupedLogs.map(group => {
-    const displayName = profileMap[group.playerHash] || group.playerHash;
-    return renderGroupedLogItem(group, displayName);
-  }).join('');
+  list.innerHTML = logs.map(renderDrinkLogItem).join('');
 }
 
 function closeHistoricalLogsPopup() {

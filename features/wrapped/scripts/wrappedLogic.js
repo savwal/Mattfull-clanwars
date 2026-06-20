@@ -30,15 +30,25 @@ async function loadWrapped(playerHash, type) {
   }
 
   const now = new Date();
-  const rangeStart = type === 'yearly'
-    ? new Date(now.getFullYear(), 0, 1)
-    : new Date(now.getFullYear(), now.getMonth(), 1);
+  let rangeStart, rangeEnd;
+  if (type === 'yearly') {
+    rangeStart = new Date(now.getFullYear(), 0, 1);
+    rangeEnd = now;
+  } else {
+    // Monthly wrapped mirrors the clan scoring period: it covers the 25th of the
+    // previous month through the 24th of this month. It is released on the 24th
+    // (gated in openWrapped) so last month's wrapped stays visible from the 24th
+    // through the end of the month.
+    rangeStart = new Date(now.getFullYear(), now.getMonth() - 1, 25, 0, 0, 0, 0);
+    const periodEnd = new Date(now.getFullYear(), now.getMonth(), 24, 23, 59, 59, 999);
+    rangeEnd = now < periodEnd ? now : periodEnd;
+  }
 
   const { data: logs, error } = await sb.from('drink_logs')
     .select('drink_name, volume_ml, abv, grams_alcohol, consumed_at')
     .eq('player_hash', playerHash)
     .gte('consumed_at', rangeStart.toISOString())
-    .lte('consumed_at', now.toISOString())
+    .lte('consumed_at', rangeEnd.toISOString())
     .order('consumed_at', { ascending: true });
 
   if (error) {

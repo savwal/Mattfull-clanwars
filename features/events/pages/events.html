@@ -137,13 +137,9 @@ li:last-child { border-bottom: none; }
 </div>
 
 <div class="card">
-  <h2 style="background: #2A8CFF;">Live Promille Top 5</h2>
-  <ul id="liveTopFive"></ul>
-</div>
-
-<div class="card">
-  <h2>Leaderboard (cl)</h2>
-  <ul id="eventLeaderboard"></ul>
+  <h2 style="background: #2A8CFF;">Live Promille</h2>
+  <ul id="liveTopFive"><li class="loading-row"><span class="loading-spinner"></span> Laddar...</li></ul>
+  <button id="showAllLiveBtn" onclick="openAllLivePromilleModal()">Visa Alla</button>
 </div>
 
 <div class="card">
@@ -158,7 +154,7 @@ li:last-child { border-bottom: none; }
 <div class="card">
   <h2 style="background: #2ECC71;">Mina custom events</h2>
   <ul id="myCustomEventsList"></ul>
-  <p id="noCustomEventsMessage" style="text-align:center; color:#7f8c8d; font-weight: bold;">Inga custom events att visa.</p>
+  <p id="noCustomEventsMessage" style="text-align:center; color:#5a6570; font-weight: bold;">Inga custom events att visa.</p>
 </div>
 
 <div class="card">
@@ -186,6 +182,15 @@ function applyStatUpdate(element, text) {
     element.textContent = text;
     element.classList.remove('stat-bump');
   }, 50);
+}
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function toIsoOrNull(dateValue) {
@@ -325,7 +330,7 @@ function renderMyCustomEvents(events) {
     li.innerHTML = `
       <div>
         <strong>${evt.event_name}</strong><br>
-        <span style="color:#7f8c8d; font-size:0.9em;">${meta}</span>
+        <span style="color:#5a6570; font-size:0.9em;">${meta}</span>
       </div>
       <div>
         <div class="badge" style="margin-bottom:6px;">${evt.event_id}</div>
@@ -580,8 +585,11 @@ function formatRange(start, end) {
 
 function renderLeaderboard(entries) {
   const list = document.getElementById('eventLeaderboard');
+  // The CL leaderboard card was removed; keep the event selector working by
+  // no-opping when its list element is not present.
+  if (!list) return;
   if (entries.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga deltagare.</p>';
+    list.innerHTML = '<p style="text-align:center; color:#5a6570;">Inga deltagare.</p>';
     return;
   }
   const existingItems = new Map(Array.from(list.children).map(item => [item.dataset.playerId, item]));
@@ -595,7 +603,7 @@ function renderLeaderboard(entries) {
       img.className = 'profile-img';
       li.appendChild(img);
       const info = document.createElement('div');
-      info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#<span class="stat-value rank-value"></span> ${player.name}</span><br><span style="font-size:0.85em; color:#7f8c8d;">${player.id}</span>`;
+      info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#<span class="stat-value rank-value"></span> ${player.name}</span><br><span style="font-size:0.85em; color:#5a6570;">${player.id}</span>`;
       li.appendChild(info);
       const stats = document.createElement('div');
       stats.className = 'badge';
@@ -703,32 +711,20 @@ async function renderSelectedEvent() {
   await renderLiveTopFive();
 }
 
-async function renderLiveTopFive(allowedHashes = null) {
-  if (!sb) return;
-  const list = document.getElementById('liveTopFive');
+// Compute every active user's current promille (drinks logged in the last 24h),
+// sorted high to low. Shared by the inline top-5 list and the "Visa Alla" window.
+async function computeLivePromilleRanking() {
+  if (!sb) return [];
 
   const yesterdayISO = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  let drinksQuery = sb.from('drink_logs').select('*').gte('consumed_at', yesterdayISO);
-  if (Array.isArray(allowedHashes) && allowedHashes.length > 0) {
-    drinksQuery = drinksQuery.in('player_hash', allowedHashes);
-  }
-  const { data: recentDrinks } = await drinksQuery;
+  const { data: recentDrinks } = await sb.from('drink_logs').select('*').gte('consumed_at', yesterdayISO);
+  if (!recentDrinks || recentDrinks.length === 0) return [];
 
-  if (!recentDrinks || recentDrinks.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga aktiva promille att visa.</p>';
-    return;
-  }
-
-  let activeHashes = Array.from(new Set(recentDrinks.map(d => d.player_hash)));
-  if (Array.isArray(allowedHashes) && allowedHashes.length > 0) {
-    const allowedSet = new Set(allowedHashes);
-    activeHashes = activeHashes.filter(hash => allowedSet.has(hash));
-  }
+  const activeHashes = Array.from(new Set(recentDrinks.map(d => d.player_hash)));
   const { data: profiles } = await sb.from('profiles').select('*').in('player_hash', activeHashes);
+  if (!profiles) return [];
 
-  if (!profiles) return;
-
-  const ranked = profiles.map(p => {
+  return profiles.map(p => {
     const pDrinks = recentDrinks.filter(d => d.player_hash === p.player_hash).map(d => ({
       timestamp: new Date(d.consumed_at).getTime(),
       grams: d.grams_alcohol,
@@ -742,10 +738,18 @@ async function renderLiveTopFive(allowedHashes = null) {
       profile: { name: p.display_name, id: p.player_hash, pic: p.avatar_url },
       promille: Math.abs(promille)
     };
-  }).filter(r => r.promille > 0).sort((a, b) => b.promille - a.promille).slice(0, 5);
+  }).filter(r => r.promille > 0).sort((a, b) => b.promille - a.promille);
+}
+
+async function renderLiveTopFive() {
+  if (!sb) return;
+  const list = document.getElementById('liveTopFive');
+  if (!list) return;
+
+  const ranked = (await computeLivePromilleRanking()).slice(0, 5);
 
   if (ranked.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga aktiva promille att visa.</p>';
+    list.innerHTML = '<p style="text-align:center; color:#5a6570;">Inga aktiva promille att visa.</p>';
     return;
   }
   const existingItems = new Map(Array.from(list.children).map(item => [item.dataset.playerId, item]));
@@ -778,7 +782,7 @@ async function renderLiveTopFive(allowedHashes = null) {
     }
     const img = li.querySelector('img.profile-img');
     img.src = entry.profile.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-    applyStatUpdate(rankValue, String(index + 1));
+    applyStatUpdate(li.querySelector('.rank-value'), String(index + 1));
     const statValue = li.querySelector('.badge .stat-value');
     applyStatUpdate(statValue, Math.abs(entry.promille).toFixed(2));
 
@@ -792,6 +796,31 @@ async function renderLiveTopFive(allowedHashes = null) {
   // refreshes momentarily appended extra rows.
   while (list.children.length > 5) {
     list.removeChild(list.lastChild);
+  }
+}
+
+function liveRowHtml(entry, index) {
+  return '<li style="display:flex;align-items:center;gap:12px;border-bottom:4px solid #E5E9F0;padding:12px 0;font-weight:bold;">'
+    + '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;border:3px solid #2C3E50;background:#E5E5E5;color:#2C3E50;font-weight:900;box-shadow:2px 2px 0 #2C3E50;flex:0 0 auto;">#' + (index + 1) + '</span>'
+    + '<span style="flex:1;min-width:0;"><span style="display:block;font-size:1.05em;color:#2C3E50;word-break:break-word;">' + escapeHtml(entry.profile.name) + '</span></span>'
+    + '<span style="margin-left:auto;border:3px solid #2C3E50;background:#FFCC00;padding:4px 8px;font-weight:900;white-space:nowrap;flex:0 0 auto;">' + Math.abs(entry.promille).toFixed(2) + ' ‰</span>'
+    + '</li>';
+}
+
+// "Visa Alla": show every active user's current promille in an in-page
+// JavaScript popup (like the Historik popup). Computes the full ranking first,
+// then renders it into a modal — no new browser tab/window is opened.
+async function openAllLivePromilleModal() {
+  const ranked = await computeLivePromilleRanking();
+  let html;
+  if (!ranked || ranked.length === 0) {
+    html = '<p style="text-align:center; color:#5a6570; font-weight:bold; margin:0;">Inga aktiva promille att visa.</p>';
+  } else {
+    const rows = ranked.map(liveRowHtml).join('');
+    html = '<ul style="list-style:none; padding:0; margin:0;">' + rows + '</ul>';
+  }
+  if (typeof showListModal === 'function') {
+    showListModal('Live Promille', html, { headerBg: '#2A8CFF' });
   }
 }
 
@@ -814,7 +843,8 @@ function refreshPage() {
 // Realtime: re-render the selected event leaderboard the moment any drink is
 // logged, so the CL counter updates immediately like the Klan list instead of
 // only on the slow poll. renderSelectedEvent keeps its event-interval filter,
-// so a drink still only counts if it falls inside the event's time window.
+// so a drink still only counts if it falls inside the event's time window, and
+// it also refreshes the live top 5.
 var eventsDrinkChannel = null;
 var eventsRefreshTimer = null;
 

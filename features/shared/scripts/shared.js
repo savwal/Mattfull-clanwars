@@ -495,6 +495,111 @@ async function showDrinkReminderNotification() {
 }
 
 // ---------------------------------------------------------------------------
+// Shared in-page list modal. Used by the "Visa Alla" buttons to show a full
+// list (all clans / all active users) in an on-page JavaScript popup — like the
+// Historik popup — instead of opening a new browser tab/window. Pass the title
+// and a ready-built HTML string for the body.
+// ---------------------------------------------------------------------------
+window.showListModal = function(title, contentHtml, options) {
+  options = options || {};
+  var headerBg = options.headerBg || '#2A8CFF';
+
+  var overlay = document.createElement('div');
+  overlay.className = 'modal';
+  overlay.style.display = 'block';
+  overlay.style.zIndex = '6000';
+
+  var content = document.createElement('div');
+  content.className = 'modal-content card';
+  content.style.cssText = 'background:#FFFFFF;color:#2C3E50;border:6px solid #2C3E50;box-shadow:8px 8px 0 #2C3E50;padding:20px;text-align:left;position:relative;';
+
+  var close = document.createElement('span');
+  close.className = 'close-modal';
+  close.innerHTML = '&times;';
+  close.style.cssText = 'color:#E74C3C;font-size:32px;font-weight:bold;cursor:pointer;position:absolute;right:15px;top:10px;line-height:1;';
+
+  var heading = document.createElement('h2');
+  heading.textContent = title;
+  heading.style.cssText = "font-family:'Arial Black',sans-serif;text-transform:uppercase;color:#FFF;background:" + headerBg + ";margin:-20px -20px 20px -20px;padding:15px;border-bottom:4px solid #2C3E50;text-align:left;";
+
+  var body = document.createElement('div');
+  body.innerHTML = contentHtml;
+
+  function cleanup() {
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+  }
+  close.addEventListener('click', cleanup);
+  overlay.addEventListener('click', function(event) { if (event.target === overlay) cleanup(); });
+
+  content.appendChild(close);
+  content.appendChild(heading);
+  content.appendChild(body);
+  overlay.appendChild(content);
+  document.body.appendChild(overlay);
+  return overlay;
+};
+
+// ---------------------------------------------------------------------------
+// Shared confirmation modal for destructive actions (leave clan, end battle,
+// delete friend). Returns a Promise that resolves true when confirmed and false
+// when cancelled/dismissed, so callers can `await showConfirmModal(...)`.
+// ---------------------------------------------------------------------------
+window.showConfirmModal = function(message, options) {
+  options = options || {};
+  var title = options.title || 'Bekräfta';
+  var confirmText = options.confirmText || 'Ja';
+  var cancelText = options.cancelText || 'Avbryt';
+
+  return new Promise(function(resolve) {
+    var overlay = document.createElement('div');
+    overlay.className = 'modal';
+    overlay.style.display = 'block';
+    overlay.style.zIndex = '6000';
+
+    var content = document.createElement('div');
+    content.className = 'modal-content card';
+    content.style.cssText = 'background:#2A8CFF;color:#fff;border:6px solid #2C3E50;box-shadow:8px 8px 0 #2C3E50;padding:25px;text-align:center;';
+
+    var heading = document.createElement('h2');
+    heading.textContent = title;
+    heading.style.cssText = "font-family:'Arial Black',sans-serif;color:#FFF;background:#2C3E50;margin:-25px -25px 20px -25px;padding:15px;border-bottom:4px solid #E74C3C;text-transform:uppercase;text-align:left;";
+
+    var text = document.createElement('p');
+    text.textContent = message;
+    text.style.cssText = 'font-weight:bold;margin:0 0 20px 0;';
+
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:12px;';
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.textContent = cancelText;
+    cancelBtn.style.cssText = 'flex:1;width:auto;margin:0;background:#FFF;color:#2C3E50;border:4px solid #2C3E50;box-shadow:4px 4px 0 #2C3E50;padding:14px;font-weight:900;text-transform:uppercase;cursor:pointer;';
+
+    var confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.textContent = confirmText;
+    confirmBtn.style.cssText = 'flex:1;width:auto;margin:0;background:#E74C3C;color:#FFF;border:4px solid #2C3E50;box-shadow:4px 4px 0 #2C3E50;padding:14px;font-weight:900;text-transform:uppercase;cursor:pointer;';
+
+    function cleanup(result) {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      resolve(result);
+    }
+    cancelBtn.addEventListener('click', function() { cleanup(false); });
+    confirmBtn.addEventListener('click', function() { cleanup(true); });
+    overlay.addEventListener('click', function(event) { if (event.target === overlay) cleanup(false); });
+
+    row.appendChild(cancelBtn);
+    row.appendChild(confirmBtn);
+    content.appendChild(heading);
+    content.appendChild(text);
+    content.appendChild(row);
+    overlay.appendChild(content);
+    document.body.appendChild(overlay);
+  });
+};
+
+// ---------------------------------------------------------------------------
 // PWA refresh helpers
 // Standalone PWAs can't be hard-refreshed and freeze their timers/realtime
 // sockets while the device is locked. When the app comes back to the

@@ -78,7 +78,7 @@ li:last-child { border-bottom: none; }
 #clanLeaderboard .leader-hash {
   display: block;
   font-size: 0.8em;
-  color: #7f8c8d;
+  color: #5a6570;
   word-break: break-word;
 }
 
@@ -173,27 +173,25 @@ li:last-child { border-bottom: none; }
     <div class="hash-text" id="clanHashDisplay"></div>
     <p style="margin: 10px 0 0 0; font-weight: bold;">Klanens Totala Poäng:</p>
     <div class="highlight-text stat-value" id="clanTotalElo">0.0 cl</div>
+    <button onclick="leaveClan()" style="background: #E74C3C; color: #FFF; width: auto; display: block; margin: 20px auto 0 auto;">Lämna Klan</button>
   </div>
   <div class="card">
     <h2 style="background: #FFCC00; color: #2C3E50;">Medlemmar</h2>
-    <ul id="clanMembers"></ul>
+    <ul id="clanMembers"><li class="loading-row"><span class="loading-spinner"></span> Laddar medlemmar...</li></ul>
   </div>
   <div id="ongoingEventCard" class="card" style="display: none;">
     <h2 style="background: #9B59B6;">Pågående Event</h2>
     <div id="ongoingEventContent"></div>
   </div>
-  <div class="card">
+  <div class="card" style="display: none;">
     <h2 style="background: #2A8CFF;">Klan War</h2>
     <button onclick="openClanWarModal()">Starta Klan War</button>
   </div>
 </div>
 <div class="card">
   <h2 style="background: #9B59B6;">Klan Leaderboard</h2>
-  <ul id="clanLeaderboard"></ul>
-</div>
-<div class="card">
-  <h2 style="background: #E74C3C;">Lämna Klan</h2>
-  <button onclick="leaveClan()" style="background: #E74C3C; color: #FFF;">Lämna Klan</button>
+  <ul id="clanLeaderboard"><li class="loading-row"><span class="loading-spinner"></span> Laddar leaderboard...</li></ul>
+  <button onclick="openAllClansModal()">Visa Alla</button>
 </div>
 <div id="clanWarModal" class="modal">
   <div class="modal-content card">
@@ -305,8 +303,8 @@ async function loadOngoingEvent() {
     var endDate = new Date(event.end_time);
     eventContent.innerHTML =
       '<p style="font-weight: bold; color: #2C3E50; margin: 10px 0;">' + event.name + '</p>' +
-      '<p style="margin: 5px 0; color: #7f8c8d;">Börjar: ' + startDate.toLocaleString() + '</p>' +
-      '<p style="margin: 5px 0; color: #7f8c8d;">Slutar: ' + endDate.toLocaleString() + '</p>' +
+      '<p style="margin: 5px 0; color: #5a6570;">Börjar: ' + startDate.toLocaleString() + '</p>' +
+      '<p style="margin: 5px 0; color: #5a6570;">Slutar: ' + endDate.toLocaleString() + '</p>' +
       '<p style="margin: 10px 0; font-size: 0.9em; color: #2C3E50;">Ditt klans medlemmar kan delta i detta event!</p>';
     eventCard.style.display = 'block';
   } catch (error) {
@@ -388,6 +386,8 @@ async function updateClanUI() {
 
   var totalElo = 0;
   var list = document.getElementById('clanMembers');
+  var loadingRow = list.querySelector('.loading-row');
+  if (loadingRow) loadingRow.remove();
   var existingItems = {};
   var items = list.querySelectorAll('li[data-member-id]');
   for (var i = 0; i < items.length; i++) {
@@ -459,7 +459,7 @@ async function updateClanUI() {
       var img = li.querySelector('img.profile-img');
       img.src = member.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
       var info = li.querySelector('.member-info');
-      info.innerHTML = '<span style="font-size:1.1em; color:#2C3E50;">' + member.name + '</span><br><span style="font-size:0.8em; color:#7f8c8d;">' + member.role + '</span>';
+      info.innerHTML = '<span style="font-size:1.1em; color:#2C3E50;">' + member.name + '</span><br><span style="font-size:0.8em; color:#5a6570;">' + member.role + '</span>';
       var statValue = li.querySelector('.stat-value');
       applyStatUpdate(statValue, Math.abs(member.elo).toFixed(1));
 
@@ -478,27 +478,18 @@ async function updateClanUI() {
   await renderClanLeaderboard();
 }
 
-async function renderClanLeaderboard() {
-  var list = document.getElementById('clanLeaderboard');
-  if (!list) return;
-  if (!sb) {
-    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Ingen data att visa.</p>';
-    return;
-  }
+// Compute every clan's score for the current period, sorted high to low.
+// Returns null when the DB is unavailable so callers can show an error state.
+async function computeClanRanking() {
+  if (!sb) return null;
 
   var clansResult = await sb.from('clans').select('id, name');
   var clans = clansResult.data;
-  if (!clans || clans.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga klaner att visa.</p>';
-    return;
-  }
+  if (!clans || clans.length === 0) return [];
 
   var membersResult = await sb.from('clan_members').select('clan_id, player_hash');
   var members = membersResult.data;
-  if (!members || members.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga klaner att visa.</p>';
-    return;
-  }
+  if (!members || members.length === 0) return [];
 
   var memberHashes = [];
   var seen = {};
@@ -533,18 +524,31 @@ async function renderClanLeaderboard() {
     gramsByClan[m.clan_id] += grams;
   });
 
-  var ranked = clans.map(function(clan) {
+  return clans.map(function(clan) {
     return {
       id: clan.id,
       name: clan.name,
       cl: Math.abs(calculateCl(gramsByClan[clan.id] || 0))
     };
-  }).sort(function(a, b) { return b.cl - a.cl; }).slice(0, 10);
+  }).sort(function(a, b) { return b.cl - a.cl; });
+}
 
-  if (ranked.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga klaner att visa.</p>';
+async function renderClanLeaderboard() {
+  var list = document.getElementById('clanLeaderboard');
+  if (!list) return;
+
+  var fullRanked = await computeClanRanking();
+  if (fullRanked === null) {
+    list.innerHTML = '<p style="text-align:center; color:#5a6570;">Ingen data att visa.</p>';
     return;
   }
+  if (fullRanked.length === 0) {
+    list.innerHTML = '<p style="text-align:center; color:#5a6570;">Inga klaner att visa.</p>';
+    return;
+  }
+
+  // Only the top 5 are shown inline; "Visa Alla" opens the full list in a window.
+  var ranked = fullRanked.slice(0, 5);
 
   list.innerHTML = '';
   ranked.forEach(function(clan, index) {
@@ -572,6 +576,41 @@ async function renderClanLeaderboard() {
     applyStatUpdate(statVal, Math.abs(clan.cl).toFixed(1));
     list.appendChild(li);
   });
+}
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// "Visa Alla": show every clan in an in-page JavaScript popup (like the Historik
+// popup). Computes the full ranking first, then renders it into a modal — no new
+// browser tab/window is opened.
+function clanRowHtml(clan, index) {
+  return '<li style="display:flex;align-items:center;gap:12px;border-bottom:4px solid #E5E9F0;padding:12px 0;font-weight:bold;">'
+    + '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;border:3px solid #2C3E50;background:#E5E5E5;color:#2C3E50;font-weight:900;box-shadow:2px 2px 0 #2C3E50;flex:0 0 auto;">#' + (index + 1) + '</span>'
+    + '<span style="flex:1;min-width:0;"><span style="display:block;font-size:1.05em;color:#2C3E50;word-break:break-word;">' + escapeHtml(clan.name) + '</span>'
+    + '<span style="display:block;font-size:0.8em;color:#5a6570;">' + escapeHtml(clan.id) + '</span></span>'
+    + '<span style="margin-left:auto;border:3px solid #2C3E50;background:#FFCC00;padding:4px 8px;font-weight:900;white-space:nowrap;flex:0 0 auto;">' + Math.abs(clan.cl).toFixed(1) + ' cl</span>'
+    + '</li>';
+}
+
+async function openAllClansModal() {
+  var fullRanked = await computeClanRanking();
+  var html;
+  if (!fullRanked || fullRanked.length === 0) {
+    html = '<p style="text-align:center; color:#5a6570; font-weight:bold; margin:0;">Inga klaner att visa.</p>';
+  } else {
+    var rows = fullRanked.map(clanRowHtml).join('');
+    html = '<ul style="list-style:none; padding:0; margin:0;">' + rows + '</ul>';
+  }
+  if (typeof showListModal === 'function') {
+    showListModal('Alla Klaner', html, { headerBg: '#9B59B6' });
+  }
 }
 
 function refreshClanUI() {
@@ -627,6 +666,8 @@ async function joinClan() {
 }
 
 async function leaveClan() {
+  var confirmed = await showConfirmModal('Vill du verkligen lämna klanen?', { title: 'Lämna Klan', confirmText: 'Lämna' });
+  if (!confirmed) return;
   if (!myClanHash || !sb || !activeProfile) {
     localStorage.removeItem('myClanHash');
     myClanHash = null;

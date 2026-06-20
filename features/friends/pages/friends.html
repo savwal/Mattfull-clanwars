@@ -28,7 +28,7 @@ li:last-child { border-bottom: none; }
 .friend-name { display: block; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
 .friend-hash { display: block; overflow-wrap: anywhere; word-break: break-word; }
 .friend-row-title { display: block; font-size: 1.1em; color: #2C3E50; }
-.friend-row-sub { display: block; font-size: 0.85em; color: #7f8c8d; }
+.friend-row-sub { display: block; font-size: 0.85em; color: #5a6570; }
 .view-toggle { display: flex; gap: 10px; flex-wrap: wrap; }
 .view-toggle button { width: auto; flex: 1 1 140px; }
 .hidden { display: none; }
@@ -121,17 +121,17 @@ li:last-child { border-bottom: none; }
 
 <div class="card" id="weeklyView">
   <h2 style="background: #F39C12;">Veckans Leaderboard (cl)</h2>
-  <ul id="weeklyLeaderboard"></ul>
+  <ul id="weeklyLeaderboard"><li class="loading-row"><span class="loading-spinner"></span> Laddar...</li></ul>
 </div>
 
 <div class="card hidden" id="liveView">
   <h2 style="background: #E74C3C;">Live Promille</h2>
-  <ul id="liveStats"></ul>
+  <ul id="liveStats"><li class="loading-row"><span class="loading-spinner"></span> Laddar...</li></ul>
 </div>
 
 <div class="card">
   <h2>Hantera Vanner</h2>
-  <ul id="friendsList"></ul>
+  <ul id="friendsList"><li class="loading-row"><span class="loading-spinner"></span> Laddar vänner...</li></ul>
 </div>
 
 <script src="../../shared/scripts/hash.js"></script>
@@ -281,9 +281,11 @@ function getLivePromille(profile) {
 
 function renderWeeklyLeaderboard() {
   const list = document.getElementById('weeklyLeaderboard');
+  const loadingRow = list.querySelector('.loading-row');
+  if (loadingRow) loadingRow.remove();
   const entries = getLeaderboardEntries();
   if (entries.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga vanner tillagda.</p>';
+    list.innerHTML = '<p style="text-align:center; color:#5a6570;">Inga vanner tillagda.</p>';
     return;
   }
   const ranked = entries
@@ -310,7 +312,7 @@ function renderWeeklyLeaderboard() {
       li.appendChild(img);
       const info = document.createElement('div');
       info.className = 'friend-info';
-      info.innerHTML = `<span class="friend-name" style="font-size:1.1em; color:#2C3E50;">${friend.name}</span><span class="friend-hash" style="font-size:0.85em; color:#7f8c8d;">${friend.hash}</span>`;
+      info.innerHTML = `<span class="friend-name" style="font-size:1.1em; color:#2C3E50;">${friend.name}</span><span class="friend-hash" style="font-size:0.85em; color:#5a6570;">${friend.hash}</span>`;
       li.appendChild(info);
       const stats = document.createElement('div');
       stats.className = 'stat-pill';
@@ -338,10 +340,12 @@ function renderWeeklyLeaderboard() {
 
 function renderLiveStats() {
   const list = document.getElementById('liveStats');
+  const loadingRow = list.querySelector('.loading-row');
+  if (loadingRow) loadingRow.remove();
   const entries = getLeaderboardEntries();
   const activeProfile = getActiveProfile();
   if (entries.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga vanner tillagda.</p>';
+    list.innerHTML = '<p style="text-align:center; color:#5a6570;">Inga vanner tillagda.</p>';
     return;
   }
   const ranked = entries
@@ -355,7 +359,7 @@ function renderLiveStats() {
     .slice(0, 5);
 
   if (ranked.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga aktiva promille att visa.</p>';
+    list.innerHTML = '<p style="text-align:center; color:#5a6570;">Inga aktiva promille att visa.</p>';
     return;
   }
 
@@ -417,7 +421,7 @@ async function updateFriendsUI() {
   await loadFriendsForActiveProfile();
   
   if (myFriends.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">Inga vänner tillagda. Sök på deras personliga kod!</p>';
+    list.innerHTML = '<p style="text-align:center; color:#5a6570;">Inga vänner tillagda. Sök på deras personliga kod!</p>';
     renderViews();
     return;
   }
@@ -435,11 +439,15 @@ async function updateFriendsUI() {
     img.src = friend.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
     const info = document.createElement('div');
     info.className = 'friend-info';
-    info.innerHTML = `<span class="friend-name" style="font-size:1.1em; color:#2C3E50;">${friend.name}</span><span class="friend-hash" style="font-size:0.8em; color:#7f8c8d;">Kod: ${hash}</span>`;
+    info.innerHTML = `<span class="friend-name" style="font-size:1.1em; color:#2C3E50;">${friend.name}</span><span class="friend-hash" style="font-size:0.8em; color:#5a6570;">Kod: ${hash}</span>`;
     const delBtn = document.createElement('button');
     delBtn.innerText = "X";
     delBtn.style.cssText = "background: #E74C3C; color: white; width: auto; padding: 5px 10px; font-size: 12px; box-shadow: 2px 2px 0px #2C3E50;";
-    delBtn.onclick = () => {
+    delBtn.onclick = async () => {
+      const confirmed = (typeof showConfirmModal === 'function')
+        ? await showConfirmModal(`Vill du ta bort ${friend.name} som vän?`, { title: 'Ta bort vän', confirmText: 'Ta bort' })
+        : true;
+      if (!confirmed) return;
       const activeProfile = getActiveProfile();
       if (!activeProfile || !sb) return;
       sb.from('friends')

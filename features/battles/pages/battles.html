@@ -105,7 +105,7 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 <div class="card">
   <h2 style="background: #2ECC71;">Aktiva Strider</h2>
   <ul id="activeBattlesList">
-    <li style="justify-content:center; color:#7f8c8d;">Laddar strider...</li>
+    <li style="justify-content:center; color:#5a6570;">Laddar strider...</li>
   </ul>
 </div>
 <div class="card">
@@ -116,9 +116,6 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
     </div>
     <div class="logger-tile" onclick="openBattleModal('Duos Battle')">
       <span class="logger-text">Duos Battle</span>
-    </div>
-    <div class="logger-tile" onclick="openBattleModal('Custom Battle Royale')">
-      <span class="logger-text">Custom Battle Royale</span>
     </div>
   </div>
 </div>
@@ -134,7 +131,7 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
   <div class="modal-content graph-modal-content card">
     <span class="close-modal" onclick="closeGraphModal()">&times;</span>
     <h2 id="graphModalTitle" style="font-family: 'Arial Black'; color: #FFF; background: #2A8CFF; margin: -25px -25px 20px -25px; padding: 15px; border-bottom: 4px solid #0984E3;"></h2>
-    <div id="graphLoadingIndicator" style="text-align: center; color: #7f8c8d; font-weight: bold;">Laddar graf...</div>
+    <div id="graphLoadingIndicator" style="text-align: center; color: #5a6570; font-weight: bold;">Laddar graf...</div>
     <div id="singleGraphContainer" style="display: none;">
       <div id="graphStats" style="margin-bottom: 20px;"></div>
       <canvas id="opponentGraphCanvas"></canvas>
@@ -203,7 +200,10 @@ function isBattleOlderThan24Hours(battle) {
 
 async function endBattleLocally(battleId) {
   if (!battleId) return;
-  if (!confirm('Vill du avsluta denna strid?')) return;
+  var confirmed = (typeof showConfirmModal === 'function')
+    ? await showConfirmModal('Vill du avsluta denna strid?', { title: 'Avsluta Strid', confirmText: 'Avsluta' })
+    : confirm('Vill du avsluta denna strid?');
+  if (!confirmed) return;
 
   if (typeof ensureSupabaseAuth === 'function') {
     await ensureSupabaseAuth();
@@ -254,12 +254,6 @@ function renderBattleFields(title) {
     container.appendChild(createBattleInput('teammateHash', 'Teamkamrats personliga kod'));
     container.appendChild(createBattleInput('opponentHash1', 'Motståndare 1 personliga kod'));
     container.appendChild(createBattleInput('opponentHash2', 'Motståndare 2 personliga kod'));
-  } else if (title === 'Custom Battle Royale') {
-    const info = document.createElement('p');
-    info.style.margin = '10px 0 0 0';
-    info.style.fontWeight = 'bold';
-    info.innerText = 'Custom Battle Royale är under utveckling.';
-    container.appendChild(info);
   } else {
     container.appendChild(createBattleInput('opponentHash', 'Motståndarens personliga kod'));
   }
@@ -280,7 +274,6 @@ function closeBattleModal() {
 function getBattleTypeCandidates(mode) {
   if (mode === 'Solo Battle') return ['Solo Battle', 'solo_battle', 'single_battle', 'solo', 'single'];
   if (mode === 'Duos Battle') return ['Duos Battle', 'duos_battle', 'duos', 'duo'];
-  if (mode === 'Custom Battle Royale') return ['Custom Battle Royale', 'custom_battle_royale', 'custom'];
   return [mode];
 }
 
@@ -304,11 +297,6 @@ async function startBattle() {
     await ensureSupabaseAuth();
   }
   if (!sb) return;
-  if (currentMode === 'Custom Battle Royale') {
-    alert("Under utveckling!");
-    closeBattleModal();
-    return;
-  }
 
   const activeProfile = getActiveProfile();
   if (!activeProfile) return;
@@ -444,7 +432,7 @@ async function renderActiveBattles() {
   list.innerHTML = '';
   
   if (myActiveBattles.length === 0) {
-    list.innerHTML = '<li style="justify-content:center; color:#7f8c8d;">Inga aktiva strider.</li>';
+    list.innerHTML = '<li style="justify-content:center; color:#5a6570;">Inga aktiva strider.</li>';
     return;
   }
 
@@ -455,7 +443,7 @@ async function renderActiveBattles() {
     li.style.gap = '10px';
     
     const title = document.createElement('div');
-    title.innerHTML = `<strong style="font-size:1.2em; color:#2C3E50;">${battle.battle_type || battle.type}</strong> <br><span style="font-size:0.8em; color:#7f8c8d;">Skapad: ${new Date(battle.created_at).toLocaleString()}</span>`;
+    title.innerHTML = `<strong style="font-size:1.2em; color:#2C3E50;">${battle.battle_type || battle.type}</strong> <br><span style="font-size:0.8em; color:#5a6570;">Skapad: ${new Date(battle.created_at).toLocaleString()}</span>`;
     li.appendChild(title);
     
     const statsContainer = document.createElement('div');
@@ -587,7 +575,7 @@ async function renderOpponentGraphData(canvasId, statsId, opponentHash, opponent
     }
 
     if (!history || history.length === 0) {
-      document.getElementById(statsId).innerHTML = '<p style="color:#7f8c8d;">Ingen dryckdata</p>';
+      document.getElementById(statsId).innerHTML = '<p style="color:#5a6570;">Ingen dryckdata</p>';
       return false;
     }
 
