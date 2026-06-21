@@ -111,22 +111,14 @@ li:last-child { border-bottom: none; }
   </div>
 </div>
 
-<div class="card">
-  <h2 style="background: #9B59B6;">Valj vy</h2>
-  <div class="view-toggle">
-    <button onclick="setFriendsView('weekly')">Veckans leaderboard</button>
-    <button onclick="setFriendsView('live')" style="background: #E74C3C; color: #FFF;">Live promille</button>
-  </div>
+<div class="card" id="liveView">
+  <h2 style="background: #E74C3C;">Live Promille</h2>
+  <ul id="liveStats"><li class="loading-row"><span class="loading-spinner"></span> Laddar...</li></ul>
 </div>
 
 <div class="card" id="weeklyView">
   <h2 style="background: #F39C12;">Veckans Leaderboard (cl)</h2>
   <ul id="weeklyLeaderboard"><li class="loading-row"><span class="loading-spinner"></span> Laddar...</li></ul>
-</div>
-
-<div class="card hidden" id="liveView">
-  <h2 style="background: #E74C3C;">Live Promille</h2>
-  <ul id="liveStats"><li class="loading-row"><span class="loading-spinner"></span> Laddar...</li></ul>
 </div>
 
 <div class="card">
@@ -141,7 +133,6 @@ li:last-child { border-bottom: none; }
 <script>
 let myFriends = [];
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-let activeView = 'weekly';
 let friendsData = {};
 
 function applyStatUpdate(element, text) {
@@ -152,13 +143,6 @@ function applyStatUpdate(element, text) {
     element.textContent = text;
     element.classList.remove('stat-bump');
   }, 50);
-}
-
-function setFriendsView(view) {
-  activeView = view;
-  document.getElementById('weeklyView').classList.toggle('hidden', view !== 'weekly');
-  document.getElementById('liveView').classList.toggle('hidden', view !== 'live');
-  renderViews();
 }
 
 async function fetchFriendsData() {
@@ -406,12 +390,11 @@ function renderLiveStats() {
   existingItems.forEach(item => item.remove());
 }
 
+// Both leaderboards are shown at once (Live Promille above Veckans Leaderboard),
+// so render both every time.
 function renderViews() {
-  if (activeView === 'weekly') {
-    renderWeeklyLeaderboard();
-  } else {
-    renderLiveStats();
-  }
+  renderLiveStats();
+  renderWeeklyLeaderboard();
 }
 
 async function updateFriendsUI() {

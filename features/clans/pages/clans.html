@@ -24,7 +24,7 @@ li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-c
 li:last-child { border-bottom: none; }
 .profile-img { width: 50px; height: 50px; border-radius: 0; object-fit: cover; border: 3px solid #2C3E50; background: #fff; }
 .member-info { flex: 1; margin-left: 15px; }
-.member-stats { text-align: right; color: #9B59B6; font-size: 1.2em; font-family: 'Arial Black'; }
+.member-stats { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 3px solid #2C3E50; background: #FFCC00; color: #2C3E50; font-weight: 900; box-shadow: 2px 2px 0px #2C3E50; white-space: nowrap; flex: 0 0 auto; }
 .stat-value { transition: opacity 2s ease; display: inline-block; }
 .stat-bump { opacity: 0.35; }
 .clan-shield { display: block; margin: 0 auto 15px auto; width: 100px; height: 110px; background: #9B59B6; border: 6px solid #2C3E50; border-radius: 10px 10px 50px 50px; box-shadow: inset -10px -10px 0px rgba(0,0,0,0.2), 6px 6px 0px #2C3E50; }
@@ -451,7 +451,7 @@ async function updateClanUI() {
         li.appendChild(info);
         var stats = document.createElement('div');
         stats.className = 'member-stats';
-        stats.innerHTML = '<span class="stat-value"></span> <span style="font-size:12px; color:#2C3E50;">cl</span>';
+        stats.innerHTML = '<span class="stat-value"></span> cl';
         li.appendChild(stats);
       }
 

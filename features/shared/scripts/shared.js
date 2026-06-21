@@ -504,25 +504,34 @@ window.showListModal = function(title, contentHtml, options) {
   options = options || {};
   var headerBg = options.headerBg || '#2A8CFF';
 
+  // Position the overlay inline so it works even on pages that do not define a
+  // `.modal { position: fixed }` rule (e.g. events.html, friends.html) — there it
+  // would otherwise flow as a static box at the bottom of the page. z-index sits
+  // above the mobile bottom menu (1100).
   var overlay = document.createElement('div');
   overlay.className = 'modal';
-  overlay.style.display = 'block';
-  overlay.style.zIndex = '6000';
+  overlay.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0.6);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);z-index:6000;';
 
+  // Flex column: the header (heading + close button) is fixed and only the body
+  // scrolls, so the close X stays reachable even after scrolling down the list.
   var content = document.createElement('div');
   content.className = 'modal-content card';
-  content.style.cssText = 'background:#FFFFFF;color:#2C3E50;border:6px solid #2C3E50;box-shadow:8px 8px 0 #2C3E50;padding:20px;text-align:left;position:relative;';
+  content.style.cssText = 'box-sizing:border-box;width:min(92vw,520px);max-width:92vw;margin:clamp(24px,8vh,80px) auto;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;background:#FFFFFF;color:#2C3E50;border:6px solid #2C3E50;box-shadow:8px 8px 0 #2C3E50;padding:0;text-align:left;position:relative;';
+
+  var header = document.createElement('div');
+  header.style.cssText = 'position:relative;flex:0 0 auto;';
+
+  var heading = document.createElement('h2');
+  heading.textContent = title;
+  heading.style.cssText = "font-family:'Arial Black',sans-serif;text-transform:uppercase;color:#FFF;background:" + headerBg + ";margin:0;padding:15px 52px 15px 15px;border-bottom:4px solid #2C3E50;text-align:left;";
 
   var close = document.createElement('span');
   close.className = 'close-modal';
   close.innerHTML = '&times;';
-  close.style.cssText = 'color:#E74C3C;font-size:32px;font-weight:bold;cursor:pointer;position:absolute;right:15px;top:10px;line-height:1;';
-
-  var heading = document.createElement('h2');
-  heading.textContent = title;
-  heading.style.cssText = "font-family:'Arial Black',sans-serif;text-transform:uppercase;color:#FFF;background:" + headerBg + ";margin:-20px -20px 20px -20px;padding:15px;border-bottom:4px solid #2C3E50;text-align:left;";
+  close.style.cssText = 'color:#FFF;font-size:32px;font-weight:bold;cursor:pointer;position:absolute;right:15px;top:8px;line-height:1;z-index:1;';
 
   var body = document.createElement('div');
+  body.style.cssText = 'flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:20px;';
   body.innerHTML = contentHtml;
 
   function cleanup() {
@@ -531,8 +540,9 @@ window.showListModal = function(title, contentHtml, options) {
   close.addEventListener('click', cleanup);
   overlay.addEventListener('click', function(event) { if (event.target === overlay) cleanup(); });
 
-  content.appendChild(close);
-  content.appendChild(heading);
+  header.appendChild(heading);
+  header.appendChild(close);
+  content.appendChild(header);
   content.appendChild(body);
   overlay.appendChild(content);
   document.body.appendChild(overlay);
@@ -551,14 +561,14 @@ window.showConfirmModal = function(message, options) {
   var cancelText = options.cancelText || 'Avbryt';
 
   return new Promise(function(resolve) {
+    // Position inline so the dialog works on pages without a `.modal` rule.
     var overlay = document.createElement('div');
     overlay.className = 'modal';
-    overlay.style.display = 'block';
-    overlay.style.zIndex = '6000';
+    overlay.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0.6);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);z-index:6000;';
 
     var content = document.createElement('div');
     content.className = 'modal-content card';
-    content.style.cssText = 'background:#2A8CFF;color:#fff;border:6px solid #2C3E50;box-shadow:8px 8px 0 #2C3E50;padding:25px;text-align:center;';
+    content.style.cssText = 'box-sizing:border-box;width:min(92vw,440px);max-width:92vw;margin:clamp(24px,12vh,120px) auto;max-height:85vh;overflow-y:auto;background:#2A8CFF;color:#fff;border:6px solid #2C3E50;box-shadow:8px 8px 0 #2C3E50;padding:25px;text-align:center;position:relative;';
 
     var heading = document.createElement('h2');
     heading.textContent = title;

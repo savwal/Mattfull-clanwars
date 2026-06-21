@@ -40,6 +40,7 @@ const listedDrinks = {
     { name: 'Red Bull Vodka', type: 'Drink (4cl sprit)', abv: 6.4, vol: 250 }
   ],
   sprit: [
+    { name: 'Snaps', type: 'Spirit', abv: 38, vol: 40 },
     { name: 'Vodka (shot)', type: 'Spirit', abv: 40, vol: 40 },
     { name: 'Tequila (shot)', type: 'Spirit', abv: 38, vol: 40 },
     { name: 'Gin (shot)', type: 'Spirit', abv: 38.8, vol: 40 },

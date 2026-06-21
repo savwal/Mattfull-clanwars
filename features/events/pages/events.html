@@ -136,10 +136,16 @@ li:last-child { border-bottom: none; }
   </div>
 </div>
 
-<div class="card">
+<div class="card" id="livePromilleCard">
   <h2 style="background: #2A8CFF;">Live Promille</h2>
   <ul id="liveTopFive"><li class="loading-row"><span class="loading-spinner"></span> Laddar...</li></ul>
   <button id="showAllLiveBtn" onclick="openAllLivePromilleModal()">Visa Alla</button>
+</div>
+
+<div class="card" id="eventClCard" style="display: none;">
+  <h2 style="background: #F39C12;">Leaderboard (cl)</h2>
+  <ul id="eventLeaderboard"></ul>
+  <button id="showAllEventBtn" onclick="openAllEventClModal()">Visa Alla</button>
 </div>
 
 <div class="card">
@@ -359,9 +365,117 @@ async function loadMyCustomEvents() {
   return combined;
 }
 
+// Holds the currently-open custom event popup so "Lämna event" can close it.
+let currentCustomEventOverlay = null;
+
+// Open a custom event's details + leaderboard in an in-page popup instead of
+// navigating to custom_events.html. Shows when it starts/ends, the participants
+// ranked by consumed cl, and a "Lämna event" button for members.
+async function openCustomEventModal(eventId) {
+  if (!eventId || !sb || typeof showListModal !== 'function') return;
+  if (typeof ensureSupabaseAuth === 'function') await ensureSupabaseAuth();
+
+  const event = await fetchCustomEvent(eventId);
+  if (!event) {
+    showListModal('Custom Event', '<p style="text-align:center; color:#5a6570; font-weight:bold; margin:0;">Kunde inte ladda eventet.</p>', { headerBg: '#2A8CFF' });
+    return;
+  }
+
+  const { data: partRows } = await sb.from('event_participants')
+    .select('player_hash')
+    .eq('event_id', eventId);
+  const hashes = Array.from(new Set((partRows || []).map(r => r.player_hash)));
+
+  const activeProfile = getActiveProfile();
+  const isMember = !!(activeProfile && hashes.indexOf(activeProfile.id) !== -1);
+
+  const profileMap = {};
+  if (hashes.length > 0) {
+    const { data: profiles } = await sb.from('profiles')
+      .select('player_hash, display_name, avatar_url')
+      .in('player_hash', hashes);
+    (profiles || []).forEach(p => { profileMap[p.player_hash] = { name: p.display_name, pic: p.avatar_url }; });
+  }
+
+  const startMs = event.starts_at ? new Date(event.starts_at).getTime() : NaN;
+  const endMs = event.ends_at ? new Date(event.ends_at).getTime() : NaN;
+
+  const gramsByHash = {};
+  if (hashes.length > 0) {
+    let query = sb.from('drink_logs')
+      .select('player_hash, grams_alcohol, volume_ml, abv, consumed_at')
+      .in('player_hash', hashes);
+    if (Number.isFinite(startMs)) query = query.gte('consumed_at', new Date(startMs).toISOString());
+    if (Number.isFinite(endMs)) query = query.lte('consumed_at', new Date(endMs).toISOString());
+    const { data: drinks } = await query;
+    (drinks || []).forEach(d => {
+      // Only count drinks consumed inside the event window. "ulta" (negative
+      // grams) never lowers an event score.
+      if (!isDrinkWithinEventWindow(d.consumed_at, startMs, endMs)) return;
+      const grams = Number.isFinite(Number(d.grams_alcohol))
+        ? Number(d.grams_alcohol)
+        : (Number(d.volume_ml) || 0) * ((Number(d.abv) || 0) / 100) * 0.789;
+      if (grams > 0) gramsByHash[d.player_hash] = (gramsByHash[d.player_hash] || 0) + grams;
+    });
+  }
+
+  const entries = hashes.map(h => ({
+    id: h,
+    name: profileMap[h] ? profileMap[h].name : h,
+    cl: Math.abs(calculateCl(gramsByHash[h] || 0))
+  })).sort((a, b) => b.cl - a.cl);
+
+  const startLabel = event.starts_at ? new Date(event.starts_at).toLocaleString('sv-SE') : 'Okänt';
+  const endLabel = event.ends_at ? new Date(event.ends_at).toLocaleString('sv-SE') : 'Okänt';
+
+  let html = '';
+  html += '<div style="margin-bottom:14px; font-weight:bold;">';
+  html += '<div style="margin-bottom:8px;">Kod: <span style="border:3px solid #2C3E50; background:#FFCC00; color:#2C3E50; padding:2px 8px; font-weight:900;">' + escapeHtml(event.event_id) + '</span></div>';
+  html += '<div style="font-size:0.9em; color:#5a6570;">Börjar: ' + escapeHtml(startLabel) + '</div>';
+  html += '<div style="font-size:0.9em; color:#5a6570;">Slutar: ' + escapeHtml(endLabel) + '</div>';
+  html += '</div>';
+  if (isMember) {
+    html += '<button type="button" onclick="leaveCustomEventFromModal(\'' + event.event_id + '\')" style="background:#E74C3C; color:#FFF; width:100%; margin:0 0 14px 0;">Lämna event</button>';
+  }
+  if (entries.length === 0) {
+    html += '<p style="text-align:center; color:#5a6570; font-weight:bold; margin:0;">Inga deltagare.</p>';
+  } else {
+    html += '<ul style="list-style:none; padding:0; margin:0;">' + entries.map(eventClRowHtml).join('') + '</ul>';
+  }
+
+  currentCustomEventOverlay = showListModal(event.event_name || 'Custom Event', html, { headerBg: '#2A8CFF' });
+}
+
+// Leave the custom event shown in the popup, then close the popup and refresh.
+async function leaveCustomEventFromModal(eventId) {
+  const activeProfile = getActiveProfile();
+  if (!sb || !eventId || !activeProfile) return;
+  const confirmed = (typeof showConfirmModal === 'function')
+    ? await showConfirmModal('Vill du lämna eventet?', { title: 'Lämna event', confirmText: 'Lämna' })
+    : true;
+  if (!confirmed) return;
+  if (typeof ensureSupabaseAuth === 'function') await ensureSupabaseAuth();
+  const { error } = await sb.from('event_participants')
+    .delete()
+    .eq('event_id', eventId)
+    .eq('player_hash', activeProfile.id);
+  if (error) {
+    console.error('Error leaving event:', error);
+    alert('Kunde inte lämna eventet.');
+    return;
+  }
+  if (typeof removeLocalCustomEvent === 'function') removeLocalCustomEvent(activeProfile.id, eventId);
+  if (currentCustomEventOverlay && currentCustomEventOverlay.parentNode) {
+    currentCustomEventOverlay.parentNode.removeChild(currentCustomEventOverlay);
+  }
+  currentCustomEventOverlay = null;
+  await loadMyCustomEvents();
+}
+
+// Replaces the old redirect to custom_events.html — opens the in-page popup.
 function openCustomEventPage(eventId) {
   if (!eventId) return;
-  window.location.href = `./custom_events.html?event_id=${encodeURIComponent(eventId)}`;
+  openCustomEventModal(eventId);
 }
 
 async function createCustomEvent() {
@@ -431,6 +545,8 @@ async function createCustomEvent() {
   document.getElementById('customEnd').value = '';
 
   await loadMyCustomEvents();
+  // Open the new event directly in the in-page popup (no redirect).
+  openCustomEventModal(eventId);
 }
 
 async function joinCustomEvent() {
@@ -556,14 +672,17 @@ function getMidsummerEve(year) {
 async function getAllPresetEvents() {
   const year = new Date().getFullYear();
   const now = new Date();
+  // Look back 90 days as well as forward, so the most recent (just-ended) event
+  // stays selectable and its previous results can be viewed in the leaderboard.
+  const windowStart = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
   const windowEnd = new Date(now.getTime() + 150 * 24 * 60 * 60 * 1000);
-  const presetEvents = getPresetEvents(year)
-    .filter(evt => evt.end >= now && evt.start <= windowEnd);
-  const nextYearPresetEvents = getPresetEvents(year + 1)
-    .filter(evt => evt.end >= now && evt.start <= windowEnd);
+  const inWindow = evt => evt.end >= windowStart && evt.start <= windowEnd;
+  const prevYearPresetEvents = getPresetEvents(year - 1).filter(inWindow);
+  const presetEvents = getPresetEvents(year).filter(inWindow);
+  const nextYearPresetEvents = getPresetEvents(year + 1).filter(inWindow);
   const publicHolidays = await getSwedishPublicHolidays();
-  const allEvents = [...presetEvents, ...nextYearPresetEvents, ...publicHolidays]
-    .filter(evt => evt.end >= now && evt.start <= windowEnd)
+  const allEvents = [...prevYearPresetEvents, ...presetEvents, ...nextYearPresetEvents, ...publicHolidays]
+    .filter(inWindow)
     .sort((a, b) => a.start - b.start);
 
   const eventMap = new Map();
@@ -625,65 +744,77 @@ function renderLeaderboard(entries) {
   existingItems.forEach(item => item.remove());
 }
 
-async function buildEventOptions() {
+async function buildEventOptions(allEvents) {
   const select = document.getElementById('eventSelect');
   select.innerHTML = '';
-  const allEvents = await getAllPresetEvents();
+  if (!allEvents) allEvents = await getAllPresetEvents();
 
-  const presetGroup = document.createElement('optgroup');
-  presetGroup.label = 'Events (Sverige)';
+  const now = Date.now();
+  // Split into upcoming/ongoing ("Kommande") and past ("Tidigare"). Kommande is
+  // sorted soonest-first; Tidigare most-recent-first.
+  const upcoming = allEvents.filter(evt => evt.end.getTime() >= now).sort((a, b) => a.start - b.start);
+  const past = allEvents.filter(evt => evt.end.getTime() < now).sort((a, b) => b.end - a.end);
 
-  allEvents.forEach(evt => {
-    const opt = document.createElement('option');
-    opt.value = `preset:${evt.key}`;
-    opt.textContent = `${evt.name}`;
-    presetGroup.appendChild(opt);
-  });
+  function addGroup(label, events) {
+    if (!events.length) return;
+    const group = document.createElement('optgroup');
+    group.label = label;
+    events.forEach(evt => {
+      const opt = document.createElement('option');
+      opt.value = `preset:${evt.key}`;
+      opt.textContent = `${evt.name} (${formatRange(evt.start, evt.end)})`;
+      group.appendChild(opt);
+    });
+    select.appendChild(group);
+  }
 
-  select.appendChild(presetGroup);
+  // "Kommande Event" group is added (and therefore shown) above "Tidigare Event".
+  // Only the 4 most recent past events are listed.
+  addGroup('Kommande Event', upcoming);
+  addGroup('Tidigare Event', past.slice(0, 4));
+
   if (select.options.length === 0) return;
 
-  // Default to the event that is happening right now (now within its window) so
-  // the board opens on the event a freshly-logged drink will actually count
-  // toward. Falls back to the soonest upcoming event when none is active.
-  const now = Date.now();
-  const ongoing = allEvents.find(evt =>
-    evt.start && evt.end && evt.start.getTime() <= now && now <= evt.end.getTime());
-  select.value = ongoing ? `preset:${ongoing.key}` : select.options[0].value;
+  // Default to the next future event (soonest start still ahead of now); falls
+  // back to the first available option otherwise.
+  const nextFuture = upcoming.find(evt => evt.start && evt.start.getTime() > now);
+  select.value = nextFuture ? `preset:${nextFuture.key}` : select.options[0].value;
 }
 
-async function renderSelectedEvent() {
+// Which leaderboard the page is showing: 'live' (Live Promille, default) or
+// 'event' (the selected event's consumed-cl leaderboard). currentEventEntries
+// holds the full event ranking so the "Visa Alla" popup can list everyone.
+let currentEventView = 'live';
+let currentEventEntries = [];
+
+// Compute the selected event's date window and each participant's consumed cl
+// from drink_logs within that window. A future event has no drinks in its
+// window yet, so it returns an empty list (an empty leaderboard).
+async function computeEventClRanking() {
   const select = document.getElementById('eventSelect');
-  const value = select.value;
-  const eventMeta = document.getElementById('eventMeta');
-  if (!value || !sb) return;
+  const value = select ? select.value : '';
+  if (!value || !sb) return { entries: [], meta: '' };
 
   let startMs, endMs, participantHashes = [];
-  let eventName, eventCity = '';
+  let meta = '';
 
   if (value.startsWith('preset:')) {
     const key = value.split(':')[1];
     const allEvents = await getAllPresetEvents();
     const evt = allEvents.find(e => e.key === key);
-    if (!evt) return;
-    eventName = evt.name;
-    eventCity = evt.city;
+    if (!evt) return { entries: [], meta: '' };
     startMs = evt.start.getTime();
     endMs = evt.end.getTime();
+    meta = `${evt.name} - ${evt.city} (${formatRange(new Date(startMs), new Date(endMs))})`;
 
     const { data: drinks } = await sb.from('drink_logs')
       .select('player_hash')
       .gte('consumed_at', new Date(startMs).toISOString())
       .lte('consumed_at', new Date(endMs).toISOString());
     if (drinks) participantHashes = Array.from(new Set(drinks.map(d => d.player_hash)));
-    setStatusText(eventMeta, `${eventName} - ${eventCity} (${formatRange(new Date(startMs), new Date(endMs))})`, false);
   }
 
-  if (participantHashes.length === 0) {
-    renderLeaderboard([]);
-    await renderLiveTopFive();
-    return;
-  }
+  if (participantHashes.length === 0) return { entries: [], meta };
 
   const { data: profiles } = await sb.from('profiles').select('*').in('player_hash', participantHashes);
   const { data: drinks } = await sb.from('drink_logs')
@@ -705,10 +836,30 @@ async function renderSelectedEvent() {
       pic: p.avatar_url,
       cl: Math.abs(calculateCl(totalGrams))
     };
-  });
+  }).sort((a, b) => b.cl - a.cl);
 
-  renderLeaderboard(entries);
-  await renderLiveTopFive();
+  return { entries, meta };
+}
+
+// Re-render the selected event's consumed-cl leaderboard (top 5 inline). Stores
+// the full ranking for the "Visa Alla" popup.
+async function renderEventLeaderboard() {
+  const eventMeta = document.getElementById('eventMeta');
+  const result = await computeEventClRanking();
+  if (eventMeta) setStatusText(eventMeta, result.meta, false);
+  currentEventEntries = result.entries;
+  renderLeaderboard(result.entries.slice(0, 5));
+}
+
+// "Visa leaderboards": swap the Live Promille box for the (non-blue) event
+// Leaderboard (cl) box, then render the selected event's consumed-cl standings.
+async function renderSelectedEvent() {
+  currentEventView = 'event';
+  const liveCard = document.getElementById('livePromilleCard');
+  const eventCard = document.getElementById('eventClCard');
+  if (liveCard) liveCard.style.display = 'none';
+  if (eventCard) eventCard.style.display = 'block';
+  await renderEventLeaderboard();
 }
 
 // Compute every active user's current promille (drinks logged in the last 24h),
@@ -824,9 +975,44 @@ async function openAllLivePromilleModal() {
   }
 }
 
+function eventClRowHtml(entry, index) {
+  return '<li style="display:flex;align-items:center;gap:12px;border-bottom:4px solid #E5E9F0;padding:12px 0;font-weight:bold;">'
+    + '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;border:3px solid #2C3E50;background:#E5E5E5;color:#2C3E50;font-weight:900;box-shadow:2px 2px 0 #2C3E50;flex:0 0 auto;">#' + (index + 1) + '</span>'
+    + '<span style="flex:1;min-width:0;"><span style="display:block;font-size:1.05em;color:#2C3E50;word-break:break-word;">' + escapeHtml(entry.name) + '</span></span>'
+    + '<span style="margin-left:auto;border:3px solid #2C3E50;background:#FFCC00;padding:4px 8px;font-weight:900;white-space:nowrap;flex:0 0 auto;">' + Math.abs(entry.cl).toFixed(1) + ' cl</span>'
+    + '</li>';
+}
+
+// "Visa Alla" for the event leaderboard: show every participant's consumed cl
+// for the selected event in an in-page popup (same manner as Live Promille).
+async function openAllEventClModal() {
+  const result = await computeEventClRanking();
+  currentEventEntries = result.entries;
+  let html;
+  if (!result.entries || result.entries.length === 0) {
+    html = '<p style="text-align:center; color:#5a6570; font-weight:bold; margin:0;">Inga deltagare.</p>';
+  } else {
+    html = '<ul style="list-style:none; padding:0; margin:0;">' + result.entries.map(eventClRowHtml).join('') + '</ul>';
+  }
+  if (typeof showListModal === 'function') {
+    showListModal('Leaderboard (cl)', html, { headerBg: '#F39C12' });
+  }
+}
+
+// Refresh whichever leaderboard is currently visible (Live Promille by default,
+// or the event Leaderboard (cl) once an event has been selected).
+function refreshActiveEventsView() {
+  if (currentEventView === 'event') {
+    renderEventLeaderboard();
+  } else {
+    renderLiveTopFive();
+  }
+}
+
 async function initLeaderboard() {
   await buildEventOptions();
-  await renderSelectedEvent();
+  // Default view is Live Promille; the event leaderboard only appears after the
+  // user selects an event in the dropdown and presses "Visa leaderboards".
   await renderLiveTopFive();
 }
 
@@ -852,7 +1038,7 @@ function scheduleEventsRefresh() {
   if (eventsRefreshTimer) return;
   eventsRefreshTimer = setTimeout(function() {
     eventsRefreshTimer = null;
-    renderSelectedEvent();
+    refreshActiveEventsView();
   }, 1200);
 }
 
@@ -875,14 +1061,14 @@ window.reconnectRealtime = function() {
 
 window.refreshPageData = function() {
   loadMyCustomEvents();
-  renderSelectedEvent();
+  refreshActiveEventsView();
 };
 
 initEvents();
 setInterval(loadMyCustomEvents, CUSTOM_EVENT_REFRESH_MS);
-// renderSelectedEvent re-queries drink_logs and also refreshes the live top 5,
-// keeping the leaderboard synced across users/devices without a hard refresh.
-setInterval(renderSelectedEvent, 20000);
+// Re-query drink_logs for the visible leaderboard, keeping it synced across
+// users/devices without a hard refresh.
+setInterval(refreshActiveEventsView, 20000);
 </script>
 </body>
 </html>
