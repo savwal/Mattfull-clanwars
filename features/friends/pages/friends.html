@@ -309,9 +309,10 @@ function renderWeeklyLeaderboard() {
     if (rankBox && !rankValue) {
       rankBox.innerHTML = '<span class="stat-value rank-value"></span>';
     }
+    if (rankBox) rankBox.style.background = rankBadgeColor(index + 1);
     const img = li.querySelector('img.profile-img');
     img.src = friend.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-    applyStatUpdate(rankValue, String(index + 1));
+    applyStatUpdate(li.querySelector('.rank-value'), formatRankLabel(index + 1));
     const statValue = li.querySelector('.stat-pill .stat-value');
     applyStatUpdate(statValue, Math.abs(friend.cl).toFixed(1));
 
@@ -377,8 +378,10 @@ function renderLiveStats() {
     const img = li.querySelector('img.profile-img');
     img.src = item.profile.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
 
+    const rankBox = li.querySelector('.rank-box');
+    if (rankBox) rankBox.style.background = rankBadgeColor(index + 1);
     const rankValue = li.querySelector('.rank-value');
-    applyStatUpdate(rankValue, String(index + 1));
+    applyStatUpdate(rankValue, formatRankLabel(index + 1));
 
     const statValue = li.querySelector('.stat-pill .stat-value');
     applyStatUpdate(statValue, Math.abs(item.promille).toFixed(2));

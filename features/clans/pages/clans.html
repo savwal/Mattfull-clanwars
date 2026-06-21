@@ -37,11 +37,8 @@ li:last-child { border-bottom: none; }
 #clanLeaderboard li {
   justify-content: flex-start;
   align-items: center;
+  gap: 12px;
   flex-wrap: nowrap;
-}
-
-#clanLeaderboard li > * + * {
-  margin-left: 12px;
 }
 
 #clanLeaderboard .rank-badge {
@@ -60,7 +57,6 @@ li:last-child { border-bottom: none; }
 }
 
 #clanLeaderboard .leaderboard-info {
-  margin-left: 0;
   flex: 1;
   text-align: left;
   min-width: 0;
@@ -555,7 +551,8 @@ async function renderClanLeaderboard() {
     var li = document.createElement('li');
     var rank = document.createElement('span');
     rank.className = 'rank-badge';
-    rank.textContent = '#' + (index + 1);
+    rank.textContent = formatRankLabel(index + 1);
+    rank.style.background = rankBadgeColor(index + 1);
     var info = document.createElement('div');
     info.className = 'leaderboard-info';
     var name = document.createElement('span');
@@ -592,7 +589,7 @@ function escapeHtml(value) {
 // browser tab/window is opened.
 function clanRowHtml(clan, index) {
   return '<li style="display:flex;align-items:center;gap:12px;border-bottom:4px solid #E5E9F0;padding:12px 0;font-weight:bold;">'
-    + '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;border:3px solid #2C3E50;background:#E5E5E5;color:#2C3E50;font-weight:900;box-shadow:2px 2px 0 #2C3E50;flex:0 0 auto;">#' + (index + 1) + '</span>'
+    + '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;border:3px solid #2C3E50;background:' + rankBadgeColor(index + 1) + ';color:#2C3E50;font-weight:900;box-shadow:2px 2px 0 #2C3E50;flex:0 0 auto;">' + formatRankLabel(index + 1) + '</span>'
     + '<span style="flex:1;min-width:0;"><span style="display:block;font-size:1.05em;color:#2C3E50;word-break:break-word;">' + escapeHtml(clan.name) + '</span>'
     + '<span style="display:block;font-size:0.8em;color:#5a6570;">' + escapeHtml(clan.id) + '</span></span>'
     + '<span style="margin-left:auto;border:3px solid #2C3E50;background:#FFCC00;padding:4px 8px;font-weight:900;white-space:nowrap;flex:0 0 auto;">' + Math.abs(clan.cl).toFixed(1) + ' cl</span>'

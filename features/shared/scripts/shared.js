@@ -495,6 +495,19 @@ async function showDrinkReminderNotification() {
 }
 
 // ---------------------------------------------------------------------------
+// Shared rank styling for every leaderboard. The rank is shown as "1.", "2.",
+// "3." (number + dot, no "#"). Ranks 1/2/3 get gold/silver/bronze; everyone
+// else gets the standard grey badge — consistent across the whole app.
+// ---------------------------------------------------------------------------
+window.RANK_MEDAL_COLORS = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' };
+window.rankBadgeColor = function(n) {
+  return window.RANK_MEDAL_COLORS[n] || '#E5E5E5';
+};
+window.formatRankLabel = function(n) {
+  return n + '.';
+};
+
+// ---------------------------------------------------------------------------
 // Shared in-page list modal. Used by the "Visa Alla" buttons to show a full
 // list (all clans / all active users) in an on-page JavaScript popup — like the
 // Historik popup — instead of opening a new browser tab/window. Pass the title

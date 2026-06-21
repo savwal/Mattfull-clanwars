@@ -38,25 +38,30 @@ li:last-child { border-bottom: none; }
   box-shadow: 2px 2px 0px #2C3E50;
   flex: 0 0 auto;
 }
-#liveTopFive li {
+#liveTopFive li, #eventLeaderboard li {
   justify-content: flex-start;
   align-items: center;
   gap: 12px;
   flex-wrap: nowrap;
 }
-#liveTopFive .leaderboard-info {
+#liveTopFive .leaderboard-info, #eventLeaderboard .leaderboard-info {
   flex: 1;
   min-width: 0;
   text-align: left;
 }
-#liveTopFive .leader-name {
+#liveTopFive .leader-name, #eventLeaderboard .leader-name {
   display: block;
   word-break: break-word;
   overflow-wrap: anywhere;
   line-height: 1.08;
 }
-#liveTopFive .leader-sub {
+#liveTopFive .leader-sub, #eventLeaderboard .leader-sub {
   display: none;
+}
+#eventLeaderboard .badge {
+  margin-left: auto;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 .stat-value { transition: opacity 2s ease; display: inline-block; }
 .stat-bump { opacity: 0.35; }
@@ -129,8 +134,7 @@ li:last-child { border-bottom: none; }
 
 <div class="card">
   <h2>Event Leaderboard</h2>
-  <select id="eventSelect"></select>
-  <button onclick="renderSelectedEvent()">Visa leaderboards</button>
+  <select id="eventSelect" onchange="handleEventSelectChange()"></select>
   <div style="margin-top: 10px;">
     <span class="event-meta" id="eventMeta"></span>
   </div>
@@ -197,6 +201,13 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+// Profile-picture <img> for the in-page popup rows (falls back to the default
+// avatar), so the popups match the inline leaderboards.
+function avatarImgHtml(pic) {
+  const fallback = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+  return '<img src="' + escapeHtml(pic || fallback) + '" alt="" style="width:42px;height:42px;object-fit:cover;border:3px solid #2C3E50;background:#fff;flex:0 0 auto;">';
 }
 
 function toIsoOrNull(dateValue) {
@@ -422,6 +433,7 @@ async function openCustomEventModal(eventId) {
   const entries = hashes.map(h => ({
     id: h,
     name: profileMap[h] ? profileMap[h].name : h,
+    pic: profileMap[h] ? profileMap[h].pic : null,
     cl: Math.abs(calculateCl(gramsByHash[h] || 0))
   })).sort((a, b) => b.cl - a.cl);
 
@@ -716,13 +728,19 @@ function renderLeaderboard(entries) {
   ranked.forEach((player, index) => {
     let li = existingItems.get(player.id);
     if (!li) {
+      // Same layout as the Live Promille board: rank badge, avatar, name, badge.
       li = document.createElement('li');
       li.dataset.playerId = player.id;
+      const rank = document.createElement('span');
+      rank.className = 'rank-badge';
+      rank.innerHTML = '<span class="stat-value rank-value"></span>';
+      li.appendChild(rank);
       const img = document.createElement('img');
       img.className = 'profile-img';
       li.appendChild(img);
       const info = document.createElement('div');
-      info.innerHTML = `<span style="font-size:1.1em; color:#2C3E50;">#<span class="stat-value rank-value"></span> ${player.name}</span><br><span style="font-size:0.85em; color:#5a6570;">${player.id}</span>`;
+      info.className = 'leaderboard-info';
+      info.innerHTML = `<span class="leader-name" style="font-size:1.1em; color:#2C3E50;">${player.name}</span>`;
       li.appendChild(info);
       const stats = document.createElement('div');
       stats.className = 'badge';
@@ -730,10 +748,12 @@ function renderLeaderboard(entries) {
       li.appendChild(stats);
     }
 
+    const rankBadge = li.querySelector('.rank-badge');
+    if (rankBadge) rankBadge.style.background = rankBadgeColor(index + 1);
     const img = li.querySelector('img.profile-img');
     img.src = player.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
     const rankValue = li.querySelector('.rank-value');
-    applyStatUpdate(rankValue, String(index + 1));
+    applyStatUpdate(rankValue, formatRankLabel(index + 1));
     const statValue = li.querySelector('.badge .stat-value');
     applyStatUpdate(statValue, Math.abs(player.cl).toFixed(1));
 
@@ -851,8 +871,7 @@ async function renderEventLeaderboard() {
   renderLeaderboard(result.entries.slice(0, 5));
 }
 
-// "Visa leaderboards": swap the Live Promille box for the (non-blue) event
-// Leaderboard (cl) box, then render the selected event's consumed-cl standings.
+// Swap to the event (cl) leaderboard card and render standings.
 async function renderSelectedEvent() {
   currentEventView = 'event';
   const liveCard = document.getElementById('livePromilleCard');
@@ -860,6 +879,40 @@ async function renderSelectedEvent() {
   if (liveCard) liveCard.style.display = 'none';
   if (eventCard) eventCard.style.display = 'block';
   await renderEventLeaderboard();
+}
+
+// Swap to the live promille card.
+async function renderLiveView() {
+  currentEventView = 'live';
+  const liveCard = document.getElementById('livePromilleCard');
+  const eventCard = document.getElementById('eventClCard');
+  if (liveCard) liveCard.style.display = 'block';
+  if (eventCard) eventCard.style.display = 'none';
+  await renderLiveTopFive();
+}
+
+// Called on dropdown change and on page init: show the event leaderboard for
+// past events, live promille for upcoming/ongoing ones.
+async function handleEventSelectChange() {
+  const select = document.getElementById('eventSelect');
+  const value = select ? select.value : '';
+  if (!value) return;
+
+  const now = Date.now();
+  let isPastEvent = false;
+
+  if (value.startsWith('preset:')) {
+    const key = value.split(':')[1];
+    const allEvents = await getAllPresetEvents();
+    const evt = allEvents.find(e => e.key === key);
+    if (evt) isPastEvent = evt.end.getTime() < now;
+  }
+
+  if (isPastEvent) {
+    await renderSelectedEvent();
+  } else {
+    await renderLiveView();
+  }
 }
 
 // Compute every active user's current promille (drinks logged in the last 24h),
@@ -911,7 +964,7 @@ async function renderLiveTopFive() {
       li.dataset.playerId = entry.profile.id;
       const rank = document.createElement('span');
       rank.className = 'rank-badge';
-      rank.innerHTML = '<span>#</span>&nbsp;<span class="stat-value rank-value"></span>';
+      rank.innerHTML = '<span class="stat-value rank-value"></span>';
       li.appendChild(rank);
       const img = document.createElement('img');
       img.className = 'profile-img';
@@ -929,11 +982,12 @@ async function renderLiveTopFive() {
     const rankBox = li.querySelector('.rank-badge');
     const rankValue = li.querySelector('.rank-value');
     if (rankBox && !rankValue) {
-      rankBox.innerHTML = '<span>#</span>&nbsp;<span class="stat-value rank-value"></span>';
+      rankBox.innerHTML = '<span class="stat-value rank-value"></span>';
     }
+    if (rankBox) rankBox.style.background = rankBadgeColor(index + 1);
     const img = li.querySelector('img.profile-img');
     img.src = entry.profile.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-    applyStatUpdate(li.querySelector('.rank-value'), String(index + 1));
+    applyStatUpdate(li.querySelector('.rank-value'), formatRankLabel(index + 1));
     const statValue = li.querySelector('.badge .stat-value');
     applyStatUpdate(statValue, Math.abs(entry.promille).toFixed(2));
 
@@ -952,7 +1006,8 @@ async function renderLiveTopFive() {
 
 function liveRowHtml(entry, index) {
   return '<li style="display:flex;align-items:center;gap:12px;border-bottom:4px solid #E5E9F0;padding:12px 0;font-weight:bold;">'
-    + '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;border:3px solid #2C3E50;background:#E5E5E5;color:#2C3E50;font-weight:900;box-shadow:2px 2px 0 #2C3E50;flex:0 0 auto;">#' + (index + 1) + '</span>'
+    + '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;border:3px solid #2C3E50;background:' + rankBadgeColor(index + 1) + ';color:#2C3E50;font-weight:900;box-shadow:2px 2px 0 #2C3E50;flex:0 0 auto;">' + formatRankLabel(index + 1) + '</span>'
+    + avatarImgHtml(entry.profile.pic)
     + '<span style="flex:1;min-width:0;"><span style="display:block;font-size:1.05em;color:#2C3E50;word-break:break-word;">' + escapeHtml(entry.profile.name) + '</span></span>'
     + '<span style="margin-left:auto;border:3px solid #2C3E50;background:#FFCC00;padding:4px 8px;font-weight:900;white-space:nowrap;flex:0 0 auto;">' + Math.abs(entry.promille).toFixed(2) + ' ‰</span>'
     + '</li>';
@@ -977,7 +1032,8 @@ async function openAllLivePromilleModal() {
 
 function eventClRowHtml(entry, index) {
   return '<li style="display:flex;align-items:center;gap:12px;border-bottom:4px solid #E5E9F0;padding:12px 0;font-weight:bold;">'
-    + '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;border:3px solid #2C3E50;background:#E5E5E5;color:#2C3E50;font-weight:900;box-shadow:2px 2px 0 #2C3E50;flex:0 0 auto;">#' + (index + 1) + '</span>'
+    + '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;border:3px solid #2C3E50;background:' + rankBadgeColor(index + 1) + ';color:#2C3E50;font-weight:900;box-shadow:2px 2px 0 #2C3E50;flex:0 0 auto;">' + formatRankLabel(index + 1) + '</span>'
+    + avatarImgHtml(entry.pic)
     + '<span style="flex:1;min-width:0;"><span style="display:block;font-size:1.05em;color:#2C3E50;word-break:break-word;">' + escapeHtml(entry.name) + '</span></span>'
     + '<span style="margin-left:auto;border:3px solid #2C3E50;background:#FFCC00;padding:4px 8px;font-weight:900;white-space:nowrap;flex:0 0 auto;">' + Math.abs(entry.cl).toFixed(1) + ' cl</span>'
     + '</li>';
@@ -1011,9 +1067,7 @@ function refreshActiveEventsView() {
 
 async function initLeaderboard() {
   await buildEventOptions();
-  // Default view is Live Promille; the event leaderboard only appears after the
-  // user selects an event in the dropdown and presses "Visa leaderboards".
-  await renderLiveTopFive();
+  await handleEventSelectChange();
 }
 
 async function initEvents() {

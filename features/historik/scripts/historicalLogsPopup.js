@@ -75,9 +75,9 @@ async function openHistoricalLogsPopup() {
   const totalCl = Math.abs(calculateCl(totalGrams));
 
   summary.innerHTML = `
-    <div style="display:grid; gap:8px; text-align:left;">
-      <div><strong>Antal loggar:</strong> ${logs.length}</div>
-      <div><strong>Total alkohol:</strong> ${totalCl.toFixed(1)} cl</div>
+    <div style="display:grid; gap:10px; text-align:left;">
+      <div style="display:flex; align-items:center; gap:8px;"><strong>Antal enheter:</strong> <span style="display:inline-block; background:#FF6FB5; color:#111; border:3px solid #2C3E50; padding:4px 8px; font-weight:900; box-shadow:2px 2px 0 #2C3E50;">${logs.length}</span></div>
+      <div style="display:flex; align-items:center; gap:8px;"><strong>Ren alkohol:</strong> <span style="display:inline-block; background:#2ECC71; color:#111; border:3px solid #2C3E50; padding:4px 8px; font-weight:900; box-shadow:2px 2px 0 #2C3E50;">${totalCl.toFixed(1)} cl</span></div>
     </div>
   `;
 
