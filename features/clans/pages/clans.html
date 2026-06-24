@@ -268,17 +268,6 @@ function initClanRealtime() {
     .subscribe();
 }
 
-async function syncProfileToSupabase(profile) {
-  if (!sb || !profile) return;
-  await sb.from('profiles').upsert({
-    player_hash: profile.id,
-    display_name: profile.name,
-    avatar_url: profile.pic,
-    weight: profile.weight || null,
-    gender: profile.gender || null
-  });
-}
-
 async function loadOngoingEvent() {
   if (!sb) return;
   var now = new Date().toISOString();
@@ -608,10 +597,6 @@ async function openAllClansModal() {
   if (typeof showListModal === 'function') {
     showListModal('Alla Klaner', html, { headerBg: '#9B59B6' });
   }
-}
-
-function refreshClanUI() {
-  updateClanUI();
 }
 
 // A player belongs to a single clan. Clear every existing membership before joining

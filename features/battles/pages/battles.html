@@ -105,7 +105,7 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 <div class="card">
   <h2 style="background: #2ECC71;">Aktiva Strider</h2>
   <ul id="activeBattlesList">
-    <li style="justify-content:center; color:#5a6570;">Laddar strider...</li>
+    <li class="loading-row"><span class="loading-spinner"></span> Laddar strider...</li>
   </ul>
 </div>
 <div class="card">
@@ -374,6 +374,8 @@ async function startBattle() {
 }
 
 async function fetchActiveBattles() {
+  const listEl = document.getElementById('activeBattlesList');
+  if (listEl) listEl.innerHTML = '<li class="loading-row"><span class="loading-spinner"></span> Laddar strider...</li>';
   if (typeof ensureSupabaseAuth === 'function') {
     await ensureSupabaseAuth();
   }
