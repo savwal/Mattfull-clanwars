@@ -8,12 +8,20 @@ const listedDrinks = {
     { name: 'Heineken', type: 'Lager', abv: 5.0, vol: 330 },
     { name: 'The Bear', type: 'Lager', abv: 5.0, vol: 330 },
     { name: 'Brooklyn Lager', type: 'Lager', abv: 5.2, vol: 330 },
-    { name: 'Guinness', type: 'Stout', abv: 4.2, vol: 330 },
     { name: 'Briska', type: 'Cider', abv: 4.5, vol: 330 },
     { name: 'Somersby', type: 'Cider', abv: 4.6, vol: 330 },
     { name: 'Xider', type: 'Cider', abv: 4.5, vol: 330 },
     { name: 'Kopparberg', type: 'Cider', abv: 4.5, vol: 330 },
     { name: 'Ey Bro', type: 'Hard seltzer', abv: 4.5, vol: 330 }
+  ],
+  beer_cider_40: [
+    { name: 'Gränges', type: 'Lager', abv: 5.3, vol: 400 },
+    { name: 'Norrlands Guld', type: 'Lager', abv: 5.3, vol: 400 },
+    { name: 'Pripps Blå', type: 'Lager', abv: 5.0, vol: 400 },
+    { name: 'Guinness', type: 'Stout', abv: 4.2, vol: 400 },
+    { name: 'Mariestads', type: 'Strong lager', abv: 5.3, vol: 400 },
+    { name: 'Sofiero', type: 'Lager', abv: 5.2, vol: 400 },
+    { name: 'Falcon', type: 'Lager', abv: 5.2, vol: 400 }
   ],
   beer_cider_50: [
     { name: 'Norrlands Guld', type: 'Lager', abv: 5.3, vol: 500 },
@@ -34,11 +42,6 @@ const listedDrinks = {
     { name: 'Ett glas rosé', type: 'Rosé', abv: 12.0, vol: 150 },
     { name: 'Ett glas rött', type: 'Rött', abv: 13.0, vol: 150 }
   ],
-  drinkar: [
-    { name: 'Gin & Tonic', type: 'Drink (4cl sprit)', abv: 8.0, vol: 200 },
-    { name: 'Vodka Cranberry', type: 'Drink (4cl sprit)', abv: 8.0, vol: 200 },
-    { name: 'Red Bull Vodka', type: 'Drink (4cl sprit)', abv: 6.4, vol: 250 }
-  ],
   sprit: [
     { name: 'Snaps', type: 'Spirit', abv: 38, vol: 40 },
     { name: 'Vodka (shot)', type: 'Spirit', abv: 40, vol: 40 },
@@ -50,10 +53,13 @@ const listedDrinks = {
     { name: 'Bacardi (rum)', type: 'Spirit', abv: 38.8, vol: 40 },
   ],
   annat: [
-    { name: 'Caprice Kir', type: 'Aperitif', abv: 12, vol: 120 },
+    { name: 'En Knäve Kir', type: 'Aperitif', abv: 12, vol: 700 },
     { name: 'Solbacka Kir', type: 'Aperitif', abv: 12, vol: 120 },
     { name: 'Champagne', type: 'Sparkling wine', abv: 12, vol: 150 },
-    { name: 'Cava', type: 'Sparkling wine', abv: 11.5, vol: 150 }
+    { name: 'Cava', type: 'Sparkling wine', abv: 11.5, vol: 150 },
+    { name: 'Gin & Tonic', type: 'Drink (4cl sprit)', abv: 8.0, vol: 200 },
+    { name: 'Vodka Cranberry', type: 'Drink (4cl sprit)', abv: 8.0, vol: 200 },
+    { name: 'Red Bull Vodka', type: 'Drink (4cl sprit)', abv: 6.4, vol: 250 }
   ]
 };
 
@@ -63,8 +69,8 @@ function renderCategoryTiles(containerId) {
   const categories = [
     { id: 'beer_cider_33', text: 'Öl/cider 33 cl', icon: 'beer-33.svg' },
     { id: 'beer_cider_50', text: 'Öl/cider 50 cl', icon: 'beer-50.svg' },
+    { id: 'beer_cider_40', text: 'Storstark 40 cl', icon: 'beer-50.svg' },
     { id: 'wine', text: 'Vin', icon: 'wine.svg' },
-    { id: 'drinkar', text: 'Drinkar', icon: 'drink.svg' },
     { id: 'sprit', text: 'Sprit', icon: 'sprit.svg' },
     { id: 'annat', text: 'Annat', icon: 'other.svg' }
   ];

@@ -356,13 +356,30 @@ async function loadMyCustomEvents() {
   const localEvents = getLocalCustomEvents(activeProfile.id);
   const remoteEvents = await fetchCustomEventsForUser(activeProfile.id);
   const remoteIds = new Set((remoteEvents || []).map(evt => evt.event_id));
-  const localOnly = (localEvents || []).filter(evt => !remoteIds.has(evt.event_id));
-  if (localOnly.length !== localEvents.length) {
+
+  // Local-only events are those in localStorage but not returned by the DB
+  // participation query. Validate them against the events table so deleted
+  // events are pruned rather than displayed forever.
+  let localOnly = (localEvents || []).filter(evt => !remoteIds.has(evt.event_id));
+  if (localOnly.length > 0 && sb) {
+    const localIds = localOnly.map(evt => evt.event_id);
+    const { data: existingRows } = await sb.from('events').select('id').in('id', localIds);
+    const existingSet = new Set((existingRows || []).map(r => r.id));
+    localOnly = localOnly.filter(evt => existingSet.has(evt.event_id));
+  }
+  // Persist the pruned list so stale entries don't reappear after navigation.
+  if (localOnly.length !== (localEvents || []).filter(evt => !remoteIds.has(evt.event_id)).length) {
     saveLocalCustomEvents(activeProfile.id, localOnly);
   }
+
   const combined = [...localOnly, ...(remoteEvents || [])];
-  renderMyCustomEvents(combined);
-  return combined;
+
+  // Hide expired events (end time in the past) — they are no longer active.
+  const now = new Date();
+  const active = combined.filter(evt => !evt.ends_at || new Date(evt.ends_at) >= now);
+
+  renderMyCustomEvents(active);
+  return active;
 }
 
 // Holds the currently-open custom event popup so "Lämna event" can close it.
