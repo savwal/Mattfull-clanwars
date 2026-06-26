@@ -102,6 +102,16 @@ html {
   transition: all 0.3s ease;
 }
 
+/* Consistent close-button color across all modals — white on every header */
+.close-modal {
+  color: #FFF;
+}
+
+/* Prevent modal heading text from sliding under the ✕ button */
+.modal-content h2 {
+  padding-right: 52px;
+}
+
 /* Shared responsive sizing for JS-driven modal popups */
 .modal .modal-content {
   width: min(92vw, 440px);

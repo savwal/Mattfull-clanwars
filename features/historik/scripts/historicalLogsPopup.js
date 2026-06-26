@@ -47,8 +47,8 @@ async function openHistoricalLogsPopup() {
   }
 
   meta.textContent = 'Dina registrerade drycker';
-  summary.innerHTML = '<p style="margin:0; color:#5a6570; font-weight:bold;">Laddar dina loggar...</p>';
-  list.innerHTML = '';
+  summary.innerHTML = '';
+  list.innerHTML = '<li class="loading-row"><span class="loading-spinner"></span> Laddar dina loggar...</li>';
 
   if (typeof ensureSupabaseAuth === 'function') {
     await ensureSupabaseAuth();

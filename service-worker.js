@@ -1,23 +1,14 @@
-const CACHE_NAME = 'redlos-v6';
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './features/shared/styles/nav.css',
-  './icons/icon-192.svg',
-  './icons/icon-512.svg',
-  './icons/menu-log.svg',
-  './icons/menu-battles.svg',
-  './icons/menu-events.svg',
-  './icons/menu-clans.svg',
-  './icons/menu-friends.svg',
-  './icons/menu-wrapped.svg',
-  './icons/menu-profile.svg'
-];
+const CACHE_NAME = 'redlos-v7';
+
+// Injected at build time with the full list of app assets. Falls back to []
+// when the SW is served without a prior build step.
+const PRECACHE_URLS = (self.__WB_MANIFEST || []).map(e =>
+  typeof e === 'string' ? e : e.url
+);
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
   );
   self.skipWaiting();
 });
