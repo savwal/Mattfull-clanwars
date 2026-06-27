@@ -134,6 +134,9 @@ li:last-child { border-bottom: none; }
 let myFriends = [];
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 let friendsData = {};
+let friendsChannel = null;
+let _updateFriendsUIRunning = false;
+let _drinkRefreshTimer = null;
 
 function applyStatUpdate(element, text) {
   if (!element) return;
@@ -402,53 +405,83 @@ function renderViews() {
 
 async function updateFriendsUI() {
   const list = document.getElementById('friendsList');
-  list.innerHTML = '';
 
   await loadFriendsForActiveProfile();
-  
+
+  const loadingRow = list.querySelector('.loading-row');
+  if (loadingRow) loadingRow.remove();
+
   if (myFriends.length === 0) {
     list.innerHTML = '<p style="text-align:center; color:#5a6570;">Inga vänner tillagda. Sök på deras personliga kod!</p>';
     renderViews();
     return;
   }
 
+  const existingEmpty = list.querySelector('p');
+  if (existingEmpty) existingEmpty.remove();
+
   await fetchFriendsData();
 
-  myFriends.forEach((hash, index) => {
-    let friendObj = friendsData[hash];
-    if(!friendObj) return;
-    let friend = friendObj.profile;
-    
-    const li = document.createElement('li');
-    const img = document.createElement('img');
-    img.className = 'profile-img';
-    img.src = friend.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-    const info = document.createElement('div');
-    info.className = 'friend-info';
-    info.innerHTML = `<span class="friend-name" style="font-size:1.1em; color:#2C3E50;">${friend.name}</span><span class="friend-hash" style="font-size:0.8em; color:#5a6570;">Kod: ${hash}</span>`;
-    const delBtn = document.createElement('button');
-    delBtn.innerText = "X";
-    delBtn.style.cssText = "background: #E74C3C; color: white; width: auto; padding: 5px 10px; font-size: 12px; box-shadow: 2px 2px 0px #2C3E50;";
-    delBtn.onclick = async () => {
-      const confirmed = (typeof showConfirmModal === 'function')
-        ? await showConfirmModal(`Vill du ta bort ${friend.name} som vän?`, { title: 'Ta bort vän', confirmText: 'Ta bort' })
-        : true;
-      if (!confirmed) return;
-      const activeProfile = getActiveProfile();
-      if (!activeProfile || !sb) return;
-      sb.from('friends')
-        .delete()
-        .eq('player_hash', activeProfile.id)
-        .eq('friend_hash', hash)
-        .then(() => updateFriendsUI());
-    };
-    li.appendChild(img);
-    li.appendChild(info);
-    li.appendChild(delBtn);
-    list.appendChild(li);
+  const existingItems = {};
+  Array.from(list.querySelectorAll('li[data-friend-hash]')).forEach(li => {
+    existingItems[li.dataset.friendHash] = li;
   });
 
+  myFriends.forEach((hash) => {
+    const friendObj = friendsData[hash];
+    if (!friendObj) return;
+    const friend = friendObj.profile;
+
+    let li = existingItems[hash];
+    if (!li) {
+      li = document.createElement('li');
+      li.dataset.friendHash = hash;
+
+      const img = document.createElement('img');
+      img.className = 'profile-img';
+
+      const info = document.createElement('div');
+      info.className = 'friend-info';
+
+      const delBtn = document.createElement('button');
+      delBtn.innerText = 'X';
+      delBtn.style.cssText = 'background: #E74C3C; color: white; width: auto; padding: 5px 10px; font-size: 12px; box-shadow: 2px 2px 0px #2C3E50;';
+      delBtn.onclick = async () => {
+        const current = friendsData[hash];
+        const displayName = current ? current.profile.name : hash;
+        const confirmed = (typeof showConfirmModal === 'function')
+          ? await showConfirmModal(`Vill du ta bort ${displayName} som vän?`, { title: 'Ta bort vän', confirmText: 'Ta bort' })
+          : true;
+        if (!confirmed) return;
+        const activeProfile = getActiveProfile();
+        if (!activeProfile || !sb) return;
+        await sb.from('friends').delete().eq('player_hash', activeProfile.id).eq('friend_hash', hash);
+        safeUpdateFriendsUI();
+      };
+
+      li.appendChild(img);
+      li.appendChild(info);
+      li.appendChild(delBtn);
+    }
+
+    const img = li.querySelector('img.profile-img');
+    img.src = friend.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+    const info = li.querySelector('.friend-info');
+    info.innerHTML = `<span class="friend-name" style="font-size:1.1em; color:#2C3E50;">${friend.name}</span><span class="friend-hash" style="font-size:0.8em; color:#5a6570;">Kod: ${hash}</span>`;
+
+    list.appendChild(li);
+    delete existingItems[hash];
+  });
+
+  Object.values(existingItems).forEach(li => li.remove());
+
   renderViews();
+}
+
+function showFriendModal(title, bodyHtml, headerBg) {
+  if (typeof showListModal === 'function') {
+    showListModal(title, bodyHtml, { headerBg: headerBg || '#2A8CFF' });
+  }
 }
 
 async function addFriend() {
@@ -458,22 +491,37 @@ async function addFriend() {
   await loadFriendsForActiveProfile();
 
   if(myFriends.includes(hash)) {
-     alert("Du har redan lagt till denna vän!");
-     return;
+    showFriendModal(
+      'Redan vän',
+      '<p style="text-align:center;color:#2C3E50;margin:20px 0;">Du är redan vän med en krigare med den koden!</p>',
+      '#F39C12'
+    );
+    return;
   }
-  
-  const { data } = await sb.from('profiles').select('player_hash').eq('player_hash', hash).single();
+
+  const { data } = await sb.from('profiles').select('player_hash, display_name').eq('player_hash', hash).single();
   if (data) {
     document.getElementById('friendHash').value = '';
-    
+    const playerName = data.display_name || hash;
+
     const activeProfile = getActiveProfile();
     if(activeProfile) {
       await sb.from('friends').insert({ player_hash: activeProfile.id, friend_hash: hash });
     }
-    
-    updateFriendsUI();
+
+    showFriendModal(
+      'Vän tillagd!',
+      '<p style="text-align:center;font-size:2em;margin:12px 0;">&#10003;</p>' +
+      '<p style="text-align:center;color:#2C3E50;margin:0 0 20px;"><strong>' + playerName + '</strong> har lagts till som vän!</p>',
+      '#27AE60'
+    );
+    safeUpdateFriendsUI();
   } else {
-    alert("Kunde inte hitta en krigare med den personliga koden!");
+    showFriendModal(
+      'Ingen krigare hittades',
+      '<p style="text-align:center;color:#2C3E50;margin:20px 0;">Det finns ingen krigare med den koden. Kontrollera att du har skrivit rätt!</p>',
+      '#E74C3C'
+    );
   }
 }
 
@@ -485,9 +533,51 @@ async function refreshFriendsData() {
   renderViews();
 }
 
-window.refreshPageData = refreshFriendsData;
+async function safeUpdateFriendsUI() {
+  if (_updateFriendsUIRunning) return;
+  _updateFriendsUIRunning = true;
+  try { await updateFriendsUI(); } catch(e) { console.error('updateFriendsUI error', e); } finally { _updateFriendsUIRunning = false; }
+}
 
-updateFriendsUI();
+function scheduleRefreshFriendsData() {
+  if (_drinkRefreshTimer) return;
+  _drinkRefreshTimer = setTimeout(function() {
+    _drinkRefreshTimer = null;
+    refreshFriendsData();
+  }, 1200);
+}
+
+function initFriendsRealtime() {
+  if (!sb || friendsChannel) return;
+  const ap = getActiveProfile();
+  if (!ap) return;
+  friendsChannel = sb.channel('friends_ui_' + ap.id)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'friends',
+      filter: 'player_hash=eq.' + ap.id
+    }, function() { safeUpdateFriendsUI(); })
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'drink_logs'
+    }, function(payload) {
+      var hash = (payload.new && payload.new.player_hash) || (payload.old && payload.old.player_hash);
+      var activeProfile = getActiveProfile();
+      if (hash && (myFriends.indexOf(hash) !== -1 || (activeProfile && hash === activeProfile.id))) {
+        scheduleRefreshFriendsData();
+      }
+    })
+    .subscribe();
+}
+
+window.refreshPageData = function() { safeUpdateFriendsUI(); };
+window.reconnectRealtime = function() {
+  if (friendsChannel) {
+    try { sb.removeChannel(friendsChannel); } catch(e) {}
+    friendsChannel = null;
+  }
+  initFriendsRealtime();
+};
+
+safeUpdateFriendsUI().then(function() { initFriendsRealtime(); });
 setInterval(refreshFriendsData, 20000);
 </script>
 </body>

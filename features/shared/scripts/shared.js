@@ -507,6 +507,30 @@ window.formatRankLabel = function(n) {
 };
 
 // ---------------------------------------------------------------------------
+// Shared leaderboard preloading cache — show stale data instantly while the
+// fresh DB fetch is in flight. Entries expire after 5 minutes.
+// ---------------------------------------------------------------------------
+(function() {
+  var TTL = 5 * 60 * 1000;
+  var PREFIX = 'redlos_lb_';
+  window.leaderboardCache = {
+    get: function(key) {
+      try {
+        var raw = localStorage.getItem(PREFIX + key);
+        if (!raw) return null;
+        var p = JSON.parse(raw);
+        return (p && p.ts && Date.now() - p.ts < TTL) ? p.data : null;
+      } catch(e) { return null; }
+    },
+    set: function(key, data) {
+      try {
+        localStorage.setItem(PREFIX + key, JSON.stringify({ ts: Date.now(), data: data }));
+      } catch(e) {}
+    }
+  };
+})();
+
+// ---------------------------------------------------------------------------
 // Shared in-page list modal. Used by the "Visa Alla" buttons to show a full
 // list (all clans / all active users) in an on-page JavaScript popup — like the
 // Historik popup — instead of opening a new browser tab/window. Pass the title
@@ -712,7 +736,15 @@ window.showConfirmModal = function(message, options) {
       var bar = getIndicator();
       bar.style.height = '60px';
       bar.textContent = 'Uppdaterar...';
-      setTimeout(function() { window.location.reload(); }, 60);
+      setTimeout(function() {
+        if (window.caches) {
+          caches.keys().then(function(keys) {
+            return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+          }).finally(function() { window.location.reload(); });
+        } else {
+          window.location.reload();
+        }
+      }, 60);
     } else {
       reset();
     }

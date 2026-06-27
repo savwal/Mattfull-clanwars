@@ -509,50 +509,69 @@ async function computeClanRanking() {
   }).sort(function(a, b) { return b.cl - a.cl; });
 }
 
+function _renderClanRankingInList(list, ranked) {
+  var loadingRow = list.querySelector('.loading-row');
+  if (loadingRow) loadingRow.remove();
+  var existing = {};
+  Array.from(list.querySelectorAll('li[data-clan-id]')).forEach(function(li) {
+    existing[li.getAttribute('data-clan-id')] = li;
+  });
+  ranked.forEach(function(clan, index) {
+    var li = existing[clan.id];
+    if (!li) {
+      li = document.createElement('li');
+      li.setAttribute('data-clan-id', clan.id);
+      var rankSpan = document.createElement('span');
+      rankSpan.className = 'rank-badge';
+      var info = document.createElement('div');
+      info.className = 'leaderboard-info';
+      var name = document.createElement('span');
+      name.className = 'leader-name';
+      var hashEl = document.createElement('span');
+      hashEl.className = 'leader-hash';
+      var badge = document.createElement('div');
+      badge.className = 'badge';
+      badge.innerHTML = '<span class="stat-value"></span> cl';
+      info.appendChild(name);
+      info.appendChild(hashEl);
+      li.appendChild(rankSpan);
+      li.appendChild(info);
+      li.appendChild(badge);
+    }
+    li.querySelector('.rank-badge').textContent = formatRankLabel(index + 1);
+    li.querySelector('.rank-badge').style.background = rankBadgeColor(index + 1);
+    li.querySelector('.leader-name').textContent = clan.name;
+    li.querySelector('.leader-hash').textContent = clan.id;
+    applyStatUpdate(li.querySelector('.badge .stat-value'), Math.abs(clan.cl).toFixed(1));
+    list.appendChild(li);
+    delete existing[clan.id];
+  });
+  Object.keys(existing).forEach(function(id) { existing[id].remove(); });
+}
+
 async function renderClanLeaderboard() {
   var list = document.getElementById('clanLeaderboard');
   if (!list) return;
 
+  // Serve cached data instantly while the fresh fetch is in flight.
+  var cached = window.leaderboardCache ? window.leaderboardCache.get('clanRanking') : null;
+  if (cached && cached.length > 0) {
+    _renderClanRankingInList(list, cached.slice(0, 5));
+  }
+
   var fullRanked = await computeClanRanking();
   if (fullRanked === null) {
-    list.innerHTML = '<p style="text-align:center; color:#5a6570;">Ingen data att visa.</p>';
+    if (!cached) list.innerHTML = '<p style="text-align:center; color:#5a6570;">Ingen data att visa.</p>';
     return;
   }
   if (fullRanked.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#5a6570;">Inga klaner att visa.</p>';
+    if (!cached || cached.length === 0) list.innerHTML = '<p style="text-align:center; color:#5a6570;">Inga klaner att visa.</p>';
     return;
   }
 
+  if (window.leaderboardCache) window.leaderboardCache.set('clanRanking', fullRanked);
   // Only the top 5 are shown inline; "Visa Alla" opens the full list in a window.
-  var ranked = fullRanked.slice(0, 5);
-
-  list.innerHTML = '';
-  ranked.forEach(function(clan, index) {
-    var li = document.createElement('li');
-    var rank = document.createElement('span');
-    rank.className = 'rank-badge';
-    rank.textContent = formatRankLabel(index + 1);
-    rank.style.background = rankBadgeColor(index + 1);
-    var info = document.createElement('div');
-    info.className = 'leaderboard-info';
-    var name = document.createElement('span');
-    name.className = 'leader-name';
-    name.textContent = clan.name;
-    var hashEl = document.createElement('span');
-    hashEl.className = 'leader-hash';
-    hashEl.textContent = clan.id;
-    var badge = document.createElement('div');
-    badge.className = 'badge';
-    badge.innerHTML = '<span class="stat-value"></span> cl';
-    info.appendChild(name);
-    info.appendChild(hashEl);
-    li.appendChild(rank);
-    li.appendChild(info);
-    li.appendChild(badge);
-    var statVal = badge.querySelector('.stat-value');
-    applyStatUpdate(statVal, Math.abs(clan.cl).toFixed(1));
-    list.appendChild(li);
-  });
+  _renderClanRankingInList(list, fullRanked.slice(0, 5));
 }
 
 function escapeHtml(value) {
@@ -711,7 +730,8 @@ var _updateClanUIRunning = false;
 async function safeUpdateClanUI() {
   if (_updateClanUIRunning) return;
   _updateClanUIRunning = true;
-  try { await updateClanUI(); } catch (e) { console.error('updateClanUI error', e); } finally { _updateClanUIRunning = false; }
+  var lockTimeout = setTimeout(function() { _updateClanUIRunning = false; }, 30000);
+  try { await updateClanUI(); } catch (e) { console.error('updateClanUI error', e); } finally { clearTimeout(lockTimeout); _updateClanUIRunning = false; }
 }
 
 safeUpdateClanUI();

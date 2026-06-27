@@ -200,6 +200,18 @@ function saveEntry(name, volume, abv, grams) {
   }
   var profile = getActiveProfile();
 
+  // If the reset condition is already met (sober for 2h+) but checkGraphReset()
+  // hasn't fired yet (app was closed), proactively archive so the graph resets
+  // on the new drink.  Only applies to real drinks (grams > 0), not Ulta.
+  if (grams > 0 && historyData.length > 0 && profile) {
+    var bacCheck = calculateBACAtTime(historyData, profile, now.getTime());
+    if (bacCheck <= ZERO_BAC_THRESHOLD && now.getTime() - lastNonZeroTime >= ZERO_BAC_RESET_MS) {
+      archiveCurrentHistory(profile.id);
+      lastNonZeroTime = now.getTime();
+      setStoredLastNonZeroTime(profile.id, lastNonZeroTime);
+    }
+  }
+
   // Only start a new session when there are no drinks in the current session.
   // Do NOT use prevBAC: alcohol takes ~60min to absorb so BAC stays near 0
   // for several minutes even after the first drink, which would incorrectly
