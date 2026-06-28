@@ -136,6 +136,7 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 let friendsData = {};
 let friendsChannel = null;
 let _updateFriendsUIRunning = false;
+let _updateFriendsUIPending = false;
 let _drinkRefreshTimer = null;
 
 function applyStatUpdate(element, text) {
@@ -507,6 +508,12 @@ async function addFriend() {
     const activeProfile = getActiveProfile();
     if(activeProfile) {
       await sb.from('friends').insert({ player_hash: activeProfile.id, friend_hash: hash });
+      // Optimistically register the new friend locally so the lists update even
+      // before the realtime event or the next DB read arrives.
+      if (!myFriends.includes(hash)) {
+        myFriends.push(hash);
+        localStorage.setItem('myFriendsHashes', JSON.stringify(myFriends));
+      }
     }
 
     showFriendModal(
@@ -515,7 +522,9 @@ async function addFriend() {
       '<p style="text-align:center;color:#2C3E50;margin:0 0 20px;"><strong>' + playerName + '</strong> har lagts till som vän!</p>',
       '#27AE60'
     );
-    safeUpdateFriendsUI();
+    // Await so the "Mina vänner" list and both leaderboards are guaranteed to
+    // reflect the new friend without needing a hard refresh.
+    await safeUpdateFriendsUI();
   } else {
     showFriendModal(
       'Ingen krigare hittades',
@@ -534,9 +543,22 @@ async function refreshFriendsData() {
 }
 
 async function safeUpdateFriendsUI() {
-  if (_updateFriendsUIRunning) return;
+  // A call that arrives while one is running must not be silently dropped —
+  // otherwise an update triggered right after adding/removing a friend can be
+  // lost and the list looks unchanged. Instead, flag a rerun so the latest
+  // state is always rendered once the in-flight pass finishes.
+  if (_updateFriendsUIRunning) { _updateFriendsUIPending = true; return; }
   _updateFriendsUIRunning = true;
-  try { await updateFriendsUI(); } catch(e) { console.error('updateFriendsUI error', e); } finally { _updateFriendsUIRunning = false; }
+  try {
+    do {
+      _updateFriendsUIPending = false;
+      await updateFriendsUI();
+    } while (_updateFriendsUIPending);
+  } catch(e) {
+    console.error('updateFriendsUI error', e);
+  } finally {
+    _updateFriendsUIRunning = false;
+  }
 }
 
 function scheduleRefreshFriendsData() {

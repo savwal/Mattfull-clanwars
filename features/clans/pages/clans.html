@@ -153,6 +153,9 @@ li:last-child { border-bottom: none; }
     <span class="menu-label">Profil</span>
   </a>
 </nav>
+<div id="clanLoadingView" class="card" style="display: flex; align-items: center; justify-content: center; gap: 10px; color: #5a6570; font-weight: 700;">
+  <span class="loading-spinner"></span> Laddar klan...
+</div>
 <div id="noClanView" class="card" style="display: none;">
   <h2>Hitta din Klan</h2>
   <input type="text" id="newClanName" placeholder="Ny Klan Namn">
@@ -206,6 +209,9 @@ var activeProfile = getActiveProfile();
 var clanChannel = null;
 var clanChannelHash = null;
 var clanMemberHashes = {};
+// Hashes of the viewer's friends — used to decide whose player_hash is visible
+// in the members list. A member's code is only shown to clan-mates and friends.
+var myFriendHashes = {};
 
 function getClanScorePeriod() {
   var now = new Date();
@@ -288,12 +294,39 @@ async function loadOngoingEvent() {
   }
 }
 
+// Load the hashes of the viewer's friends. Seeds instantly from the cache the
+// Friends page maintains, then refreshes from the DB. Used to gate who may see a
+// member's personal code.
+async function loadMyFriendHashes() {
+  myFriendHashes = {};
+  if (!activeProfile) return;
+  try {
+    var cached = JSON.parse(localStorage.getItem('myFriendsHashes')) || [];
+    cached.forEach(function(h) { if (h) myFriendHashes[h] = true; });
+  } catch (e) {}
+  if (!sb) return;
+  var result = await sb.from('friends')
+    .select('friend_hash')
+    .eq('player_hash', activeProfile.id);
+  if (result.data) {
+    result.data.forEach(function(row) {
+      if (row.friend_hash) myFriendHashes[row.friend_hash] = true;
+    });
+  }
+}
+
+function hideClanLoading() {
+  var el = document.getElementById('clanLoadingView');
+  if (el) el.style.display = 'none';
+}
+
 async function updateClanUI() {
   var noClanView = document.getElementById('noClanView');
   var hasClanView = document.getElementById('hasClanView');
   var storedClanHash = localStorage.getItem('myClanHash') || null;
 
   if (!sb || !activeProfile) {
+    hideClanLoading();
     noClanView.style.display = 'block';
     hasClanView.style.display = 'none';
     return;
@@ -305,6 +338,10 @@ async function updateClanUI() {
     .maybeSingle();
   var myMembership = membershipResult.data;
   var membershipError = membershipResult.error;
+
+  // Membership resolved — the page now shows a real view in every branch below,
+  // so retire the initial loading spinner.
+  hideClanLoading();
 
   if (myMembership && myMembership.clan_id) {
     myClanHash = myMembership.clan_id;
@@ -359,6 +396,19 @@ async function updateClanUI() {
   // Cache member hashes so the realtime drink_logs handler can ignore non-members.
   clanMemberHashes = {};
   (membersData || []).forEach(function(m) { clanMemberHashes[m.player_hash] = true; });
+
+  // A member's personal code (player_hash) is private: only people in the same
+  // clan or the viewer's friends may see it. The viewer is a clan-mate of every
+  // member shown here whenever they are themselves a confirmed member of this
+  // clan, so in that case all codes are visible; otherwise we fall back to
+  // friendship (and you can always see your own code).
+  await loadMyFriendHashes();
+  var iAmClanMember = !!clanMemberHashes[activeProfile.id];
+  function canSeeMemberHash(memberId) {
+    if (memberId === activeProfile.id) return true;
+    if (iAmClanMember) return true;
+    return !!myFriendHashes[memberId];
+  }
 
   var totalElo = 0;
   var list = document.getElementById('clanMembers');
@@ -435,7 +485,12 @@ async function updateClanUI() {
       var img = li.querySelector('img.profile-img');
       img.src = member.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
       var info = li.querySelector('.member-info');
-      info.innerHTML = '<span style="font-size:1.1em; color:#2C3E50;">' + member.name + '</span><br><span style="font-size:0.8em; color:#5a6570;">' + member.role + '</span>';
+      // Formatted to match the "Mina vänner" list (friends.html): a name line
+      // (1.1em) above a grey player_hash line (0.8em), same font.
+      var hashLine = canSeeMemberHash(member.id)
+        ? '<span style="display:block; font-size:0.8em; color:#5a6570; overflow-wrap:anywhere; word-break:break-word;">' + member.id + '</span>'
+        : '';
+      info.innerHTML = '<span style="display:block; font-size:1.1em; color:#2C3E50; overflow-wrap:anywhere; word-break:break-word;">' + member.name + '</span>' + hashLine;
       var statValue = li.querySelector('.stat-value');
       applyStatUpdate(statValue, Math.abs(member.elo).toFixed(1));
 

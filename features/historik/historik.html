@@ -40,16 +40,17 @@ li:last-child { border-bottom: none; }
 #historicalLogsModal .hist-modal-body {
   flex: 1 1 auto;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding: 16px 20px calc(28px + env(safe-area-inset-bottom)) 20px;
 }
 #historicalLogsModal .close-modal { top: 8px; z-index: 1; }
 .close-modal { color: #FFF; font-size: 32px; font-weight: bold; cursor: pointer; position: absolute; right: 15px; top: 10px; }
-.drink-log-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.drink-log-info { text-align: left; }
-.drink-log-name { display: block; font-size: 1.05em; color: #2C3E50; }
-.drink-log-sub { display: block; font-size: 0.85em; color: #5a6570; }
+.drink-log-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; }
+.drink-log-info { text-align: left; flex: 1 1 auto; min-width: 0; }
+.drink-log-name { display: block; font-size: 1.05em; color: #2C3E50; overflow-wrap: anywhere; word-break: break-word; }
+.drink-log-sub { display: block; font-size: 0.85em; color: #5a6570; overflow-wrap: anywhere; word-break: break-word; }
 .drink-log-cl { display: inline-flex; align-items: center; padding: 4px 8px; border: 3px solid #2C3E50; background: #FFCC00; color: #2C3E50; font-weight: 900; box-shadow: 2px 2px 0px #2C3E50; white-space: nowrap; flex: 0 0 auto; }
 #historicalLogsList { padding-bottom: 8px; }
 </style>

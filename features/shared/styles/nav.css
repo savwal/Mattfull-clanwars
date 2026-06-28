@@ -14,6 +14,16 @@ body.pwa-transitions.page-leaving > :not(.main-nav):not(.mobile-bottom-menu) {
     transform: translateY(-4px);
   }
 
+  /* Overlays (the JS-built list/confirm/result modals) are appended straight to
+     <body>, so the transition rules above would otherwise fade or hide them
+     along with the page. Force them fully visible whatever the page state — new
+     content like "Vän tillagd!" must never be frozen out of view. */
+  body.pwa-transitions > .modal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
 html {
   scroll-behavior: smooth;
 }
@@ -120,7 +130,37 @@ html {
   box-sizing: border-box;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+}
+
+/* ---------------------------------------------------------------------------
+   Modal content overflow hardening (iOS / standalone PWA).
+   On iOS, flex children default to `min-width: auto` and refuse to shrink, so a
+   long name, a long date, or an unbreakable code lets a row grow wider than the
+   popup and a trailing pill/badge spills past its border. Make the popup the
+   clipping boundary and let the flexible text columns shrink so the boxes next
+   to them always stay inside the borders. (Headers use negative margins to
+   bleed to the edges, so we deliberately do NOT cap descendant widths.) */
+.modal .modal-content,
+.modal .modal-content * {
+  box-sizing: border-box;
+}
+.modal .modal-content .leaderboard-info,
+.modal .modal-content .leader-info,
+.modal .modal-content .friend-info,
+.modal .modal-content .member-info,
+.modal .modal-content .event-meta,
+.modal .modal-content .drink-log-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.modal .modal-content .drink-log-name,
+.modal .modal-content .drink-log-sub,
+.modal .modal-content .leader-name,
+.modal .modal-content .leader-hash {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .modal .graph-modal-content {

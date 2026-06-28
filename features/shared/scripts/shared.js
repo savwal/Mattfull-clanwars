@@ -82,10 +82,12 @@ initApp();
 function enablePageTransitions() {
   document.body.classList.add('pwa-transitions');
 
-  let readyApplied = false;
+  // Idempotent: always clear the "leaving" state and mark the page ready.
+  // It MUST be safe to call repeatedly — a standalone PWA restores frozen
+  // pages from the bfcache with `page-leaving` still set, and if we ever
+  // refused to re-run (the old `readyApplied` guard) the content would stay
+  // stuck at opacity:0 and look like it never updated.
   const ready = () => {
-    if (readyApplied) return;
-    readyApplied = true;
     document.body.classList.remove('page-leaving');
     document.body.classList.add('page-ready');
   };
@@ -102,8 +104,17 @@ function enablePageTransitions() {
   }
 
   window.addEventListener('load', scheduleReady, { once: true });
+  // pageshow fires on every display, including bfcache restores in a PWA.
+  // Clear the leaving state immediately (no rAF delay) so a restored page is
+  // never left invisible, then re-run scheduleReady as a belt-and-braces pass.
   window.addEventListener('pageshow', () => {
+    ready();
     scheduleReady();
+  });
+  // Coming back to the foreground (unlocking the device, switching back to the
+  // installed app) must also guarantee the content is visible again.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') ready();
   });
 
   document.addEventListener('click', event => {
@@ -567,7 +578,7 @@ window.showListModal = function(title, contentHtml, options) {
   close.style.cssText = 'color:#FFF;font-size:32px;font-weight:bold;cursor:pointer;position:absolute;right:15px;top:8px;line-height:1;z-index:1;';
 
   var body = document.createElement('div');
-  body.style.cssText = 'flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:20px;';
+  body.style.cssText = 'flex:1 1 auto;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:20px;';
   body.innerHTML = contentHtml;
 
   function cleanup() {
@@ -720,14 +731,20 @@ window.showConfirmModal = function(message, options) {
     pulling = true;
   }, { passive: true });
 
+  // Non-passive so we can call preventDefault() and OWN the downward pull at the
+  // top of the page. Without this the browser's native overscroll/rubber-band
+  // can swallow the gesture in a standalone PWA and the refresh never triggers.
   document.addEventListener('touchmove', function(e) {
     if (!pulling) return;
     distance = e.touches[0].clientY - startY;
     if (distance <= 0) { reset(); return; }
+    // We're at the top and the finger is moving down — this is our pull, not a
+    // scroll. Claim it so the page doesn't also try to overscroll.
+    if (e.cancelable) e.preventDefault();
     var bar = getIndicator();
     bar.style.height = Math.min(distance * 0.5, 60) + 'px';
     bar.textContent = distance > THRESHOLD ? 'Släpp för att uppdatera' : 'Dra för att uppdatera';
-  }, { passive: true });
+  }, { passive: false });
 
   document.addEventListener('touchend', function() {
     if (!pulling) return;
