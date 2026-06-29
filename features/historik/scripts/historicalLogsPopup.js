@@ -54,18 +54,26 @@ async function openHistoricalLogsPopup() {
     await ensureSupabaseAuth();
   }
 
-  // Locate every drink this user has logged via their player_hash.
-  const { data, error } = await sb.from('drink_logs')
-    .select('id, player_hash, drink_name, volume_ml, abv, grams_alcohol, consumed_at')
-    .eq('player_hash', profile.id)
-    .order('consumed_at', { ascending: false });
-
-  if (error) {
-    summary.innerHTML = '<p style="margin:0; color:#E74C3C; font-weight:bold;">Kunde inte hämta loggarna.</p>';
-    return;
+  // Read every drink from the shared drink_logs cache (the same single fetch the
+  // leaderboards use) and keep just this player's, newest first — no dedicated
+  // query for this popup.
+  let allDrinks = [];
+  if (window.sharedData && typeof window.sharedData.getDrinkLogs === 'function') {
+    allDrinks = await window.sharedData.getDrinkLogs();
+  } else {
+    const { data, error } = await sb.from('drink_logs')
+      .select('player_hash, drink_name, volume_ml, abv, grams_alcohol, consumed_at')
+      .eq('player_hash', profile.id);
+    if (error) {
+      summary.innerHTML = '<p style="margin:0; color:#E74C3C; font-weight:bold;">Kunde inte hämta loggarna.</p>';
+      return;
+    }
+    allDrinks = data || [];
   }
 
-  const logs = data || [];
+  const logs = (allDrinks || [])
+    .filter(d => d.player_hash === profile.id)
+    .sort((a, b) => new Date(b.consumed_at).getTime() - new Date(a.consumed_at).getTime());
   if (logs.length === 0) {
     summary.innerHTML = '<p style="margin:0; color:#5a6570; font-weight:bold;">Du har inga registrerade drycker än.</p>';
     return;

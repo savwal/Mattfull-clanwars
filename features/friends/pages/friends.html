@@ -107,7 +107,7 @@ li:last-child { border-bottom: none; }
   <h2 style="background: #2A8CFF;">Lägg till Vän</h2>
   <div style="display: flex; gap: 10px;">
     <input type="text" id="friendHash" placeholder="Personlig kod">
-    <button onclick="addFriend()" class="magic" style="width: auto; margin: 8px 0;">SÖK</button>
+    <button onclick="addFriend(this)" class="magic" style="width: auto; margin: 8px 0;">SÖK</button>
   </div>
 </div>
 
@@ -134,10 +134,11 @@ li:last-child { border-bottom: none; }
 let myFriends = [];
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 let friendsData = {};
-let friendsChannel = null;
 let _updateFriendsUIRunning = false;
 let _updateFriendsUIPending = false;
-let _drinkRefreshTimer = null;
+// Set when a friends/profiles/drinks fetch fails, so the UI can show a distinct
+// "could not load" + retry state instead of the misleading "Inga vänner".
+let _friendsLoadError = false;
 
 function applyStatUpdate(element, text) {
   if (!element) return;
@@ -166,41 +167,46 @@ async function fetchFriendsData() {
     return;
   }
 
-  const { data: profiles } = await sb.from('profiles').select('*').in('player_hash', leaderboardHashes);
-  const sinceISO = new Date(Date.now() - WEEK_MS).toISOString();
-  const { data: drinks } = await sb.from('drink_logs')
-    .select('*')
-    .in('player_hash', leaderboardHashes)
-    .gte('consumed_at', sinceISO);
+  // Profiles + drinks both come from the shared, cross-page caches: one profiles
+  // fetch for any new hashes and one shared drink_logs fetch (filtered to the
+  // last week in JS) instead of a dedicated query on this page. The shared layer
+  // keeps the last good data on error, so the boards are never blanked.
+  const profileMap = await window.sharedData.getProfiles(leaderboardHashes);
+  const allDrinks = await window.sharedData.getDrinkLogs();
+  const since = Date.now() - WEEK_MS;
+  _friendsLoadError = false;
 
   friendsData = {};
-  if (profiles) {
-    profiles.forEach(p => {
-      friendsData[p.player_hash] = {
+  leaderboardHashes.forEach(hash => {
+    const p = profileMap[hash];
+    if (p) {
+      friendsData[hash] = {
         profile: { id: p.player_hash, name: p.display_name, pic: p.avatar_url, weight: p.weight, gender: p.gender },
         drinks: []
       };
-    });
-  }
+    }
+  });
   if (activeProfile && !friendsData[activeProfile.id]) {
     friendsData[activeProfile.id] = {
       profile: { id: activeProfile.id, name: activeProfile.name, pic: activeProfile.pic, weight: activeProfile.weight, gender: activeProfile.gender },
       drinks: []
     };
   }
-  if (drinks) {
-    drinks.forEach(d => {
-      if (friendsData[d.player_hash]) {
-        friendsData[d.player_hash].drinks.push({
-          timestamp: new Date(d.consumed_at).getTime(),
-          grams: d.grams_alcohol,
-          // abv drives getAbsorptionTime() so the leaderboard absorbs at the
-          // same pace as the log graph (omitting it defaults to the fastest rate).
-          abv: d.abv
-        });
-      }
-    });
-  }
+  const hashSet = new Set(leaderboardHashes);
+  (allDrinks || []).forEach(d => {
+    if (!hashSet.has(d.player_hash)) return;
+    const t = new Date(d.consumed_at).getTime();
+    if (!Number.isFinite(t) || t < since) return;
+    if (friendsData[d.player_hash]) {
+      friendsData[d.player_hash].drinks.push({
+        timestamp: t,
+        grams: d.grams_alcohol,
+        // abv drives getAbsorptionTime() so the leaderboard absorbs at the
+        // same pace as the log graph (omitting it defaults to the fastest rate).
+        abv: d.abv
+      });
+    }
+  });
 }
 
 async function loadFriendsForActiveProfile() {
@@ -211,10 +217,18 @@ async function loadFriendsForActiveProfile() {
     return [];
   }
 
-  const { data: friendRows } = await sb.from('friends')
+  const { data: friendRows, error } = await sb.from('friends')
     .select('friend_hash')
     .eq('player_hash', activeProfile.id)
     .order('added_at', { ascending: true });
+
+  if (error) {
+    // Keep the last known friend list (from localStorage) so an offline/transient
+    // failure doesn't blank "Mina vänner".
+    _friendsLoadError = true;
+    try { myFriends = JSON.parse(localStorage.getItem('myFriendsHashes')) || myFriends; } catch (e) {}
+    return myFriends;
+  }
 
   myFriends = (friendRows || [])
     .map(row => row.friend_hash)
@@ -246,8 +260,18 @@ function getHistoryForProfile(profileId) {
   return [];
 }
 
+// Most recent Monday at 00:00 local time — the weekly leaderboard resets here,
+// so a new week always starts on Monday regardless of when drinks were logged.
+function getWeekStartMs() {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sunday … 6=Saturday
+  const daysFromMonday = day === 0 ? 6 : day - 1;
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysFromMonday, 0, 0, 0, 0);
+  return monday.getTime();
+}
+
 function getWeeklyCl(profileId) {
-  const since = Date.now() - WEEK_MS;
+  const since = getWeekStartMs();
   const history = getHistoryForProfile(profileId);
   const grams = history.reduce((sum, item) => {
     if (item.grams > 0 && item.timestamp >= since) return sum + item.grams;
@@ -260,10 +284,13 @@ function getLivePromille(profile) {
   const history = getHistoryForProfile(profile.id);
   if (!profile.weight || !profile.gender) return null;
   // Only the last 24h affects current promille, so trim before the BAC calc.
-  // This keeps calculateBACAtTime cheap and makes the value match the log graph
-  // (which is computed backwards from the same recent drink_logs entries).
+  // This keeps calculateBACAtTime cheap and makes the value match the log graph.
+  // calculateBACAtTime iterates forward from the first entry, so the drinks must
+  // be oldest-first; the shared cache returns rows newest-first, hence the sort.
   const since = Date.now() - 24 * 60 * 60 * 1000;
-  const recent = history.filter(function(d) { return d.timestamp >= since; });
+  const recent = history
+    .filter(function(d) { return d.timestamp >= since; })
+    .sort(function(a, b) { return a.timestamp - b.timestamp; });
   return calculateBACAtTime(recent, profile, Date.now());
 }
 
@@ -407,13 +434,21 @@ function renderViews() {
 async function updateFriendsUI() {
   const list = document.getElementById('friendsList');
 
+  _friendsLoadError = false;
   await loadFriendsForActiveProfile();
 
   const loadingRow = list.querySelector('.loading-row');
   if (loadingRow) loadingRow.remove();
 
   if (myFriends.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#5a6570;">Inga vänner tillagda. Sök på deras personliga kod!</p>';
+    if (_friendsLoadError) {
+      // Don't blank an existing list on a transient error.
+      if (!list.querySelector('li[data-friend-hash]')) {
+        list.innerHTML = '<p style="text-align:center; color:#E74C3C; font-weight:700;">Kunde inte ladda vänner. <button style="width:auto; padding:6px 10px; margin-top:8px;" onclick="safeUpdateFriendsUI()">Försök igen</button></p>';
+      }
+    } else {
+      list.innerHTML = '<p style="text-align:center; color:#5a6570;">Inga vänner tillagda. Sök på deras personliga kod!</p>';
+    }
     renderViews();
     return;
   }
@@ -456,7 +491,19 @@ async function updateFriendsUI() {
         if (!confirmed) return;
         const activeProfile = getActiveProfile();
         if (!activeProfile || !sb) return;
-        await sb.from('friends').delete().eq('player_hash', activeProfile.id).eq('friend_hash', hash);
+        const { error: deleteError } = await sb.from('friends').delete().eq('player_hash', activeProfile.id).eq('friend_hash', hash);
+        if (deleteError) {
+          if (typeof showToast === 'function') showToast('Kunde inte ta bort vännen. Försök igen.', { error: true });
+          return;
+        }
+        // Optimistically drop the friend locally and from the DOM so the list
+        // updates immediately — and stays updated even if the refetch below
+        // transiently fails (loadFriendsForActiveProfile would otherwise fall back
+        // to the cached list that still contains this hash).
+        myFriends = myFriends.filter(h => h !== hash);
+        localStorage.setItem('myFriendsHashes', JSON.stringify(myFriends));
+        delete friendsData[hash];
+        li.remove();
         safeUpdateFriendsUI();
       };
 
@@ -485,7 +532,10 @@ function showFriendModal(title, bodyHtml, headerBg) {
   }
 }
 
-async function addFriend() {
+async function addFriend(btn) {
+  return runWithButtonLock(btn, () => addFriendImpl());
+}
+async function addFriendImpl() {
   const hash = document.getElementById('friendHash').value.trim();
   if(!hash || !sb) return;
 
@@ -500,7 +550,7 @@ async function addFriend() {
     return;
   }
 
-  const { data } = await sb.from('profiles').select('player_hash, display_name').eq('player_hash', hash).single();
+  const { data, error } = await sb.from('profiles').select('player_hash, display_name').eq('player_hash', hash).single();
   if (data) {
     document.getElementById('friendHash').value = '';
     const playerName = data.display_name || hash;
@@ -525,6 +575,14 @@ async function addFriend() {
     // Await so the "Mina vänner" list and both leaderboards are guaranteed to
     // reflect the new friend without needing a hard refresh.
     await safeUpdateFriendsUI();
+  } else if (error && error.code && error.code !== 'PGRST116') {
+    // A real fetch failure (offline/RLS) — .single() returns PGRST116 only for
+    // a genuine "no matching row", so anything else means we couldn't search.
+    showFriendModal(
+      'Kunde inte söka',
+      '<p style="text-align:center;color:#2C3E50;margin:20px 0;">Kunde inte söka just nu. Kontrollera din anslutning och försök igen.</p>',
+      '#E74C3C'
+    );
   } else {
     showFriendModal(
       'Ingen krigare hittades',
@@ -561,46 +619,13 @@ async function safeUpdateFriendsUI() {
   }
 }
 
-function scheduleRefreshFriendsData() {
-  if (_drinkRefreshTimer) return;
-  _drinkRefreshTimer = setTimeout(function() {
-    _drinkRefreshTimer = null;
-    refreshFriendsData();
-  }, 1200);
-}
-
-function initFriendsRealtime() {
-  if (!sb || friendsChannel) return;
-  const ap = getActiveProfile();
-  if (!ap) return;
-  friendsChannel = sb.channel('friends_ui_' + ap.id)
-    .on('postgres_changes', {
-      event: '*', schema: 'public', table: 'friends',
-      filter: 'player_hash=eq.' + ap.id
-    }, function() { safeUpdateFriendsUI(); })
-    .on('postgres_changes', {
-      event: '*', schema: 'public', table: 'drink_logs'
-    }, function(payload) {
-      var hash = (payload.new && payload.new.player_hash) || (payload.old && payload.old.player_hash);
-      var activeProfile = getActiveProfile();
-      if (hash && (myFriends.indexOf(hash) !== -1 || (activeProfile && hash === activeProfile.id))) {
-        scheduleRefreshFriendsData();
-      }
-    })
-    .subscribe();
-}
-
 window.refreshPageData = function() { safeUpdateFriendsUI(); };
-window.reconnectRealtime = function() {
-  if (friendsChannel) {
-    try { sb.removeChannel(friendsChannel); } catch(e) {}
-    friendsChannel = null;
-  }
-  initFriendsRealtime();
-};
 
-safeUpdateFriendsUI().then(function() { initFriendsRealtime(); });
-setInterval(refreshFriendsData, 20000);
+safeUpdateFriendsUI();
+// Gentle polling re-pulls the friend list and the shared drink_logs cache (30s
+// TTL) so the leaderboards stay in sync, replacing the previous per-drink
+// realtime subscription that fired for every user's logs.
+setInterval(refreshFriendsData, 30000);
 </script>
 </body>
 </html>

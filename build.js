@@ -9,6 +9,9 @@ const DIST = join(ROOT, 'dist');
 // Development/build artefacts that must not go into the deployed site.
 const SKIP = new Set([
   'node_modules', 'dist', '.git', '.github', '.claude',
+  // Local data-analysis workspace: notebooks + exported CSVs of user data.
+  // Must never be copied into the deployed site (privacy + size).
+  'data_analysis',
   'package.json', 'package-lock.json',
   'vite.config.js', 'build.js',
   'README.md', '.gitignore', '.gitattributes'

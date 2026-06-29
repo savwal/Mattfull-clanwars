@@ -159,10 +159,10 @@ li:last-child { border-bottom: none; }
 <div id="noClanView" class="card" style="display: none;">
   <h2>Hitta din Klan</h2>
   <input type="text" id="newClanName" placeholder="Ny Klan Namn">
-  <button onclick="createClan()" style="background: #2ECC71; color: #FFF;">Skapa Ny Klan</button>
+  <button onclick="createClan(this)" style="background: #2ECC71; color: #FFF;">Skapa Ny Klan</button>
   <div style="margin: 20px 0; border-top: 4px dashed #2C3E50;"></div>
   <input type="text" id="joinClanHash" placeholder="Klan kod (5 tecken)">
-  <button onclick="joinClan()" style="background: #2A8CFF; color: #FFF;">Gå med i Klan</button>
+  <button onclick="joinClan(this)" style="background: #2A8CFF; color: #FFF;">Gå med i Klan</button>
 </div>
 <div id="hasClanView" style="display: none;">
   <div class="card" style="text-align: center;">
@@ -206,24 +206,30 @@ li:last-child { border-bottom: none; }
 <script>
 var myClanHash = localStorage.getItem('myClanHash') || null;
 var activeProfile = getActiveProfile();
-var clanChannel = null;
-var clanChannelHash = null;
-var clanMemberHashes = {};
-// Hashes of the viewer's friends — used to decide whose player_hash is visible
-// in the members list. A member's code is only shown to clan-mates and friends.
-var myFriendHashes = {};
 
+// The clan leaderboard (and the member scores + clan total that share this
+// period) runs in MONTHLY periods that turn over on the 24th: a period covers
+// the 25th of one month through the 24th of the next, mirroring the monthly
+// Wrapped. This is the one leaderboard that does NOT reset weekly — every other
+// board resets each Monday.
 function getClanScorePeriod() {
   var now = new Date();
-  var day = now.getDay(); // 0=Sunday, 1=Monday … 6=Saturday
-  var daysFromMonday = day === 0 ? 6 : day - 1;
-  var monday = new Date(now);
-  monday.setDate(monday.getDate() - daysFromMonday);
-  monday.setHours(0, 0, 0, 0);
-  var sunday = new Date(monday);
-  sunday.setDate(sunday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
-  return { start: monday.toISOString(), end: sunday.toISOString() };
+  var y = now.getFullYear();
+  var m = now.getMonth(); // 0–11
+  var start, end;
+  if (now.getDate() >= 25) {
+    // We're past this month's 24th turnover: current period is 25th this month
+    // through the 24th of next month.
+    start = new Date(y, m, 25, 0, 0, 0, 0);
+    end = new Date(y, m + 1, 24, 23, 59, 59, 999);
+  } else {
+    // On/before the 24th: current period started on the 25th of last month.
+    start = new Date(y, m - 1, 25, 0, 0, 0, 0);
+    end = new Date(y, m, 24, 23, 59, 59, 999);
+  }
+  // Date arithmetic with out-of-range months (m+1 in Dec, m-1 in Jan) rolls the
+  // year over automatically.
+  return { start: start.toISOString(), end: end.toISOString() };
 }
 
 function applyStatUpdate(element, text) {
@@ -243,26 +249,32 @@ function formatClanTitle(name) {
     : name;
 }
 
-function initClanRealtime() {
-  if (!sb || !myClanHash) return;
-  if (clanChannel && clanChannelHash === myClanHash) return;
-  if (clanChannel) {
-    sb.removeChannel(clanChannel);
-    clanChannel = null;
-  }
-  clanChannelHash = myClanHash;
-  clanChannel = sb.channel('clan_ui_' + myClanHash)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'clan_members', filter: 'clan_id=eq.' + myClanHash }, function() {
-      updateClanUI();
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'drink_logs' }, function(payload) {
-      // Only react to drinks logged by a current clan member — not every user in the DB.
-      var hash = (payload.new && payload.new.player_hash) || (payload.old && payload.old.player_hash);
-      if (hash && clanMemberHashes[hash]) {
-        updateClanUI();
-      }
-    })
-    .subscribe();
+// Sum each player's consumed grams within a period from the shared drink_logs
+// cache. Consumption only — "ulta" (negative grams) never lowers a score.
+function gramsByPlayerInPeriod(allDrinks, period) {
+  var start = new Date(period.start).getTime();
+  var end = new Date(period.end).getTime();
+  var byPlayer = {};
+  (allDrinks || []).forEach(function(d) {
+    var g = window.sharedData.resolveDrinkGrams(d);
+    if (!(g > 0)) return;
+    var t = new Date(d.consumed_at).getTime();
+    if (!Number.isFinite(t) || t < start || t > end) return;
+    byPlayer[d.player_hash] = (byPlayer[d.player_hash] || 0) + g;
+  });
+  return byPlayer;
+}
+
+// Build every clan's score for the period from already-fetched clans + members
+// and the per-player grams map (no further DB calls).
+function buildClanRanking(allClans, allMembers, gramsByPlayer) {
+  var gramsByClan = {};
+  (allMembers || []).forEach(function(m) {
+    gramsByClan[m.clan_id] = (gramsByClan[m.clan_id] || 0) + (gramsByPlayer[m.player_hash] || 0);
+  });
+  return (allClans || []).map(function(clan) {
+    return { id: clan.id, name: clan.name, cl: Math.abs(calculateCl(gramsByClan[clan.id] || 0)) };
+  }).sort(function(a, b) { return b.cl - a.cl; });
 }
 
 async function loadOngoingEvent() {
@@ -294,27 +306,6 @@ async function loadOngoingEvent() {
   }
 }
 
-// Load the hashes of the viewer's friends. Seeds instantly from the cache the
-// Friends page maintains, then refreshes from the DB. Used to gate who may see a
-// member's personal code.
-async function loadMyFriendHashes() {
-  myFriendHashes = {};
-  if (!activeProfile) return;
-  try {
-    var cached = JSON.parse(localStorage.getItem('myFriendsHashes')) || [];
-    cached.forEach(function(h) { if (h) myFriendHashes[h] = true; });
-  } catch (e) {}
-  if (!sb) return;
-  var result = await sb.from('friends')
-    .select('friend_hash')
-    .eq('player_hash', activeProfile.id);
-  if (result.data) {
-    result.data.forEach(function(row) {
-      if (row.friend_hash) myFriendHashes[row.friend_hash] = true;
-    });
-  }
-}
-
 function hideClanLoading() {
   var el = document.getElementById('clanLoadingView');
   if (el) el.style.display = 'none';
@@ -332,16 +323,28 @@ async function updateClanUI() {
     return;
   }
 
-  var membershipResult = await sb.from('clan_members')
-    .select('clan_id')
-    .eq('player_hash', activeProfile.id)
-    .maybeSingle();
-  var myMembership = membershipResult.data;
-  var membershipError = membershipResult.error;
+  // ONE fetch of every membership and every clan; my membership, my clan, my
+  // clan's members AND the global leaderboard are all derived from these two
+  // results. Member scores come from the shared drink_logs cache, so this page
+  // no longer issues its own drink_logs/profiles queries per poll.
+  var membersResp = await sb.from('clan_members').select('clan_id, player_hash, role');
+  var clansResp = await sb.from('clans').select('id, name');
+  var allMembers = membersResp.data || [];
+  var allClans = clansResp.data || [];
+  var membersError = membersResp.error || clansResp.error;
 
   // Membership resolved — the page now shows a real view in every branch below,
   // so retire the initial loading spinner.
   hideClanLoading();
+
+  var allDrinks = await window.sharedData.getDrinkLogs();
+  var gramsByPlayer = gramsByPlayerInPeriod(allDrinks, getClanScorePeriod());
+  var ranked = membersError ? null : buildClanRanking(allClans, allMembers, gramsByPlayer);
+
+  var myMembership = null;
+  for (var mi = 0; mi < allMembers.length; mi++) {
+    if (allMembers[mi].player_hash === activeProfile.id) { myMembership = allMembers[mi]; break; }
+  }
 
   if (myMembership && myMembership.clan_id) {
     myClanHash = myMembership.clan_id;
@@ -350,7 +353,7 @@ async function updateClanUI() {
     myClanHash = storedClanHash;
   } else {
     myClanHash = null;
-    if (!membershipError) {
+    if (!membersError) {
       localStorage.removeItem('myClanHash');
     }
   }
@@ -358,25 +361,26 @@ async function updateClanUI() {
   if (!myClanHash) {
     noClanView.style.display = 'block';
     hasClanView.style.display = 'none';
-    if (clanChannel) {
-      sb.removeChannel(clanChannel);
-      clanChannel = null;
-      clanChannelHash = null;
-    }
-    await renderClanLeaderboard();
+    await renderClanLeaderboard(ranked);
     return;
   }
 
-  var clanResult = await sb.from('clans').select('*').eq('id', myClanHash).single();
-  var clanData = clanResult.data;
-  var clanErr = clanResult.error;
+  var clanData = null;
+  for (var ci = 0; ci < allClans.length; ci++) {
+    if (allClans[ci].id === myClanHash) { clanData = allClans[ci]; break; }
+  }
 
-  if (clanErr || !clanData) {
-    localStorage.removeItem('myClanHash');
-    myClanHash = null;
-    noClanView.style.display = 'block';
-    hasClanView.style.display = 'none';
-    await renderClanLeaderboard();
+  if (!clanData) {
+    // Only forget the clan when the fetch actually succeeded (it's genuinely
+    // gone); a failed fetch keeps the stored hash so a transient error doesn't
+    // bounce the user back to the "no clan" view.
+    if (!membersError) {
+      localStorage.removeItem('myClanHash');
+      myClanHash = null;
+      noClanView.style.display = 'block';
+      hasClanView.style.display = 'none';
+    }
+    await renderClanLeaderboard(ranked);
     return;
   }
 
@@ -384,30 +388,34 @@ async function updateClanUI() {
   hasClanView.style.display = 'block';
   document.getElementById('clanTitle').innerHTML = formatClanTitle(clanData.name);
   document.getElementById('clanHashDisplay').innerText = myClanHash;
-  initClanRealtime();
 
   await loadOngoingEvent();
 
-  var membersResult = await sb.from('clan_members')
-    .select('role, player_hash')
-    .eq('clan_id', myClanHash);
-  var membersData = membersResult.data;
+  var membersData = allMembers.filter(function(m) { return m.clan_id === myClanHash; });
 
-  // Cache member hashes so the realtime drink_logs handler can ignore non-members.
-  clanMemberHashes = {};
-  (membersData || []).forEach(function(m) { clanMemberHashes[m.player_hash] = true; });
+  // On a fetch error, don't blank the member list — keep what's already shown so
+  // a transient/offline failure can't look like everyone left the clan. Show a
+  // retry message only if there is nothing rendered yet.
+  if (membersError) {
+    var membersListEl = document.getElementById('clanMembers');
+    var memLoadingRow = membersListEl.querySelector('.loading-row');
+    if (memLoadingRow) memLoadingRow.remove();
+    if (!membersListEl.querySelector('li[data-member-id]')) {
+      membersListEl.innerHTML = '<p style="text-align:center; color:#E74C3C; font-weight:700;">Kunde inte ladda medlemmar. <button style="width:auto; padding:6px 10px; margin-top:8px;" onclick="safeUpdateClanUI()">Försök igen</button></p>';
+    }
+    await renderClanLeaderboard(ranked);
+    return;
+  }
 
   // A member's personal code (player_hash) is private: only people in the same
-  // clan or the viewer's friends may see it. The viewer is a clan-mate of every
-  // member shown here whenever they are themselves a confirmed member of this
-  // clan, so in that case all codes are visible; otherwise we fall back to
-  // friendship (and you can always see your own code).
-  await loadMyFriendHashes();
-  var iAmClanMember = !!clanMemberHashes[activeProfile.id];
+  // clan may see it. The viewer is a clan-mate of every member shown here
+  // whenever they are themselves a confirmed member of this clan, so in that
+  // case all codes are visible (and you can always see your own code).
+  var iAmClanMember = false;
+  membersData.forEach(function(m) { if (m.player_hash === activeProfile.id) iAmClanMember = true; });
   function canSeeMemberHash(memberId) {
     if (memberId === activeProfile.id) return true;
-    if (iAmClanMember) return true;
-    return !!myFriendHashes[memberId];
+    return iAmClanMember;
   }
 
   var totalElo = 0;
@@ -423,35 +431,12 @@ async function updateClanUI() {
   if (membersData && membersData.length > 0) {
     var memberHashes = membersData.map(function(m) { return m.player_hash; });
 
-    var profilesResult = await sb.from('profiles')
-      .select('player_hash, display_name, avatar_url')
-      .in('player_hash', memberHashes);
-    var profileRows = profilesResult.data || [];
-    var profilesByHash = {};
-    profileRows.forEach(function(profile) {
-      profilesByHash[profile.player_hash] = profile;
-    });
-
-    var period = getClanScorePeriod();
-    var drinksResult = await sb.from('drink_logs')
-      .select('player_hash, grams_alcohol')
-      .in('player_hash', memberHashes)
-      .gte('consumed_at', period.start)
-      .lte('consumed_at', period.end);
-    var drinksData = drinksResult.data;
-
-    var memberScores = {};
-    if (drinksData) {
-      drinksData.forEach(function(d) {
-        if (!memberScores[d.player_hash]) memberScores[d.player_hash] = 0;
-        // Count consumption only; "ulta" (negative grams) never lowers a clan score.
-        if (d.grams_alcohol > 0) memberScores[d.player_hash] += d.grams_alcohol;
-      });
-    }
+    // Profiles from the shared, cross-page cache (one fetch for any new hashes).
+    var profilesByHash = await window.sharedData.getProfiles(memberHashes);
 
     var membersList = membersData.map(function(m) {
       var profile = profilesByHash[m.player_hash];
-      var grams = memberScores[m.player_hash] || 0;
+      var grams = gramsByPlayer[m.player_hash] || 0;
       return {
         id: m.player_hash,
         name: profile && profile.display_name ? profile.display_name : m.player_hash,
@@ -506,62 +491,29 @@ async function updateClanUI() {
     existingItems[id].remove();
   });
 
-  await renderClanLeaderboard();
+  await renderClanLeaderboard(ranked);
 }
 
 // Compute every clan's score for the current period, sorted high to low.
+// Used standalone by the "Visa Alla" modal: fetches clans + members, then scores
+// them from the shared drink_logs cache (no per-clan drink_logs queries).
 // Returns null when the DB is unavailable so callers can show an error state.
 async function computeClanRanking() {
   if (!sb) return null;
 
   var clansResult = await sb.from('clans').select('id, name');
+  if (clansResult.error) return null;
   var clans = clansResult.data;
   if (!clans || clans.length === 0) return [];
 
   var membersResult = await sb.from('clan_members').select('clan_id, player_hash');
+  if (membersResult.error) return null;
   var members = membersResult.data;
   if (!members || members.length === 0) return [];
 
-  var memberHashes = [];
-  var seen = {};
-  members.forEach(function(m) {
-    if (!seen[m.player_hash]) {
-      seen[m.player_hash] = true;
-      memberHashes.push(m.player_hash);
-    }
-  });
-
-  var period = getClanScorePeriod();
-  var drinksResult = await sb.from('drink_logs')
-    .select('player_hash, grams_alcohol')
-    .in('player_hash', memberHashes)
-    .gte('consumed_at', period.start)
-    .lte('consumed_at', period.end);
-  var drinks = drinksResult.data;
-
-  var gramsByPlayer = {};
-  if (drinks) {
-    drinks.forEach(function(d) {
-      if (!gramsByPlayer[d.player_hash]) gramsByPlayer[d.player_hash] = 0;
-      // Count consumption only; "ulta" (negative grams) never lowers a clan score.
-      if (d.grams_alcohol > 0) gramsByPlayer[d.player_hash] += d.grams_alcohol;
-    });
-  }
-
-  var gramsByClan = {};
-  members.forEach(function(m) {
-    var grams = gramsByPlayer[m.player_hash] || 0;
-    if (!gramsByClan[m.clan_id]) gramsByClan[m.clan_id] = 0;
-    gramsByClan[m.clan_id] += grams;
-  });
-
-  return clans.map(function(clan) {
-    return {
-      id: clan.id,
-      name: clan.name,
-      cl: Math.abs(calculateCl(gramsByClan[clan.id] || 0))
-    };
-  }).sort(function(a, b) { return b.cl - a.cl; });
+  var allDrinks = await window.sharedData.getDrinkLogs();
+  var gramsByPlayer = gramsByPlayerInPeriod(allDrinks, getClanScorePeriod());
+  return buildClanRanking(clans, members, gramsByPlayer);
 }
 
 function _renderClanRankingInList(list, ranked) {
@@ -604,29 +556,33 @@ function _renderClanRankingInList(list, ranked) {
   Object.keys(existing).forEach(function(id) { existing[id].remove(); });
 }
 
-async function renderClanLeaderboard() {
+// Render the inline top-5 clan leaderboard. updateClanUI passes the ranking it
+// already computed (from its single clans/members fetch) so no extra queries are
+// made; called with no argument it computes a fresh ranking itself.
+async function renderClanLeaderboard(ranked) {
   var list = document.getElementById('clanLeaderboard');
   if (!list) return;
 
-  // Serve cached data instantly while the fresh fetch is in flight.
   var cached = window.leaderboardCache ? window.leaderboardCache.get('clanRanking') : null;
-  if (cached && cached.length > 0) {
-    _renderClanRankingInList(list, cached.slice(0, 5));
+
+  if (typeof ranked === 'undefined') {
+    // Serve cached data instantly while a fresh ranking is computed.
+    if (cached && cached.length > 0) _renderClanRankingInList(list, cached.slice(0, 5));
+    ranked = await computeClanRanking();
   }
 
-  var fullRanked = await computeClanRanking();
-  if (fullRanked === null) {
+  if (ranked === null) {
     if (!cached) list.innerHTML = '<p style="text-align:center; color:#5a6570;">Ingen data att visa.</p>';
     return;
   }
-  if (fullRanked.length === 0) {
+  if (ranked.length === 0) {
     if (!cached || cached.length === 0) list.innerHTML = '<p style="text-align:center; color:#5a6570;">Inga klaner att visa.</p>';
     return;
   }
 
-  if (window.leaderboardCache) window.leaderboardCache.set('clanRanking', fullRanked);
+  if (window.leaderboardCache) window.leaderboardCache.set('clanRanking', ranked);
   // Only the top 5 are shown inline; "Visa Alla" opens the full list in a window.
-  _renderClanRankingInList(list, fullRanked.slice(0, 5));
+  _renderClanRankingInList(list, ranked.slice(0, 5));
 }
 
 function escapeHtml(value) {
@@ -651,17 +607,20 @@ function clanRowHtml(clan, index) {
 }
 
 async function openAllClansModal() {
+  if (typeof showLoadingModal !== 'function') return;
+  // Open immediately with a spinner so the tap never feels dead, then fill in.
+  var overlay = showLoadingModal('Alla Klaner', { headerBg: '#9B59B6' });
   var fullRanked = await computeClanRanking();
   var html;
-  if (!fullRanked || fullRanked.length === 0) {
+  if (fullRanked === null) {
+    html = '<p style="text-align:center; color:#E74C3C; font-weight:bold; margin:0;">Kunde inte ladda klaner. Kontrollera din anslutning och försök igen.</p>';
+  } else if (fullRanked.length === 0) {
     html = '<p style="text-align:center; color:#5a6570; font-weight:bold; margin:0;">Inga klaner att visa.</p>';
   } else {
     var rows = fullRanked.map(clanRowHtml).join('');
     html = '<ul style="list-style:none; padding:0; margin:0;">' + rows + '</ul>';
   }
-  if (typeof showListModal === 'function') {
-    showListModal('Alla Klaner', html, { headerBg: '#9B59B6' });
-  }
+  updateModalBody(overlay, html);
 }
 
 // A player belongs to a single clan. Clear every existing membership before joining
@@ -672,7 +631,10 @@ async function clearMyClanMemberships() {
   await sb.from('clan_participants').delete().eq('player_hash', activeProfile.id);
 }
 
-async function createClan() {
+async function createClan(btn) {
+  return runWithButtonLock(btn, function() { return createClanImpl(); });
+}
+async function createClanImpl() {
   var name = document.getElementById('newClanName').value;
   if (!name || !sb || !activeProfile) return;
   var newHash = generateUniqueHash();
@@ -687,10 +649,12 @@ async function createClan() {
   myClanHash = newHash;
   document.getElementById('newClanName').value = '';
   await updateClanUI();
-  initClanRealtime();
 }
 
-async function joinClan() {
+async function joinClan(btn) {
+  return runWithButtonLock(btn, function() { return joinClanImpl(); });
+}
+async function joinClanImpl() {
   var hash = document.getElementById('joinClanHash').value.trim();
   if (!hash || !sb || !activeProfile) return;
   var clanResult = await sb.from('clans').select('id').eq('id', hash).single();
@@ -706,7 +670,6 @@ async function joinClan() {
     myClanHash = hash;
     document.getElementById('joinClanHash').value = '';
     await updateClanUI();
-    initClanRealtime();
   } else {
     alert('Klanen hittades inte!');
   }
@@ -735,11 +698,6 @@ async function leaveClan() {
     return;
   }
 
-  if (clanChannel) {
-    sb.removeChannel(clanChannel);
-    clanChannel = null;
-    clanChannelHash = null;
-  }
   localStorage.removeItem('myClanHash');
   myClanHash = null;
   await updateClanUI();
@@ -770,16 +728,8 @@ async function startClanWar() {
   }
 }
 
-// Refresh hooks used by the shared resume/pull-to-refresh helpers.
+// Refresh hook used by the shared resume/pull-to-refresh helpers.
 window.refreshPageData = function() { safeUpdateClanUI(); };
-window.reconnectRealtime = function() {
-  if (clanChannel) {
-    try { sb.removeChannel(clanChannel); } catch (e) {}
-    clanChannel = null;
-    clanChannelHash = null;
-  }
-  initClanRealtime();
-};
 
 var _updateClanUIRunning = false;
 async function safeUpdateClanUI() {
@@ -790,11 +740,13 @@ async function safeUpdateClanUI() {
 }
 
 safeUpdateClanUI();
-setInterval(safeUpdateClanUI, 15000);
-
-document.addEventListener('visibilitychange', function() {
-  if (!document.hidden) safeUpdateClanUI();
-});
+// Poll once a minute as a fallback; live updates from the shared drink_logs
+// cache (30s TTL) mean most of these refreshes hit the cache rather than the DB.
+setInterval(safeUpdateClanUI, 60000);
+// Returning to the foreground is handled by the shared resume helper
+// (resumeRefresh in shared.js): it refreshes the Supabase token before calling
+// refreshPageData() -> safeUpdateClanUI(), so a >1h lock can't leave the page
+// querying with a dead token.
 </script>
 </body>
 </html>

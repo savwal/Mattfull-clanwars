@@ -14,3 +14,6 @@ pnpm-debug.log*
 # OS / editor cruft
 .DS_Store
 Thumbs.db
+*.ipynb
+*.csv
+/data_analysis/

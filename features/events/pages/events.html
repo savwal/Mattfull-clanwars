@@ -157,7 +157,7 @@ li:last-child { border-bottom: none; }
   <input type="text" id="customName" placeholder="Event namn">
   <input type="datetime-local" id="customStart" style="width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
   <input type="datetime-local" id="customEnd" style="width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
-  <button onclick="createCustomEvent()">Skapa event</button>
+  <button onclick="createCustomEvent(this)">Skapa event</button>
   <p id="customHashInfo" style="font-weight: 900; color: #2C3E50;"></p>
 </div>
 
@@ -170,7 +170,7 @@ li:last-child { border-bottom: none; }
 <div class="card">
   <h2 style="background: #2A8CFF;">Gå med i custom event</h2>
   <input type="text" id="joinHash" placeholder="Eventkod (4 tecken)">
-  <button onclick="joinCustomEvent()">Gå med</button>
+  <button onclick="joinCustomEvent(this)">Gå med</button>
   <p id="joinStatus" style="font-weight: 900; color:#2C3E50;"></p>
 </div>
 
@@ -181,7 +181,7 @@ li:last-child { border-bottom: none; }
 <script>
 const CUSTOM_EVENT_ID_LENGTH = 4;
 const LOCAL_CUSTOM_EVENTS_KEY = 'local_custom_events';
-const CUSTOM_EVENT_REFRESH_MS = 30000;
+const CUSTOM_EVENT_REFRESH_MS = 60000;
 const CUSTOM_EVENT_MAX_RANGE_DAYS = 7;
 
 function applyStatUpdate(element, text) {
@@ -389,12 +389,16 @@ let currentCustomEventOverlay = null;
 // navigating to custom_events.html. Shows when it starts/ends, the participants
 // ranked by consumed cl, and a "Lämna event" button for members.
 async function openCustomEventModal(eventId) {
-  if (!eventId || !sb || typeof showListModal !== 'function') return;
+  if (!eventId || !sb || typeof showLoadingModal !== 'function') return;
+  // Open immediately with a spinner so the tap never feels dead. Track the
+  // overlay right away so "Lämna event" can still close it.
+  const overlay = showLoadingModal('Custom Event', { headerBg: '#2A8CFF' });
+  currentCustomEventOverlay = overlay;
   if (typeof ensureSupabaseAuth === 'function') await ensureSupabaseAuth();
 
   const event = await fetchCustomEvent(eventId);
   if (!event) {
-    showListModal('Custom Event', '<p style="text-align:center; color:#5a6570; font-weight:bold; margin:0;">Kunde inte ladda eventet.</p>', { headerBg: '#2A8CFF' });
+    updateModalBody(overlay, '<p style="text-align:center; color:#E74C3C; font-weight:bold; margin:0;">Kunde inte ladda eventet. Försök igen.</p>');
     return;
   }
 
@@ -408,10 +412,11 @@ async function openCustomEventModal(eventId) {
 
   const profileMap = {};
   if (hashes.length > 0) {
-    const { data: profiles } = await sb.from('profiles')
-      .select('player_hash, display_name, avatar_url')
-      .in('player_hash', hashes);
-    (profiles || []).forEach(p => { profileMap[p.player_hash] = { name: p.display_name, pic: p.avatar_url }; });
+    const profiles = await window.sharedData.getProfiles(hashes);
+    hashes.forEach(h => {
+      const p = profiles[h];
+      if (p) profileMap[h] = { name: p.display_name, pic: p.avatar_url };
+    });
   }
 
   const startMs = event.starts_at ? new Date(event.starts_at).getTime() : NaN;
@@ -419,19 +424,14 @@ async function openCustomEventModal(eventId) {
 
   const gramsByHash = {};
   if (hashes.length > 0) {
-    let query = sb.from('drink_logs')
-      .select('player_hash, grams_alcohol, volume_ml, abv, consumed_at')
-      .in('player_hash', hashes);
-    if (Number.isFinite(startMs)) query = query.gte('consumed_at', new Date(startMs).toISOString());
-    if (Number.isFinite(endMs)) query = query.lte('consumed_at', new Date(endMs).toISOString());
-    const { data: drinks } = await query;
-    (drinks || []).forEach(d => {
+    const hashSet = new Set(hashes);
+    const allDrinks = await window.sharedData.getDrinkLogs();
+    (allDrinks || []).forEach(d => {
+      if (!hashSet.has(d.player_hash)) return;
       // Only count drinks consumed inside the event window. "ulta" (negative
       // grams) never lowers an event score.
       if (!isDrinkWithinEventWindow(d.consumed_at, startMs, endMs)) return;
-      const grams = Number.isFinite(Number(d.grams_alcohol))
-        ? Number(d.grams_alcohol)
-        : (Number(d.volume_ml) || 0) * ((Number(d.abv) || 0) / 100) * 0.789;
+      const grams = window.sharedData.resolveDrinkGrams(d);
       if (grams > 0) gramsByHash[d.player_hash] = (gramsByHash[d.player_hash] || 0) + grams;
     });
   }
@@ -461,7 +461,8 @@ async function openCustomEventModal(eventId) {
     html += '<ul style="list-style:none; padding:0; margin:0;">' + entries.map(eventClRowHtml).join('') + '</ul>';
   }
 
-  currentCustomEventOverlay = showListModal(event.event_name || 'Custom Event', html, { headerBg: '#2A8CFF' });
+  updateModalTitle(overlay, event.event_name || 'Custom Event');
+  updateModalBody(overlay, html);
 }
 
 // Leave the custom event shown in the popup, then close the popup and refresh.
@@ -496,7 +497,10 @@ function openCustomEventPage(eventId) {
   openCustomEventModal(eventId);
 }
 
-async function createCustomEvent() {
+async function createCustomEvent(btn) {
+  return runWithButtonLock(btn, () => createCustomEventImpl());
+}
+async function createCustomEventImpl() {
   const name = document.getElementById('customName').value.trim();
   const startValue = document.getElementById('customStart').value;
   const endValue = document.getElementById('customEnd').value;
@@ -567,7 +571,10 @@ async function createCustomEvent() {
   openCustomEventModal(eventId);
 }
 
-async function joinCustomEvent() {
+async function joinCustomEvent(btn) {
+  return runWithButtonLock(btn, () => joinCustomEventImpl());
+}
+async function joinCustomEventImpl() {
   const hash = document.getElementById('joinHash').value.trim();
   const status = document.getElementById('joinStatus');
   setStatusText(status, '', false);
@@ -818,7 +825,7 @@ async function computeEventClRanking() {
   const value = select ? select.value : '';
   if (!value || !sb) return { entries: [], meta: '' };
 
-  let startMs, endMs, participantHashes = [];
+  let startMs, endMs;
   let meta = '';
 
   if (value.startsWith('preset:')) {
@@ -829,35 +836,33 @@ async function computeEventClRanking() {
     startMs = evt.start.getTime();
     endMs = evt.end.getTime();
     meta = `${evt.name} - ${evt.city} (${formatRange(new Date(startMs), new Date(endMs))})`;
-
-    const { data: drinks } = await sb.from('drink_logs')
-      .select('player_hash')
-      .gte('consumed_at', new Date(startMs).toISOString())
-      .lte('consumed_at', new Date(endMs).toISOString());
-    if (drinks) participantHashes = Array.from(new Set(drinks.map(d => d.player_hash)));
+  } else {
+    return { entries: [], meta: '' };
   }
 
+  // One shared drink_logs fetch; the participants and their scores are both
+  // derived from it in JS (no per-window or per-participant drink_logs queries).
+  const allDrinks = await window.sharedData.getDrinkLogs();
+  const inWindow = (allDrinks || []).filter(d => isDrinkWithinEventWindow(d.consumed_at, startMs, endMs));
+  const participantHashes = Array.from(new Set(inWindow.map(d => d.player_hash)));
   if (participantHashes.length === 0) return { entries: [], meta };
 
-  const { data: profiles } = await sb.from('profiles').select('*').in('player_hash', participantHashes);
-  const { data: drinks } = await sb.from('drink_logs')
-    .select('player_hash, grams_alcohol, consumed_at')
-    .in('player_hash', participantHashes)
-    .gte('consumed_at', new Date(startMs).toISOString())
-    .lte('consumed_at', new Date(endMs).toISOString());
+  const profileMap = await window.sharedData.getProfiles(participantHashes);
 
-  const entries = (profiles || []).map(p => {
-    // Actively re-check each drink's date against the event window so only
-    // drinks consumed during the selected event count toward its score.
-    const pDrinks = (drinks || []).filter(d =>
-      d.player_hash === p.player_hash && isDrinkWithinEventWindow(d.consumed_at, startMs, endMs));
+  const gramsByHash = {};
+  inWindow.forEach(d => {
     // Count consumption only; "ulta" (negative grams) never lowers an event score.
-    const totalGrams = pDrinks.reduce((sum, d) => sum + (d.grams_alcohol > 0 ? d.grams_alcohol : 0), 0);
+    const g = window.sharedData.resolveDrinkGrams(d);
+    if (g > 0) gramsByHash[d.player_hash] = (gramsByHash[d.player_hash] || 0) + g;
+  });
+
+  const entries = participantHashes.map(hash => {
+    const p = profileMap[hash];
     return {
-      id: p.player_hash,
-      name: p.display_name,
-      pic: p.avatar_url,
-      cl: Math.abs(calculateCl(totalGrams))
+      id: hash,
+      name: p ? p.display_name : hash,
+      pic: p ? p.avatar_url : null,
+      cl: Math.abs(calculateCl(gramsByHash[hash] || 0))
     };
   }).sort((a, b) => b.cl - a.cl);
 
@@ -921,32 +926,48 @@ async function handleEventSelectChange() {
 
 // Compute every active user's current promille (drinks logged in the last 24h),
 // sorted high to low. Shared by the inline top-5 list and the "Visa Alla" window.
+// Set whenever a live-promille fetch fails, so callers can show a distinct
+// error state instead of the misleading "Inga aktiva promille att visa".
+let _liveLoadError = false;
+
 async function computeLivePromilleRanking() {
   if (!sb) return [];
 
-  const yesterdayISO = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { data: recentDrinks } = await sb.from('drink_logs').select('*').gte('consumed_at', yesterdayISO);
-  if (!recentDrinks || recentDrinks.length === 0) return [];
+  const since = Date.now() - 24 * 60 * 60 * 1000;
+  // One shared drink_logs fetch (cached across cards/pages), filtered to the
+  // last 24h in JS. The shared layer keeps the last good data on error, so the
+  // board is never blanked by a transient failure.
+  const allDrinks = await window.sharedData.getDrinkLogs();
+  const recentDrinks = (allDrinks || []).filter(d => {
+    const t = new Date(d.consumed_at).getTime();
+    return Number.isFinite(t) && t >= since;
+  });
+  _liveLoadError = false;
+  if (recentDrinks.length === 0) return [];
 
   const activeHashes = Array.from(new Set(recentDrinks.map(d => d.player_hash)));
-  const { data: profiles } = await sb.from('profiles').select('*').in('player_hash', activeHashes);
-  if (!profiles) return [];
+  const profileMap = await window.sharedData.getProfiles(activeHashes);
 
-  return profiles.map(p => {
-    const pDrinks = recentDrinks.filter(d => d.player_hash === p.player_hash).map(d => ({
+  return activeHashes.map(hash => {
+    const p = profileMap[hash];
+    if (!p) return null;
+    const pDrinks = recentDrinks.filter(d => d.player_hash === hash).map(d => ({
       timestamp: new Date(d.consumed_at).getTime(),
       grams: d.grams_alcohol,
       // abv drives getAbsorptionTime() so the leaderboard absorbs at the
       // same pace as the log graph (omitting it defaults to the fastest rate).
       abv: d.abv
-    }));
+    }))
+    // calculateBACAtTime iterates forward from the FIRST entry, so the drinks
+    // must be oldest-first. The shared cache returns rows newest-first, so sort.
+    .sort((a, b) => a.timestamp - b.timestamp);
     const profileObj = { id: p.player_hash, weight: p.weight, gender: p.gender };
     const promille = calculateBACAtTime(pDrinks, profileObj, Date.now());
     return {
       profile: { name: p.display_name, id: p.player_hash, pic: p.avatar_url },
       promille: Math.abs(promille)
     };
-  }).filter(r => r.promille > 0).sort((a, b) => b.promille - a.promille);
+  }).filter(r => r && r.promille > 0).sort((a, b) => b.promille - a.promille);
 }
 
 async function renderLiveTopFive() {
@@ -957,6 +978,17 @@ async function renderLiveTopFive() {
   const ranked = (await computeLivePromilleRanking()).slice(0, 5);
 
   if (ranked.length === 0) {
+    // On a fetch error keep any rows already shown; only replace the spinner /
+    // empty list with a retry message when there is nothing to preserve.
+    if (_liveLoadError) {
+      if (list.querySelector('li[data-player-id]')) {
+        const spinner = list.querySelector('.loading-row');
+        if (spinner) spinner.remove();
+        return;
+      }
+      list.innerHTML = '<p style="text-align:center; color:#E74C3C; font-weight:700;">Kunde inte ladda. <button style="width:auto; padding:6px 10px; margin-top:8px;" onclick="renderLiveTopFive()">Försök igen</button></p>';
+      return;
+    }
     list.innerHTML = '<p style="text-align:center; color:#5a6570;">Inga aktiva promille att visa.</p>';
     return;
   }
@@ -1021,17 +1053,20 @@ function liveRowHtml(entry, index) {
 // JavaScript popup (like the Historik popup). Computes the full ranking first,
 // then renders it into a modal — no new browser tab/window is opened.
 async function openAllLivePromilleModal() {
+  if (typeof showLoadingModal !== 'function') return;
+  // Open immediately with a spinner so the tap never feels dead, then fill in.
+  const overlay = showLoadingModal('Live Promille', { headerBg: '#2A8CFF' });
   const ranked = await computeLivePromilleRanking();
   let html;
-  if (!ranked || ranked.length === 0) {
+  if (_liveLoadError) {
+    html = '<p style="text-align:center; color:#E74C3C; font-weight:bold; margin:0;">Kunde inte ladda. Kontrollera din anslutning och försök igen.</p>';
+  } else if (!ranked || ranked.length === 0) {
     html = '<p style="text-align:center; color:#5a6570; font-weight:bold; margin:0;">Inga aktiva promille att visa.</p>';
   } else {
     const rows = ranked.map(liveRowHtml).join('');
     html = '<ul style="list-style:none; padding:0; margin:0;">' + rows + '</ul>';
   }
-  if (typeof showListModal === 'function') {
-    showListModal('Live Promille', html, { headerBg: '#2A8CFF' });
-  }
+  updateModalBody(overlay, html);
 }
 
 function eventClRowHtml(entry, index) {
@@ -1046,6 +1081,9 @@ function eventClRowHtml(entry, index) {
 // "Visa Alla" for the event leaderboard: show every participant's consumed cl
 // for the selected event in an in-page popup (same manner as Live Promille).
 async function openAllEventClModal() {
+  if (typeof showLoadingModal !== 'function') return;
+  // Open immediately with a spinner so the tap never feels dead, then fill in.
+  const overlay = showLoadingModal('Leaderboard (cl)', { headerBg: '#F39C12' });
   const result = await computeEventClRanking();
   let html;
   if (!result.entries || result.entries.length === 0) {
@@ -1053,9 +1091,7 @@ async function openAllEventClModal() {
   } else {
     html = '<ul style="list-style:none; padding:0; margin:0;">' + result.entries.map(eventClRowHtml).join('') + '</ul>';
   }
-  if (typeof showListModal === 'function') {
-    showListModal('Leaderboard (cl)', html, { headerBg: '#F39C12' });
-  }
+  updateModalBody(overlay, html);
 }
 
 // Refresh whichever leaderboard is currently visible (Live Promille by default,
@@ -1076,41 +1112,7 @@ async function initLeaderboard() {
 async function initEvents() {
   await loadMyCustomEvents();
   await initLeaderboard();
-  initEventsRealtime();
 }
-
-// Realtime: re-render the selected event leaderboard the moment any drink is
-// logged, so the CL counter updates immediately like the Klan list instead of
-// only on the slow poll. renderSelectedEvent keeps its event-interval filter,
-// so a drink still only counts if it falls inside the event's time window, and
-// it also refreshes the live top 5.
-var eventsDrinkChannel = null;
-var eventsRefreshTimer = null;
-
-function scheduleEventsRefresh() {
-  if (eventsRefreshTimer) return;
-  eventsRefreshTimer = setTimeout(function() {
-    eventsRefreshTimer = null;
-    refreshActiveEventsView();
-  }, 1200);
-}
-
-function initEventsRealtime() {
-  if (!sb || eventsDrinkChannel) return;
-  eventsDrinkChannel = sb.channel('events_drink_logs')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'drink_logs' }, function() {
-      scheduleEventsRefresh();
-    })
-    .subscribe();
-}
-
-window.reconnectRealtime = function() {
-  if (eventsDrinkChannel) {
-    sb.removeChannel(eventsDrinkChannel);
-    eventsDrinkChannel = null;
-  }
-  initEventsRealtime();
-};
 
 window.refreshPageData = function() {
   loadMyCustomEvents();
@@ -1118,10 +1120,12 @@ window.refreshPageData = function() {
 };
 
 initEvents();
+// Gentle polling keeps the boards synced across users/devices without a hard
+// refresh. The leaderboard reads the shared drink_logs cache (30s TTL), so these
+// polls mostly serve from cache instead of hitting the database — replacing the
+// previous per-drink realtime subscription that fired for every user's logs.
 setInterval(loadMyCustomEvents, CUSTOM_EVENT_REFRESH_MS);
-// Re-query drink_logs for the visible leaderboard, keeping it synced across
-// users/devices without a hard refresh.
-setInterval(refreshActiveEventsView, 20000);
+setInterval(refreshActiveEventsView, 30000);
 </script>
 </body>
 </html>

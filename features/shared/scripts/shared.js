@@ -117,22 +117,38 @@ function enablePageTransitions() {
     if (document.visibilityState === 'visible') ready();
   });
 
+  // Fade out, then navigate. A watchdog guarantees we can never get stuck on an
+  // invisible page: when a real navigation happens this document is torn down and
+  // the timers die with it, but if the navigation is blocked, a no-op, or the
+  // device locked mid-transition and resumed on the same page, the watchdog
+  // restores visibility so taps keep working instead of going dead.
+  const startLeavingNavigation = url => {
+    if (!url) return;
+    document.body.classList.add('page-leaving');
+    setTimeout(() => {
+      window.location.href = url;
+    }, 140);
+    setTimeout(ready, 1200);
+  };
+
   document.addEventListener('click', event => {
     const link = event.target.closest('a[href]');
     if (!link) return;
     if (event.defaultPrevented) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (link.target && link.target !== '_self') return;
+    if (link.hasAttribute('download')) return;
 
     const url = new URL(link.href, window.location.href);
     if (url.origin !== window.location.origin) return;
     if (url.href === window.location.href) return;
+    // Same document, only the hash differs: let the browser jump natively. Faking
+    // it through location.href would add `page-leaving` without a reload, fading
+    // the page out forever — a dead UI.
+    if (url.pathname === window.location.pathname && url.search === window.location.search) return;
 
     event.preventDefault();
-    document.body.classList.add('page-leaving');
-    setTimeout(() => {
-      window.location.href = url.href;
-    }, 140);
+    startLeavingNavigation(url.href);
   }, true);
 
   document.addEventListener('click', event => {
@@ -144,18 +160,11 @@ function enablePageTransitions() {
 
     event.preventDefault();
     event.stopImmediatePropagation();
-    document.body.classList.add('page-leaving');
-    setTimeout(() => {
-      window.location.href = navigationMatch[2];
-    }, 140);
+    startLeavingNavigation(navigationMatch[2]);
   }, true);
 
   window.navigateWithTransition = function(url) {
-    if (!url) return;
-    document.body.classList.add('page-leaving');
-    setTimeout(() => {
-      window.location.href = url;
-    }, 140);
+    startLeavingNavigation(url);
   };
 }
 
@@ -542,6 +551,158 @@ window.formatRankLabel = function(n) {
 })();
 
 // ---------------------------------------------------------------------------
+// Shared Supabase data layer — the single biggest lever for staying under the
+// free-tier request quota.
+//
+// The leaderboards on the Klan, Events, Vänner and Historik pages all need the
+// same two things: the `drink_logs` rows and the players' `profiles`. Before,
+// EVERY card on EVERY page — and every 15–20s poll, and a realtime subscription
+// per page — issued its own query for them, which is what blew past the quota.
+//
+// This layer makes the call to each table ONCE and hands the cached result to
+// every caller:
+//   * getDrinkLogs() — the whole (small) drink_logs table, fetched at most once
+//     per DRINKS_TTL and shared by every leaderboard. Each board then filters in
+//     JS to its own window (24h live, 7d weekly, the clan period, an event's
+//     range, …) so no extra round-trips are needed.
+//   * getProfiles(hashes) — fetches only the player_hashes not already cached and
+//     merges them into one map keyed by hash. This replaces the many
+//     `profiles … .in('player_hash', …)` lookups that cross-referenced other
+//     tables; callers just read the map and join in JS.
+//
+// Both caches are mirrored to localStorage so navigating between pages reuses
+// the data instead of re-querying, and concurrent callers share one in-flight
+// request (several cards rendering at once still trigger only one fetch).
+// ---------------------------------------------------------------------------
+(function() {
+  var DRINKS_TTL = 30 * 1000;        // drink_logs refetched at most once / 30s
+  var PROFILES_TTL = 5 * 60 * 1000;  // profiles change rarely
+  var DRINKS_LS_KEY = 'redlos_drink_logs_cache';
+  var PROFILES_LS_KEY = 'redlos_profiles_cache';
+  var DRINK_COLUMNS = 'player_hash, drink_name, volume_ml, abv, grams_alcohol, consumed_at';
+  var PROFILE_COLUMNS = 'player_hash, display_name, avatar_url, weight, gender, funzone_limit';
+
+  var drinksMem = null;        // { ts, data: [] }
+  var drinksInflight = null;
+  var profilesMem = null;      // { ts, map: {} }
+  var profilesInflight = {};   // signature -> Promise
+
+  function readLS(key) {
+    try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
+  }
+  function writeLS(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+  }
+
+  // ---- drink_logs ---------------------------------------------------------
+  function drinksFresh(entry) {
+    return !!(entry && entry.data && (Date.now() - entry.ts < DRINKS_TTL));
+  }
+  function cachedDrinks() {
+    if (drinksMem && drinksMem.data) return drinksMem.data;
+    var ls = readLS(DRINKS_LS_KEY);
+    if (ls && ls.data) { drinksMem = ls; return ls.data; }
+    return [];
+  }
+
+  // Returns the whole drink_logs table (cached). `options.force` bypasses the TTL.
+  // Never rejects — on any failure it resolves to the last cached data (possibly
+  // stale, possibly empty) so a transient error can't blank a leaderboard.
+  async function getDrinkLogs(options) {
+    options = options || {};
+    if (drinksFresh(drinksMem) && !options.force) return drinksMem.data;
+    var ls = !drinksMem ? readLS(DRINKS_LS_KEY) : null;
+    if (ls) drinksMem = ls;
+    if (drinksFresh(drinksMem) && !options.force) return drinksMem.data;
+    if (drinksInflight) return drinksInflight;
+    if (!sb) return cachedDrinks();
+    drinksInflight = (async function() {
+      try {
+        // Newest-first with a generous explicit limit. Ordering by consumed_at
+        // means that if the table ever outgrows the server's row cap, the rows
+        // that ARE returned are the most recent ones — exactly what every
+        // leaderboard window (24h / 7d / the clan period / recent events) needs.
+        var res = await sb.from('drink_logs')
+          .select(DRINK_COLUMNS)
+          .order('consumed_at', { ascending: false })
+          .limit(20000);
+        if (res.error) return cachedDrinks();
+        var data = res.data || [];
+        drinksMem = { ts: Date.now(), data: data };
+        writeLS(DRINKS_LS_KEY, drinksMem);
+        return data;
+      } catch (e) {
+        return cachedDrinks();
+      } finally {
+        drinksInflight = null;
+      }
+    })();
+    return drinksInflight;
+  }
+
+  // ---- profiles -----------------------------------------------------------
+  function loadProfilesCache() {
+    if (profilesMem) return;
+    var ls = readLS(PROFILES_LS_KEY);
+    if (ls && ls.map) profilesMem = ls;
+  }
+
+  // Returns a map { player_hash -> profile } covering (at least) the requested
+  // hashes. Only hashes missing from the cache are fetched; when the cache has
+  // expired the requested hashes are refetched so names/avatars stay current.
+  async function getProfiles(hashes) {
+    loadProfilesCache();
+    var want = Array.from(new Set((hashes || []).filter(Boolean)));
+    var expired = !profilesMem || (Date.now() - profilesMem.ts >= PROFILES_TTL);
+    var map = (profilesMem && profilesMem.map) || {};
+    var missing = expired ? want.slice() : want.filter(function(h) { return !map[h]; });
+    if (missing.length === 0 || !sb) return map;
+
+    var sig = missing.slice().sort().join('|');
+    if (!profilesInflight[sig]) {
+      profilesInflight[sig] = (async function() {
+        try {
+          var res = await sb.from('profiles').select(PROFILE_COLUMNS).in('player_hash', missing);
+          if (!res.error && res.data) {
+            var base = (profilesMem && profilesMem.map) || {};
+            res.data.forEach(function(p) { base[p.player_hash] = p; });
+            profilesMem = { ts: Date.now(), map: base };
+            writeLS(PROFILES_LS_KEY, profilesMem);
+          } else if (!profilesMem) {
+            profilesMem = { ts: Date.now(), map: {} };
+          }
+        } catch (e) {
+          if (!profilesMem) profilesMem = { ts: Date.now(), map: {} };
+        } finally {
+          delete profilesInflight[sig];
+        }
+      })();
+    }
+    await profilesInflight[sig];
+    return (profilesMem && profilesMem.map) || map;
+  }
+
+  // Resolve the grams of alcohol for a logged drink, falling back to the
+  // volume/abv calculation when grams_alcohol was not stored. Shared so every
+  // leaderboard scores a drink identically.
+  function resolveDrinkGrams(row) {
+    var grams = Number(row.grams_alcohol);
+    if (Number.isFinite(grams)) return grams;
+    var vol = Number(row.volume_ml) || 0;
+    var abv = Number(row.abv) || 0;
+    return vol * (abv / 100) * 0.789;
+  }
+
+  window.sharedData = {
+    getDrinkLogs: getDrinkLogs,
+    getProfiles: getProfiles,
+    resolveDrinkGrams: resolveDrinkGrams,
+    invalidateDrinks: function() { drinksMem = null; },
+    invalidateProfiles: function() { profilesMem = null; }
+  };
+})();
+
+// ---------------------------------------------------------------------------
 // Shared in-page list modal. Used by the "Visa Alla" buttons to show a full
 // list (all clans / all active users) in an on-page JavaScript popup — like the
 // Historik popup — instead of opening a new browser tab/window. Pass the title
@@ -570,6 +731,9 @@ window.showListModal = function(title, contentHtml, options) {
 
   var heading = document.createElement('h2');
   heading.textContent = title;
+  // Tagged so callers can open the modal instantly with a loading spinner and
+  // then fill in the real title/body once the data resolves (no dead taps).
+  heading.setAttribute('data-modal-title', '');
   heading.style.cssText = "font-family:'Arial Black',sans-serif;text-transform:uppercase;color:#FFF;background:" + headerBg + ";margin:0;padding:15px 52px 15px 15px;border-bottom:4px solid #2C3E50;text-align:left;";
 
   var close = document.createElement('span');
@@ -578,6 +742,7 @@ window.showListModal = function(title, contentHtml, options) {
   close.style.cssText = 'color:#FFF;font-size:32px;font-weight:bold;cursor:pointer;position:absolute;right:15px;top:8px;line-height:1;z-index:1;';
 
   var body = document.createElement('div');
+  body.setAttribute('data-modal-body', '');
   body.style.cssText = 'flex:1 1 auto;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:20px;';
   body.innerHTML = contentHtml;
 
@@ -594,6 +759,84 @@ window.showListModal = function(title, contentHtml, options) {
   overlay.appendChild(content);
   document.body.appendChild(overlay);
   return overlay;
+};
+
+// Shared markup for the "loading" state inside a popup body.
+window.MODAL_LOADING_HTML = '<div style="display:flex;align-items:center;justify-content:center;gap:10px;color:#5a6570;font-weight:700;padding:24px;"><span class="loading-spinner"></span> Laddar...</div>';
+
+// Open a list-modal immediately showing a spinner, so a tap never feels dead
+// while the data is fetched. Returns the overlay; fill it later with
+// updateModalBody()/updateModalTitle().
+window.showLoadingModal = function(title, options) {
+  if (typeof window.showListModal !== 'function') return null;
+  return window.showListModal(title, window.MODAL_LOADING_HTML, options);
+};
+
+// Replace the body of a modal previously created by showListModal/showLoadingModal.
+window.updateModalBody = function(overlay, html) {
+  if (!overlay) return;
+  var body = overlay.querySelector('[data-modal-body]');
+  if (body) body.innerHTML = html;
+};
+
+// Replace the heading text of such a modal.
+window.updateModalTitle = function(overlay, title) {
+  if (!overlay) return;
+  var heading = overlay.querySelector('[data-modal-title]');
+  if (heading) heading.textContent = title;
+};
+
+// ---------------------------------------------------------------------------
+// Shared lightweight toast. Lazily creates (and reuses) a single #sharedToast
+// element so any page can show transient feedback ("Profil sparad!"). The
+// element carries the `.toast` class, which the page-transition rules exempt,
+// so it animates via its own opacity instead of being pinned by page-ready.
+// ---------------------------------------------------------------------------
+var _sharedToastTimer = null;
+window.showToast = function(message, options) {
+  options = options || {};
+  var toast = document.getElementById('sharedToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'sharedToast';
+    toast.className = 'toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.toggle('error', !!options.error);
+  // Force a reflow so re-showing restarts the fade even if already visible.
+  void toast.offsetWidth;
+  toast.classList.add('show');
+  if (_sharedToastTimer) clearTimeout(_sharedToastTimer);
+  _sharedToastTimer = setTimeout(function() {
+    toast.classList.remove('show');
+  }, options.duration || 2500);
+};
+
+// ---------------------------------------------------------------------------
+// Double-submit guard. Disables the triggering button and shows an inline
+// spinner for the duration of an async action, so a quick double-tap can't fire
+// it twice (duplicate battles / event joins / inserts). Safe to call with a null
+// button — it just runs the action without a lock.
+// ---------------------------------------------------------------------------
+window.runWithButtonLock = async function(btn, fn) {
+  if (btn && (btn.disabled || btn.dataset.locked === '1')) return;
+  var original = null;
+  if (btn) {
+    original = btn.innerHTML;
+    btn.dataset.locked = '1';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner" style="width:18px;height:18px;border-width:3px;vertical-align:middle;"></span>';
+  }
+  try {
+    return await fn();
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      delete btn.dataset.locked;
+      btn.innerHTML = original;
+    }
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -665,12 +908,31 @@ window.showConfirmModal = function(message, options) {
 // (optionally) window.reconnectRealtime.
 // ---------------------------------------------------------------------------
 (function() {
-  function resumeRefresh() {
-    if (typeof window.reconnectRealtime === 'function') {
-      try { window.reconnectRealtime(); } catch (e) {}
-    }
-    if (typeof window.refreshPageData === 'function') {
-      try { window.refreshPageData(); } catch (e) {}
+  var resuming = false;
+
+  // Coming back to the foreground after the device was locked, we must assume the
+  // Supabase access token has expired — tokens last ~1h and their refresh timer is
+  // frozen while the app is backgrounded. Refresh auth FIRST, before anything that
+  // touches the DB: otherwise the realtime socket reconnects with a dead JWT and
+  // every refetch is silently rejected by RLS, leaving the UI stuck on stale data
+  // and taps that depend on it feeling dead. Only once the token is valid do we
+  // reopen realtime channels and refresh the page's data. This is what lets the
+  // PWA keep working after being locked for over an hour.
+  async function resumeRefresh() {
+    if (resuming) return;
+    resuming = true;
+    try {
+      if (typeof ensureSupabaseAuth === 'function') {
+        try { await ensureSupabaseAuth(); } catch (e) {}
+      }
+      if (typeof window.reconnectRealtime === 'function') {
+        try { window.reconnectRealtime(); } catch (e) {}
+      }
+      if (typeof window.refreshPageData === 'function') {
+        try { window.refreshPageData(); } catch (e) {}
+      }
+    } finally {
+      resuming = false;
     }
   }
 
