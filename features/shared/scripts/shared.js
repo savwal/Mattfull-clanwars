@@ -31,6 +31,8 @@ async function syncDrinkToSupabase(profileId, drink) {
     consumed_at: new Date(drink.timestamp).toISOString()
   });
   if (error) console.error('Error syncing drink log:', error);
+  // Notify all connected clients that leaderboard data changed.
+  if (!error) broadcastLeaderboardUpdate();
 }
 
 async function removeDrinkFromSupabase(profileId, drinkName, timestamp) {
@@ -42,6 +44,37 @@ async function removeDrinkFromSupabase(profileId, drinkName, timestamp) {
     .eq('drink_name', drinkName)
     .eq('consumed_at', drinkTime);
   if (error) console.error('Error removing drink from cloud:', error);
+  // Notify all connected clients that leaderboard data changed.
+  if (!error) broadcastLeaderboardUpdate();
+}
+
+// ---------------------------------------------------------------------------
+// Leaderboard broadcast helper. Sends a lightweight Supabase Realtime
+// "broadcast" message on the shared 'leaderboard' channel so every connected
+// client knows drink data changed and can re-render. The payload is tiny
+// (~50 bytes) — the heavy lifting (BAC computation, ranking) stays client-side
+// using the shared drink_logs cache.
+// ---------------------------------------------------------------------------
+function broadcastLeaderboardUpdate() {
+  if (!sb) return;
+  // Send through the persistent listener channel managed by the subscription
+  // IIFE (exposed as window._leaderboardChannel). This ensures the message
+  // goes out on the same 'leaderboard' channel that all clients listen on.
+  // If the channel isn't subscribed yet (e.g. page still loading), the
+  // message is silently dropped — the next client-side refresh on page load
+  // will pick up the data anyway.
+  var ch = window._leaderboardChannel;
+  if (ch) {
+    try {
+      ch.send({
+        type: 'broadcast',
+        event: 'drink_change',
+        payload: { ts: Date.now() }
+      });
+    } catch (e) {
+      console.error('broadcastLeaderboardUpdate error:', e);
+    }
+  }
 }
 
 async function fetchProfileFromSupabase(hash) {
@@ -700,6 +733,107 @@ window.formatRankLabel = function(n) {
     invalidateDrinks: function() { drinksMem = null; },
     invalidateProfiles: function() { profilesMem = null; }
   };
+})();
+
+// ---------------------------------------------------------------------------
+// Leaderboard Realtime broadcast subscription (PWA-resilient).
+//
+// Replaces all setInterval-based leaderboard polling. When ANY client logs or
+// removes a drink, it broadcasts a tiny 'drink_change' event on the
+// 'leaderboard' channel. Every subscribed client receives it, invalidates
+// its drink_logs cache, and re-renders — so updates appear in ~1-2s without
+// constant polling.
+//
+// PWA-specific handling:
+//   • visibilitychange / focus  — resubscribe when the app returns to
+//     foreground (the WebSocket is often killed by the OS while backgrounded)
+//   • online event              — resubscribe when network connectivity is
+//     regained after being offline
+//   • Duplicate-subscription guard — always tears down the old channel
+//     before creating a new one, so repeated resume cycles never leak sockets
+//   • Debounced refresh         — coalesces rapid back-to-back broadcasts
+//     (e.g. user logs 3 drinks in 5 seconds) into a single cache-invalidate
+//     + re-render pass
+// ---------------------------------------------------------------------------
+(function() {
+  if (!sb) return; // No Supabase client — nothing to subscribe to.
+
+  var DEBOUNCE_MS = 500; // Coalesce rapid broadcasts into one refresh.
+  var currentChannel = null;
+  var debounceTimer = null;
+
+  // Invalidate the shared drink_logs cache and tell the current page to
+  // re-render its leaderboard. Debounced so that 3 drinks logged in 5s
+  // trigger only one refresh, not three.
+  function onLeaderboardBroadcast() {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(function() {
+      debounceTimer = null;
+      // Force the next getDrinkLogs() call to fetch fresh data from the DB
+      // instead of returning the (now stale) 30s-TTL cached copy.
+      if (window.sharedData && typeof window.sharedData.invalidateDrinks === 'function') {
+        window.sharedData.invalidateDrinks();
+      }
+      // Trigger the page's own refresh hook (each page defines this to
+      // re-render its specific leaderboard cards).
+      if (typeof window.refreshPageData === 'function') {
+        try { window.refreshPageData(); } catch (e) {}
+      }
+    }, DEBOUNCE_MS);
+  }
+
+  // Create (or recreate) the broadcast subscription. Always tears down the
+  // previous channel first so we never end up with duplicate sockets after
+  // repeated background/foreground cycles.
+  function subscribe() {
+    // --- Cleanup old channel (duplicate-subscription guard) ----------------
+    if (currentChannel) {
+      try { sb.removeChannel(currentChannel); } catch (e) {}
+      currentChannel = null;
+      window._leaderboardChannel = null;
+    }
+
+    // --- Create new channel -----------------------------------------------
+    var ch = sb.channel('leaderboard', {
+      config: { broadcast: { self: false } } // Don't echo our own broadcasts.
+    });
+
+    ch.on('broadcast', { event: 'drink_change' }, function(_payload) {
+      onLeaderboardBroadcast();
+    });
+
+    ch.subscribe(function(status) {
+      if (status === 'SUBSCRIBED') {
+        currentChannel = ch;
+        // Expose globally so broadcastLeaderboardUpdate() can send through
+        // this channel without creating a conflicting ephemeral one.
+        window._leaderboardChannel = ch;
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        // Connection failed — log but don't crash. The PWA resume handlers
+        // will retry on the next foreground / online event.
+        console.warn('[leaderboard-rt] subscription ' + status);
+      }
+    });
+  }
+
+  // --- Initial subscription on page load ----------------------------------
+  subscribe();
+
+  // --- PWA reconnect hook -------------------------------------------------
+  // shared.js already calls window.reconnectRealtime() on visibilitychange,
+  // pageshow, and focus (see resumeRefresh). We implement it here to
+  // resubscribe the leaderboard channel after the app was backgrounded and
+  // the OS killed the WebSocket.
+  window.reconnectRealtime = function() {
+    subscribe();
+  };
+
+  // --- Network recovery ---------------------------------------------------
+  // When the device goes offline the WebSocket drops silently. Resubscribe
+  // as soon as connectivity is restored so the user doesn't have to reload.
+  window.addEventListener('online', function() {
+    subscribe();
+  });
 })();
 
 // ---------------------------------------------------------------------------

@@ -622,10 +622,8 @@ async function safeUpdateFriendsUI() {
 window.refreshPageData = function() { safeUpdateFriendsUI(); };
 
 safeUpdateFriendsUI();
-// Gentle polling re-pulls the friend list and the shared drink_logs cache (30s
-// TTL) so the leaderboards stay in sync, replacing the previous per-drink
-// realtime subscription that fired for every user's logs.
-setInterval(refreshFriendsData, 30000);
+// Leaderboard updates are now pushed via the Supabase Realtime broadcast
+// channel (see shared.js). No polling interval needed.
 </script>
 </body>
 </html>

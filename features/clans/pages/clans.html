@@ -740,9 +740,8 @@ async function safeUpdateClanUI() {
 }
 
 safeUpdateClanUI();
-// Poll once a minute as a fallback; live updates from the shared drink_logs
-// cache (30s TTL) mean most of these refreshes hit the cache rather than the DB.
-setInterval(safeUpdateClanUI, 60000);
+// Leaderboard updates are now pushed via the Supabase Realtime broadcast
+// channel (see shared.js). No polling interval needed.
 // Returning to the foreground is handled by the shared resume helper
 // (resumeRefresh in shared.js): it refreshes the Supabase token before calling
 // refreshPageData() -> safeUpdateClanUI(), so a >1h lock can't leave the page
@@ -750,3 +749,4 @@ setInterval(safeUpdateClanUI, 60000);
 </script>
 </body>
 </html>
+

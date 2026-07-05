@@ -808,10 +808,12 @@ async function buildEventOptions(allEvents) {
 
   if (select.options.length === 0) return;
 
-  // Default to the next future event (soonest start still ahead of now); falls
+  // Default to the ongoing event if one exists.
+  // Otherwise, default to the next future event (soonest start still ahead of now); falls
   // back to the first available option otherwise.
+  const ongoing = upcoming.find(evt => evt.start && evt.start.getTime() <= now && evt.end.getTime() >= now);
   const nextFuture = upcoming.find(evt => evt.start && evt.start.getTime() > now);
-  select.value = nextFuture ? `preset:${nextFuture.key}` : select.options[0].value;
+  select.value = ongoing ? `preset:${ongoing.key}` : (nextFuture ? `preset:${nextFuture.key}` : select.options[0].value);
 }
 
 // Which leaderboard the page is currently showing: 'live' or 'event'.
@@ -1098,10 +1100,10 @@ async function openAllEventClModal() {
 // or the event Leaderboard (cl) once an event has been selected).
 function refreshActiveEventsView() {
   if (currentEventView === 'event') {
-    renderEventLeaderboard();
-  } else {
-    renderLiveTopFive();
+    // Past events don't change, so we don't need to query database / refresh them periodically.
+    return;
   }
+  renderLiveTopFive();
 }
 
 async function initLeaderboard() {
@@ -1120,12 +1122,11 @@ window.refreshPageData = function() {
 };
 
 initEvents();
-// Gentle polling keeps the boards synced across users/devices without a hard
-// refresh. The leaderboard reads the shared drink_logs cache (30s TTL), so these
-// polls mostly serve from cache instead of hitting the database — replacing the
-// previous per-drink realtime subscription that fired for every user's logs.
+// Custom events list refresh — NOT a leaderboard poll, so it stays.
 setInterval(loadMyCustomEvents, CUSTOM_EVENT_REFRESH_MS);
-setInterval(refreshActiveEventsView, 30000);
+// Leaderboard updates are now pushed via the Supabase Realtime broadcast
+// channel (see shared.js). No polling interval needed.
 </script>
 </body>
 </html>
+

@@ -35,7 +35,11 @@ const listedDrinks = {
     { name: 'Somersby', type: 'Cider', abv: 4.6, vol: 500 },
     { name: 'Xider', type: 'Cider', abv: 4.5, vol: 500 },
     { name: 'Kopparberg', type: 'Cider', abv: 4.5, vol: 500 },
-    { name: 'Ey Bro', type: 'Hard seltzer', abv: 4.5, vol: 500 }
+    { name: 'Ey Bro', type: 'Hard seltzer', abv: 4.5, vol: 500 },
+    { name: 'Staropramen', type: 'Lager', abv: 5.0, vol: 500 },
+    { name: 'Pilsner Urquell', type: 'Lager', abv: 4.4, vol: 500 },
+    { name: 'Paulaner', type: 'Lager', abv: 5.0, vol: 500 },
+    { name: 'Schneider Weisse', type: 'Hefeweizen', abv: 5.4, vol: 500 }
   ],
   wine: [
     { name: 'Ett glas vittvin', type: 'Vitt', abv: 12.0, vol: 150 },
@@ -53,7 +57,7 @@ const listedDrinks = {
     { name: 'Bacardi (rum)', type: 'Spirit', abv: 38.8, vol: 40 },
   ],
   annat: [
-    { name: 'En Knäve Kir', type: 'Aperitif', abv: 12, vol: 700 },
+    { name: 'En Näve Kir', type: 'Aperitif', abv: 12, vol: 700 },
     { name: 'Solbacka Kir', type: 'Aperitif', abv: 12, vol: 120 },
     { name: 'Champagne', type: 'Sparkling wine', abv: 12, vol: 150 },
     { name: 'Cava', type: 'Sparkling wine', abv: 11.5, vol: 150 },
@@ -65,7 +69,7 @@ const listedDrinks = {
 
 function renderCategoryTiles(containerId) {
   const container = document.getElementById(containerId);
-  container.innerHTML = ''; 
+  container.innerHTML = '';
   const categories = [
     { id: 'beer_cider_33', text: 'Öl/cider 33 cl', icon: 'beer-33.svg' },
     { id: 'beer_cider_50', text: 'Öl/cider 50 cl', icon: 'beer-50.svg' },
@@ -81,7 +85,7 @@ function renderCategoryTiles(containerId) {
     tile.onclick = () => renderDrinkList(containerId, category.id);
     const img = document.createElement('img');
     img.src = `icons/${category.icon}`;
-    img.onerror = () => { img.style.display = 'none'; }; 
+    img.onerror = () => { img.style.display = 'none'; };
     img.alt = category.text;
     img.className = 'logger-icon';
     const textSpan = document.createElement('span');
@@ -95,7 +99,7 @@ function renderCategoryTiles(containerId) {
 
 function renderDrinkList(containerId, categoryId) {
   const container = document.getElementById(containerId);
-  container.innerHTML = ''; 
+  container.innerHTML = '';
   const backBtn = document.createElement('button');
   backBtn.innerText = '< Gå tillbaka';
   backBtn.className = 'logger-back-btn';
@@ -129,7 +133,7 @@ var _selectDrinkLock = false;
 function selectDrinkAndAdd(drink) {
   if (_selectDrinkLock) return;
   _selectDrinkLock = true;
-  setTimeout(function() { _selectDrinkLock = false; }, 1500);
+  setTimeout(function () { _selectDrinkLock = false; }, 1500);
   var grams = parseFloat((drink.vol * (drink.abv / 100) * 0.789).toFixed(1));
   saveEntry(drink.name, drink.vol, drink.abv, grams);
   closeDrinkModal();
