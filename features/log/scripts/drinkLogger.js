@@ -115,7 +115,11 @@ function renderDrinkList(containerId, categoryId) {
   drinks.forEach(drink => {
     const li = document.createElement('li');
     li.className = 'logger-list-item';
-    li.onclick = () => selectDrinkAndAdd(drink);
+    if (drink.name === 'Tequila (shot)') {
+      li.onclick = () => showTequilaConfirmation(drink);
+    } else {
+      li.onclick = () => selectDrinkAndAdd(drink);
+    }
     const drinkTitle = document.createElement('div');
     drinkTitle.innerHTML = `<strong>${drink.name}</strong><br><span class="logger-drink-info">${drink.type}</span>`;
     const drinkStats = document.createElement('div');
@@ -142,3 +146,106 @@ function selectDrinkAndAdd(drink) {
 function closeDrinkModal() {
   document.getElementById('drinkModal').style.display = 'none';
 }
+
+// ── Tequila shot confirmation ──────────────────────────────────────────────────
+function ensureTequilaModal() {
+  if (document.getElementById('tequilaConfirmModal')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'tequilaConfirmModal';
+  overlay.style.cssText = [
+    'display:none',
+    'position:fixed',
+    'z-index:9999',
+    'left:0',
+    'top:0',
+    'width:100%',
+    'height:100%',
+    'background:rgba(0,0,0,0.7)',
+    '-webkit-backdrop-filter:blur(6px)',
+    'backdrop-filter:blur(6px)',
+    'align-items:center',
+    'justify-content:center'
+  ].join(';');
+
+  overlay.innerHTML = `
+    <div style="
+      background:#fff;
+      border:6px solid #2C3E50;
+      box-shadow:8px 8px 0px #2C3E50;
+      padding:30px 24px 24px;
+      max-width:340px;
+      width:90%;
+      text-align:center;
+      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    ">
+      <div style="font-size:3rem;margin-bottom:12px;">🍋🥃</div>
+      <h3 style="
+        font-family:'Arial Black',Impact,sans-serif;
+        text-transform:uppercase;
+        font-size:1.5rem;
+        color:#2C3E50;
+        margin:0 0 10px 0;
+        letter-spacing:1px;
+      ">Tequila shot!</h3>
+      <p style="
+        font-size:1.3rem;
+        font-weight:900;
+        color:#E74C3C;
+        margin:0 0 24px 0;
+        letter-spacing:0.5px;
+      ">Är du säker?!?</p>
+      <div style="display:flex;gap:12px;">
+        <button id="tequilaConfirmYes" style="
+          flex:1;
+          padding:14px;
+          background:#E74C3C;
+          color:#fff;
+          border:4px solid #2C3E50;
+          box-shadow:4px 4px 0px #2C3E50;
+          font-size:16px;
+          font-weight:900;
+          text-transform:uppercase;
+          cursor:pointer;
+          font-family:inherit;
+        ">Ja, självklart!</button>
+        <button id="tequilaConfirmNo" style="
+          flex:1;
+          padding:14px;
+          background:#FFCC00;
+          color:#2C3E50;
+          border:4px solid #2C3E50;
+          box-shadow:4px 4px 0px #2C3E50;
+          font-size:16px;
+          font-weight:900;
+          text-transform:uppercase;
+          cursor:pointer;
+          font-family:inherit;
+        ">Nej, ångrar mig</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function showTequilaConfirmation(drink) {
+  ensureTequilaModal();
+  const modal = document.getElementById('tequilaConfirmModal');
+  modal.style.display = 'flex';
+
+  const yesBtn = document.getElementById('tequilaConfirmYes');
+  const noBtn  = document.getElementById('tequilaConfirmNo');
+
+  // Clone nodes to remove any previous event listeners
+  const newYes = yesBtn.cloneNode(true);
+  const newNo  = noBtn.cloneNode(true);
+  yesBtn.replaceWith(newYes);
+  noBtn.replaceWith(newNo);
+
+  newYes.addEventListener('click', () => {
+    modal.style.display = 'none';
+    selectDrinkAndAdd(drink);
+  });
+  newNo.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+}

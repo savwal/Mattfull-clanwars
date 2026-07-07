@@ -49,6 +49,39 @@ async function removeDrinkFromSupabase(profileId, drinkName, timestamp) {
 }
 
 // ---------------------------------------------------------------------------
+// GDPR Article 17 — Right to erasure. Deletes ALL user data from Supabase:
+// drink_logs, friends, event/clan participation, and the profile itself.
+// Returns true if the critical deletes (profile + drinks) succeeded.
+// ---------------------------------------------------------------------------
+async function deleteAccountFromSupabase(profileId) {
+  if (!sb || !profileId) return false;
+  try {
+    // Clean up participations (non-critical, best-effort)
+    await sb.from('event_participants').delete().eq('player_hash', profileId).then(function() {}, function() {});
+    await sb.from('clan_participants').delete().eq('player_hash', profileId).then(function() {}, function() {});
+    await sb.from('clan_members').delete().eq('player_hash', profileId).then(function() {}, function() {});
+    await sb.from('friends').delete().eq('player_hash', profileId).then(function() {}, function() {});
+    await sb.from('friends').delete().eq('friend_hash', profileId).then(function() {}, function() {});
+
+    // Critical personal data
+    const { error: logsError } = await sb.from('drink_logs')
+      .delete()
+      .eq('player_hash', profileId);
+    if (logsError) console.error('Error deleting drink logs:', logsError);
+
+    const { error: profileError } = await sb.from('profiles')
+      .delete()
+      .eq('player_hash', profileId);
+    if (profileError) console.error('Error deleting profile:', profileError);
+
+    return !logsError && !profileError;
+  } catch (e) {
+    console.error('Error deleting account:', e);
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Leaderboard broadcast helper. Sends a lightweight Supabase Realtime
 // "broadcast" message on the shared 'leaderboard' channel so every connected
 // client knows drink data changed and can re-render. The payload is tiny
