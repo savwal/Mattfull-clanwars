@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#2C3E50">
+<title>redlös - Schemalaggare</title>
+<link rel="manifest" href="../../../manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
+.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+.main-nav::-webkit-scrollbar { display: none; }
+.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 12px; }
+.main-nav a:last-child { border-right: none; }
+.main-nav a:hover, .main-nav a.active { background: #FFCC00; }
+.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
+h2 { font-family: 'Arial Black', Impact, sans-serif; text-transform: uppercase; color: #FFF; background: #2A8CFF; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; letter-spacing: 1px; text-shadow: 2px 2px 0px #2C3E50; text-align: left; }
+input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 0; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
+input:focus, select:focus { background: #f1f2f6; }
+button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
+button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+button.danger { background: #E74C3C; width: auto; color: white; padding: 8px 16px; font-size: 14px; margin-left: 10px; box-shadow: 3px 3px 0px #2C3E50; border: 3px solid #2C3E50; }
+ul { list-style: none; padding: 0; margin: 0; }
+li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+canvas { max-height: 300px; margin-top: 10px; }
+.highlight-text { font-size: 1.3em; color: #2A8CFF; font-family: 'Arial Black', sans-serif; text-shadow: 1px 1px 0px #2C3E50; }
+.legend { display: flex; flex-wrap: wrap; margin: -7.5px; margin-top: 20px; justify-content: center; }
+.legend > * { margin: 7.5px; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-weight: 900; color: #2C3E50; text-transform: uppercase; font-size: 11px; }
+.legend-item > * + * { margin-left: 8px; }
+.dot { width: 16px; height: 16px; border: 3px solid #2C3E50; box-shadow: 2px 2px 0px #2C3E50; }
+.dot.blue { background: #3498DB; }
+.dot.red { background: #E74C3C; }
+.dot.green { background: #2ECC71; }
+.dot.purple { background: #9B59B6; }
+.dot.line { background: #FFCC00; height: 6px; width: 20px; }
+.graph-scroll { overflow-x: auto; overflow-y: hidden; padding-bottom: 6px; }
+.graph-scroll::-webkit-scrollbar { height: 8px; }
+.graph-scroll::-webkit-scrollbar-thumb { background: #2C3E50; border-radius: 4px; }
+.graph-scroll::-webkit-scrollbar-track { background: #D1EAFE; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #2A8CFF; color: #FFF; padding: 12px 16px; border: 4px solid #2C3E50; box-shadow: 6px 6px 0px #2C3E50; font-weight: 900; text-transform: uppercase; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 2000; }
+.toast.show { opacity: 1; }
+.toast.error { background: #E74C3C; }
+
+/* Planner-specific */
+.stats-row { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px; }
+.stat-block { flex: 1 1 140px; text-align: center; padding: 12px; background: #D1EAFE; border: 4px solid #2C3E50; box-shadow: 3px 3px 0px #2C3E50; }
+.stat-block .stat-label { font-size: 11px; text-transform: uppercase; font-weight: 900; color: #2C3E50; letter-spacing: 0.5px; }
+.stat-block .stat-value { font-size: 1.4em; font-weight: 900; color: #2A8CFF; font-family: 'Arial Black', sans-serif; text-shadow: 1px 1px 0px #2C3E50; margin-top: 4px; }
+.back-link { display: inline-block; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; font-size: 14px; margin-bottom: 15px; padding: 10px 18px; background: #FFCC00; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
+.back-link:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+.empty-state { text-align: center; padding: 20px; color: #636e72; font-weight: bold; justify-content: center; }
+</style>
+<link rel="stylesheet" href="../../shared/styles/nav.css">
+</head>
+<body>
+<nav class="main-nav">
+  <a href="../../../index.html" class="active" aria-label="Log" title="Log">
+    <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
+    <span class="menu-label">Log</span>
+  </a>
+  <a href="../../battles/pages/battles.html" aria-label="Battles" title="Battles">
+    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
+    <span class="menu-label">Battles</span>
+  </a>
+  <a href="../../events/pages/events.html" aria-label="Events" title="Events">
+    <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
+    <span class="menu-label">Events</span>
+  </a>
+  <a href="../../clans/pages/clans.html" aria-label="Klan" title="Klan">
+    <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
+    <span class="menu-label">Klan</span>
+  </a>
+  <a href="../../friends/pages/friends.html" aria-label="Vänner" title="Vänner">
+    <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
+    <span class="menu-label">Vänner</span>
+  </a>
+  <a href="../../historik/historik.html" aria-label="Historik" title="Historik">
+    <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
+    <span class="menu-label">Historik</span>
+  </a>
+  <a href="../../profile/pages/profile.html" aria-label="Profil" title="Profil">
+    <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
+    <span class="menu-label">Profil</span>
+  </a>
+</nav>
+<nav class="mobile-bottom-menu">
+  <a href="../../../index.html" class="menu-item active" aria-label="Log" title="Log">
+    <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
+    <span class="menu-label">Log</span>
+  </a>
+  <a href="../../battles/pages/battles.html" class="menu-item" aria-label="Battles" title="Battles">
+    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
+    <span class="menu-label">Battles</span>
+  </a>
+  <a href="../../events/pages/events.html" class="menu-item" aria-label="Events" title="Events">
+    <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
+    <span class="menu-label">Events</span>
+  </a>
+  <a href="../../clans/pages/clans.html" class="menu-item" aria-label="Klan" title="Klan">
+    <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
+    <span class="menu-label">Klan</span>
+  </a>
+  <a href="../../friends/pages/friends.html" class="menu-item" aria-label="Vänner" title="Vänner">
+    <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
+    <span class="menu-label">Vänner</span>
+  </a>
+  <a href="../../historik/historik.html" class="menu-item" aria-label="Historik" title="Historik">
+    <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
+    <span class="menu-label">Historik</span>
+  </a>
+  <a href="../../profile/pages/profile.html" class="menu-item" aria-label="Profil" title="Profil">
+    <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
+    <span class="menu-label">Profil</span>
+  </a>
+</nav>
+
+<a href="../../../index.html" class="back-link">← Tillbaka till Log</a>
+
+<div class="card">
+  <h2 style="background: #2ECC71;">Schemalägg dryck</h2>
+  <select id="planType" style="width: 100%;">
+    <option value="">Välj dryck...</option>
+    <option value="Öl">Öl/Cider</option>
+    <option value="Rött vin">Rött vin</option>
+    <option value="Vitt vin">Vitt vin</option>
+    <option value="Champagne">Champagne</option>
+    <option value="Sprit">Sprit</option>
+    <option value="Drink">Drink</option>
+  </select>
+  <input type="number" id="planVolume" placeholder="Volym (ml, t.ex. 330)" min="1" max="1000" step="1">
+  <input type="number" id="planAbv" placeholder="Alkoholhalt (%, t.ex. 5.0)" min="0" max="98" step="0.1">
+  <input type="time" id="planTime">
+  <button onclick="addPlannedDrink()">Lägg till</button>
+</div>
+
+<div class="card">
+  <h2>Prognos</h2>
+  <div class="graph-scroll">
+    <canvas id="forecastChart"></canvas>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><span class="dot line"></span> Promille</div>
+    <div class="legend-item"><span class="dot blue"></span> Tiger Woods zone</div>
+    <div class="legend-item"><span class="dot red"></span> Farthållare</div>
+    <div class="legend-item"><span class="dot green"></span> Funzone</div>
+    <div class="legend-item"><span class="dot purple"></span> Sangriagränsen</div>
+  </div>
+  <div class="stats-row" id="statsRow" style="display:none;">
+    <div class="stat-block">
+      <div class="stat-label">Topp promille</div>
+      <div class="stat-value" id="peakBac">0.00 ‰</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-label">Topp kl.</div>
+      <div class="stat-value" id="peakTime">--:--</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-label">Nykter kl.</div>
+      <div class="stat-value" id="soberTime">--:--</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Planerade drycker</h2>
+  <ul id="plannedList">
+    <li class="empty-state">Inga drycker tillagda ännu.</li>
+  </ul>
+</div>
+
+<div id="planToast" class="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../shared/scripts/shared.js"></script>
+<script src="../../shared/scripts/calculator.js"></script>
+<script src="../scripts/graph.js"></script>
+<script>
+// ── Schemalaggare (Drink Planner) ──────────────────────────────────────────
+// All logic is self-contained in this script block so it can be extracted
+// into a JS-generated popup in the future.
+
+var plannedDrinks = [];
+var planToastTimer = null;
+
+// ── LocalStorage persistence ───────────────────────────────────────────────
+function savePlan() {
+  try { localStorage.setItem('plannedDrinks', JSON.stringify(plannedDrinks)); } catch(e) {}
+}
+
+function loadPlan() {
+  try {
+    var stored = JSON.parse(localStorage.getItem('plannedDrinks'));
+    if (Array.isArray(stored)) plannedDrinks = stored;
+  } catch(e) {}
+}
+
+// ── Profile from logged-in user ────────────────────────────────────────────
+function getPlanProfile() {
+  var profile = typeof getActiveProfile === 'function' ? getActiveProfile() : null;
+  if (profile && profile.weight && profile.weight > 0) {
+    return {
+      weight: profile.weight,
+      gender: profile.gender || 'man',
+      funzone: profile.funzone || 1.0
+    };
+  }
+  // Fallback if no profile
+  return { weight: 80, gender: 'man', funzone: 1.0 };
+}
+
+// ── Default time: 30 min after last drink or rounded "now" ─────────────────
+function getDefaultTime() {
+  var d;
+  if (plannedDrinks.length > 0) {
+    d = new Date(plannedDrinks[plannedDrinks.length - 1].timestamp + 30 * 60000);
+  } else {
+    d = new Date();
+    var mins = d.getMinutes();
+    var next = Math.ceil(mins / 15) * 15;
+    d.setMinutes(next, 0, 0);
+  }
+  var hh = String(d.getHours()).padStart(2, '0');
+  var mm = String(d.getMinutes()).padStart(2, '0');
+  return hh + ':' + mm;
+}
+
+function resetTimeDefault() {
+  document.getElementById('planTime').value = getDefaultTime();
+}
+
+// ── Add planned drink ──────────────────────────────────────────────────────
+function addPlannedDrink() {
+  var name = document.getElementById('planType').value;
+  var volume = parseFloat(document.getElementById('planVolume').value);
+  var abv = parseFloat(document.getElementById('planAbv').value);
+  var timeInput = document.getElementById('planTime').value;
+
+  if (!name) { showPlanToast('Välj en dryckstyp.'); return; }
+  if (!Number.isFinite(volume) || volume <= 0 || volume > 1000) { showPlanToast('Ange volym.'); return; }
+  if (!Number.isFinite(abv) || abv < 0 || abv > 98) { showPlanToast('Ange alkoholhalt.'); return; }
+  if (!timeInput) { showPlanToast('Välj en tid.'); return; }
+
+  // Build a timestamp for today at the chosen time
+  var parts = timeInput.split(':');
+  var now = new Date();
+  var drinkDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(),
+                           parseInt(parts[0]), parseInt(parts[1]), 0, 0);
+
+  // Handle past-midnight planning
+  if (plannedDrinks.length > 0) {
+    var lastTs = plannedDrinks[plannedDrinks.length - 1].timestamp;
+    if (drinkDate.getTime() < lastTs - 12 * 3600000) {
+      drinkDate.setDate(drinkDate.getDate() + 1);
+    }
+  }
+
+  var grams = parseFloat((volume * (abv / 100) * 0.789).toFixed(1));
+
+  plannedDrinks.push({
+    name: name,
+    volume: volume,
+    abv: abv,
+    grams: grams,
+    timestamp: drinkDate.getTime(),
+    time: timeInput
+  });
+
+  // Sort by timestamp
+  plannedDrinks.sort(function(a, b) { return a.timestamp - b.timestamp; });
+  savePlan();
+
+  // Reset form for next entry
+  resetTimeDefault();
+  document.getElementById('planType').value = '';
+  document.getElementById('planVolume').value = '';
+  document.getElementById('planAbv').value = '';
+  updatePlanUI();
+}
+
+function removePlannedDrink(index) {
+  plannedDrinks.splice(index, 1);
+  savePlan();
+  updatePlanUI();
+}
+
+// ── Render list + chart ────────────────────────────────────────────────────
+function updatePlanUI() {
+  var list = document.getElementById('plannedList');
+  list.innerHTML = '';
+  var profile = getPlanProfile();
+  var zones = getZones(profile);
+
+  if (plannedDrinks.length === 0) {
+    list.innerHTML = '<li class="empty-state">Inga drycker tillagda ännu.</li>';
+    document.getElementById('statsRow').style.display = 'none';
+    var canvas = document.getElementById('forecastChart');
+    if (canvas) {
+      canvas.style.width = '700px';
+      canvas.style.height = '300px';
+    }
+    renderChart('forecastChart', [], [], zones);
+    return;
+  }
+
+  for (var i = 0; i < plannedDrinks.length; i++) {
+    var d = plannedDrinks[i];
+    var li = document.createElement('li');
+
+    var info = document.createElement('div');
+    var ts = new Date(d.timestamp);
+    var timeLabel = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    info.innerHTML = '<strong>' + timeLabel + '</strong>: ' + d.name +
+      ' <br><span style="color:#2C3E50;">' + d.volume + 'ml, ' + d.abv + '% (' + d.grams.toFixed(1) + 'g)</span>';
+    li.appendChild(info);
+
+    var btn = document.createElement('button');
+    btn.className = 'danger';
+    btn.textContent = 'X';
+    (function(idx) {
+      btn.onclick = function() { removePlannedDrink(idx); };
+    })(i);
+    li.appendChild(btn);
+    list.appendChild(li);
+  }
+
+  updateForecastChart();
+}
+
+function updateForecastChart() {
+  var profile = getPlanProfile();
+  var zones = getZones(profile);
+
+  if (plannedDrinks.length === 0) return;
+
+  var firstTime = plannedDrinks[0].timestamp;
+  var lastTime = plannedDrinks[plannedDrinks.length - 1].timestamp;
+  var endTime = lastTime + 5 * 3600000;
+
+  var labels = [];
+  var dataPoints = [];
+  var timeline = [];
+  var peakValue = 0;
+  var peakTime = firstTime;
+  var soberAfterPeak = null;
+
+  for (var t = firstTime; t <= endTime; t += 900000) {
+    var label = new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    var value = calculateBACAtTime(plannedDrinks, profile, t);
+    timeline.push({ time: t, label: label, value: value });
+
+    if (value > peakValue) {
+      peakValue = value;
+      peakTime = t;
+    }
+  }
+
+  // Find sober time (first time BAC hits 0 after peak)
+  var foundPeak = false;
+  for (var j = 0; j < timeline.length; j++) {
+    if (timeline[j].time >= peakTime) foundPeak = true;
+    if (foundPeak && timeline[j].value <= 0.005) {
+      soberAfterPeak = timeline[j].time;
+      break;
+    }
+  }
+
+  timeline.forEach(function(point) {
+    labels.push(point.label);
+    dataPoints.push(Math.abs(point.value).toFixed(2));
+  });
+
+  // Current time annotation
+  var currentLabel = null;
+  var now = Date.now();
+  if (timeline.length > 0 && now >= timeline[0].time && now <= timeline[timeline.length - 1].time) {
+    var closestIndex = 0;
+    var closestDiff = Math.abs(timeline[0].time - now);
+    for (var i = 1; i < timeline.length; i++) {
+      var diff = Math.abs(timeline[i].time - now);
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        closestIndex = i;
+      }
+    }
+    currentLabel = timeline[closestIndex].label;
+  }
+
+  var chartCanvas = document.getElementById('forecastChart');
+  if (chartCanvas) {
+    var minWidth = 700;
+    var pointWidth = 60;
+    var targetWidth = Math.max(minWidth, labels.length * pointWidth);
+    chartCanvas.style.width = targetWidth + 'px';
+    chartCanvas.style.height = '300px';
+  }
+
+  renderChart('forecastChart', labels, dataPoints, zones, { currentLabel: currentLabel });
+
+  // Update stats
+  document.getElementById('statsRow').style.display = 'flex';
+  document.getElementById('peakBac').textContent = peakValue.toFixed(2) + ' ‰';
+  document.getElementById('peakTime').textContent = new Date(peakTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  if (soberAfterPeak) {
+    document.getElementById('soberTime').textContent = new Date(soberAfterPeak).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } else if (peakValue > 0) {
+    var extraEnd = endTime + 12 * 3600000;
+    for (var t2 = endTime; t2 <= extraEnd; t2 += 900000) {
+      var v = calculateBACAtTime(plannedDrinks, profile, t2);
+      if (v <= 0.005) {
+        document.getElementById('soberTime').textContent = new Date(t2).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        soberAfterPeak = t2;
+        break;
+      }
+    }
+    if (!soberAfterPeak) {
+      document.getElementById('soberTime').textContent = '?';
+    }
+  } else {
+    document.getElementById('soberTime').textContent = '--:--';
+  }
+}
+
+function showPlanToast(msg) {
+  var toast = document.getElementById('planToast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.classList.add('show');
+  if (planToastTimer) clearTimeout(planToastTimer);
+  planToastTimer = setTimeout(function() {
+    toast.classList.remove('show');
+  }, 2500);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  loadPlan();
+  resetTimeDefault();
+  updatePlanUI();
+});
+</script>
+</body>
+</html>

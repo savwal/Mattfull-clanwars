@@ -2,17 +2,17 @@ const listedDrinks = {
   beer_cider_33: [
     { name: 'Norrlands Guld', type: 'Lager', abv: 5.3, vol: 330 },
     { name: 'Pripps Blå', type: 'Lager', abv: 5.0, vol: 330 },
+    { name: 'Brooklyn Lager', type: 'Lager', abv: 5.2, vol: 330 },
+    { name: 'Ey Bro', type: 'Hard seltzer', abv: 4.5, vol: 330 },
+    { name: 'Briska', type: 'Cider', abv: 4.5, vol: 330 },
+    { name: 'Somersby', type: 'Cider', abv: 4.6, vol: 330 },
+    { name: 'Melleruds', type: 'Lager', abv: 6.0, vol: 330 },
+    { name: 'Kopparberg', type: 'Cider', abv: 4.5, vol: 330 },
     { name: 'Falcon', type: 'Lager', abv: 5.2, vol: 330 },
     { name: 'Mariestads', type: 'Strong lager', abv: 5.3, vol: 330 },
     { name: 'Carlsberg Hof', type: 'Lager', abv: 4.2, vol: 330 },
     { name: 'Heineken', type: 'Lager', abv: 5.0, vol: 330 },
-    { name: 'The Bear', type: 'Lager', abv: 5.0, vol: 330 },
-    { name: 'Brooklyn Lager', type: 'Lager', abv: 5.2, vol: 330 },
-    { name: 'Briska', type: 'Cider', abv: 4.5, vol: 330 },
-    { name: 'Somersby', type: 'Cider', abv: 4.6, vol: 330 },
-    { name: 'Xider', type: 'Cider', abv: 4.5, vol: 330 },
-    { name: 'Kopparberg', type: 'Cider', abv: 4.5, vol: 330 },
-    { name: 'Ey Bro', type: 'Hard seltzer', abv: 4.5, vol: 330 }
+    { name: 'The Bear', type: 'Lager', abv: 5.0, vol: 330 }
   ],
   beer_cider_40: [
     { name: 'Gränges', type: 'Lager', abv: 5.3, vol: 400 },
@@ -27,24 +27,21 @@ const listedDrinks = {
     { name: 'Norrlands Guld', type: 'Lager', abv: 5.3, vol: 500 },
     { name: 'Pripps Blå', type: 'Lager', abv: 5.0, vol: 500 },
     { name: 'Falcon', type: 'Lager', abv: 5.2, vol: 500 },
-    { name: 'Mariestads', type: 'Strong lager', abv: 5.3, vol: 500 },
-    { name: 'Carlsberg Hof', type: 'Lager', abv: 4.2, vol: 500 },
+    { name: 'Mariestads', type: 'Lager', abv: 5.3, vol: 500 },
+    { name: '1664 Blanc', type: 'Lager', abv: 5.0, vol: 500 },
     { name: 'Heineken', type: 'Lager', abv: 5.0, vol: 500 },
     { name: 'Guinness', type: 'Stout', abv: 4.2, vol: 500 },
     { name: 'Briska', type: 'Cider', abv: 4.5, vol: 500 },
     { name: 'Somersby', type: 'Cider', abv: 4.6, vol: 500 },
-    { name: 'Xider', type: 'Cider', abv: 4.5, vol: 500 },
-    { name: 'Kopparberg', type: 'Cider', abv: 4.5, vol: 500 },
-    { name: 'Ey Bro', type: 'Hard seltzer', abv: 4.5, vol: 500 },
+    { name: 'Ey Bro', type: 'Lager', abv: 4.5, vol: 500 },
     { name: 'Staropramen', type: 'Lager', abv: 5.0, vol: 500 },
     { name: 'Pilsner Urquell', type: 'Lager', abv: 4.4, vol: 500 },
-    { name: 'Paulaner', type: 'Lager', abv: 5.0, vol: 500 },
-    { name: 'Schneider Weisse', type: 'Hefeweizen', abv: 5.4, vol: 500 }
+    { name: 'Paulaner', type: 'Lager', abv: 5.0, vol: 500 }
   ],
   wine: [
     { name: 'Ett glas vittvin', type: 'Vitt', abv: 12.0, vol: 150 },
     { name: 'Ett glas rosé', type: 'Rosé', abv: 12.0, vol: 150 },
-    { name: 'Ett glas rött', type: 'Rött', abv: 13.0, vol: 150 }
+    { name: 'Ett glas rött', type: 'Rött', abv: 12.0, vol: 150 }
   ],
   sprit: [
     { name: 'Snaps', type: 'Spirit', abv: 38, vol: 40 },
@@ -52,7 +49,7 @@ const listedDrinks = {
     { name: 'Tequila (shot)', type: 'Spirit', abv: 38, vol: 40 },
     { name: 'Gin (shot)', type: 'Spirit', abv: 38.8, vol: 40 },
     { name: 'Whisky', type: 'Spirit', abv: 41.5, vol: 40 },
-    { name: 'Rum', type: 'Spirit', abv: 38.8, vol: 40 },
+    { name: 'Rom', type: 'Spirit', abv: 38.8, vol: 40 },
     { name: 'Jägermeister', type: 'Liqueur', abv: 35, vol: 40 },
     { name: 'Bacardi (rum)', type: 'Spirit', abv: 38.8, vol: 40 },
   ],
@@ -63,7 +60,8 @@ const listedDrinks = {
     { name: 'Cava', type: 'Sparkling wine', abv: 11.5, vol: 150 },
     { name: 'Gin & Tonic', type: 'Drink (4cl sprit)', abv: 8.0, vol: 200 },
     { name: 'Vodka Cranberry', type: 'Drink (4cl sprit)', abv: 8.0, vol: 200 },
-    { name: 'Red Bull Vodka', type: 'Drink (4cl sprit)', abv: 6.4, vol: 250 }
+    { name: 'Red Bull Vodka', type: 'Drink (4cl sprit)', abv: 6.4, vol: 250 },
+    { name: 'Aperol Spritz', type: 'Drink (4cl sprit)', abv: 6.4, vol: 250 },
   ]
 };
 
@@ -233,11 +231,11 @@ function showTequilaConfirmation(drink) {
   modal.style.display = 'flex';
 
   const yesBtn = document.getElementById('tequilaConfirmYes');
-  const noBtn  = document.getElementById('tequilaConfirmNo');
+  const noBtn = document.getElementById('tequilaConfirmNo');
 
   // Clone nodes to remove any previous event listeners
   const newYes = yesBtn.cloneNode(true);
-  const newNo  = noBtn.cloneNode(true);
+  const newNo = noBtn.cloneNode(true);
   yesBtn.replaceWith(newYes);
   noBtn.replaceWith(newNo);
 
@@ -248,4 +246,4 @@ function showTequilaConfirmation(drink) {
   newNo.addEventListener('click', () => {
     modal.style.display = 'none';
   });
-}
+}

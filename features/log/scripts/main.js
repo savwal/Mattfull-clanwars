@@ -152,6 +152,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     onScroll();
   }
   updateUI();
+  renderPendingPlan();
   scheduleDrinkReminder(getLatestDrinkTimestamp());
   setInterval(updateUI, 60000);
   graphResetCheckInterval = setInterval(checkGraphReset, 60000);
@@ -411,5 +412,88 @@ function checkGraphReset() {
 window.refreshPageData = function() {
   historyData = getDrinkHistory();
   updateUI();
+  renderPendingPlan();
   scheduleDrinkReminder(getLatestDrinkTimestamp());
 };
+
+// ── Pending planned drinks (Schemalaggare integration) ─────────────────────
+function getPlannedDrinks() {
+  try {
+    var stored = JSON.parse(localStorage.getItem('plannedDrinks'));
+    return Array.isArray(stored) ? stored : [];
+  } catch(e) { return []; }
+}
+
+function savePlannedDrinks(drinks) {
+  try { localStorage.setItem('plannedDrinks', JSON.stringify(drinks)); } catch(e) {}
+}
+
+function renderPendingPlan() {
+  var container = document.getElementById('pendingPlan');
+  if (!container) return;
+  var drinks = getPlannedDrinks();
+  container.innerHTML = '';
+
+  if (drinks.length === 0) return;
+
+  for (var i = 0; i < drinks.length; i++) {
+    var d = drinks[i];
+    var li = document.createElement('li');
+    li.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:4px solid #E5E9F0; font-weight:bold;';
+
+    var ts = new Date(d.timestamp);
+    var timeLabel = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    var info = document.createElement('div');
+    info.innerHTML = '<strong>' + timeLabel + '</strong>: ' + d.name +
+      '<br><span style="color:#636e72; font-size:0.85em;">' + d.volume + 'ml, ' + d.abv + '%</span>';
+    li.appendChild(info);
+
+    var btnContainer = document.createElement('div');
+    btnContainer.style.cssText = 'display:flex; gap:6px; margin-left:10px;';
+
+    var declineBtn = document.createElement('button');
+    declineBtn.textContent = '✕';
+    declineBtn.title = 'Avböj dryck';
+    declineBtn.style.cssText = 'background:#E74C3C; color:#FFF; width:auto; padding:8px 12px; font-size:14px; box-shadow:3px 3px 0px #2C3E50; border:3px solid #2C3E50; font-weight:900; text-transform:uppercase; cursor:pointer; margin:0;';
+    (function(idx) {
+      declineBtn.onclick = function() { declinePlannedDrink(idx); };
+    })(i);
+
+    var btn = document.createElement('button');
+    btn.textContent = '✓ Druckit';
+    btn.style.cssText = 'background:#2ECC71; color:#FFF; width:auto; padding:8px 16px; font-size:14px; box-shadow:3px 3px 0px #2C3E50; border:3px solid #2C3E50; font-weight:900; text-transform:uppercase; cursor:pointer; margin:0;';
+    (function(idx) {
+      btn.onclick = function() { acceptPlannedDrink(idx); };
+    })(i);
+
+    btnContainer.appendChild(declineBtn);
+    btnContainer.appendChild(btn);
+    li.appendChild(btnContainer);
+    container.appendChild(li);
+  }
+}
+
+function acceptPlannedDrink(index) {
+  var drinks = getPlannedDrinks();
+  if (index < 0 || index >= drinks.length) return;
+  var d = drinks[index];
+
+  // Register the drink via the existing saveEntry flow (handles Supabase sync)
+  saveEntry(d.name, d.volume, d.abv, d.grams);
+
+  // Remove from plan
+  drinks.splice(index, 1);
+  savePlannedDrinks(drinks);
+  renderPendingPlan();
+}
+
+function declinePlannedDrink(index) {
+  var drinks = getPlannedDrinks();
+  if (index < 0 || index >= drinks.length) return;
+
+  // Remove from plan without registering
+  drinks.splice(index, 1);
+  savePlannedDrinks(drinks);
+  renderPendingPlan();
+}
