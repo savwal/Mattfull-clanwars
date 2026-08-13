@@ -7,25 +7,46 @@
 <title>redlös - Profil</title>
 <link rel="manifest" href="../../../manifest.json">
 <style>
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
-.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; transition: background-color 0.3s ease, color 0.3s ease; }
+.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 2px solid #7f8c8d; box-shadow: 0 2px 8px rgba(44,62,80,0.08); background: #fff; border-radius: 14px; overflow: hidden; }
 .main-nav::-webkit-scrollbar { display: none; }
-.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 12px; }
+.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 1px solid #bdc3c7; font-size: 12px; }
 .main-nav a:last-child { border-right: none; }
 .main-nav a:hover, .main-nav a.active { background: #FFCC00; }
-.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
-h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #2A8CFF; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; text-align: left; }
-input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 0; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
-input:focus, select:focus { background: #f1f2f6; }
-button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
-button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+.card { background: #FFFFFF; border: 2px solid #bdc3c7; border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); position: relative; transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #2A8CFF; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.15); text-align: left; border-radius: 14px 14px 0 0; }
+input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid rgba(44,62,80,0.15); font-size: 16px; outline: none; font-weight: bold; transition: all 0.2s ease; }
+input:focus, select:focus { background: #f1f2f6; border-color: #2A8CFF; }
+button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 0 2px 6px rgba(44,62,80,0.12); transition: all 0.15s ease; }
+button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,0.10); }
 .profile-pic-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
-#picPreview { width: 120px; height: 120px; border-radius: 0; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; display: none; object-fit: cover; }
-.hash-text { display: inline-block; background: #2C3E50; color: #FFF; padding: 5px 10px; font-family: monospace; font-size: 1.2em; margin: 10px 0; letter-spacing: 2px; }
+#picPreview { width: 100px; height: 100px; border-radius: 50%; border: 3px solid #2C3E50; box-shadow: 0 2px 8px rgba(44,62,80,0.15); display: none; object-fit: cover; }
+.hash-text { display: inline-block; background: #2C3E50; color: #FFF; padding: 6px 14px; font-family: monospace; font-size: 1.1em; margin: 10px 0; letter-spacing: 2px; border-radius: 8px; }
 .file-input { display: none; }
-.file-label { display: inline-block; background: #FFCC00; color: #2C3E50; padding: 10px 12px; border: 4px solid #2C3E50; font-weight: 900; cursor: pointer; box-shadow: 4px 4px 0px #2C3E50; text-transform: uppercase; margin-top: 10px; }
+.file-label { display: inline-block; background: #FFCC00; color: #2C3E50; padding: 10px 12px; border: 1px solid rgba(44,62,80,0.15); font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(44,62,80,0.10); text-transform: uppercase; margin-top: 10px; border-radius: 10px; transition: all 0.15s ease; }
+.file-label:active { transform: translateY(2px); }
 .hash-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .hash-actions input { flex: 1 1 200px; }
+/* Settings gear button */
+.settings-gear-btn { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; padding: 0; margin: 0; background: rgba(44,62,80,0.06); border: 1px solid rgba(44,62,80,0.10); border-radius: 50%; box-shadow: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s ease; z-index: 10; }
+.settings-gear-btn:hover { background: rgba(44,62,80,0.12); }
+.settings-gear-btn:active { transform: translateY(1px); }
+.settings-gear-btn svg { width: 20px; height: 20px; fill: #2C3E50; }
+/* QR code display */
+.qr-section { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.qr-canvas-wrap { background: #fff; padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(44,62,80,0.10); display: inline-block; }
+.qr-scan-btn { background: #2A8CFF; color: #FFF; width: auto; padding: 12px 20px; display: inline-flex; align-items: center; gap: 8px; }
+/* Settings popup sections */
+.settings-section { margin-bottom: 20px; }
+.settings-section-title { font-weight: 900; color: #2C3E50; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; margin-bottom: 10px; opacity: 0.6; }
+.settings-toggle-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.settings-toggle-btn { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid rgba(44,62,80,0.12); background: #fff; color: #2C3E50; font-weight: 700; cursor: pointer; text-align: center; transition: all 0.15s ease; box-shadow: none; margin: 0; text-transform: none; font-size: 14px; }
+.settings-toggle-btn.active { background: #FFCC00; border-color: #FFCC00; font-weight: 900; }
+.settings-toggle-btn:active { transform: translateY(1px); }
+.settings-action-btn { width: 100%; padding: 13px; border-radius: 10px; border: 1px solid rgba(44,62,80,0.12); background: #fff; color: #2C3E50; font-weight: 700; cursor: pointer; text-align: left; transition: all 0.15s ease; box-shadow: none; margin: 0 0 6px 0; text-transform: none; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+.settings-action-btn:hover { background: rgba(44,62,80,0.04); }
+.settings-action-btn.danger-action { color: #E74C3C; }
+.settings-action-btn.danger-action:hover { background: rgba(231,76,60,0.06); }
 </style>
 <link rel="stylesheet" href="../../shared/styles/nav.css">
 </head>
@@ -33,104 +54,115 @@ button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50;
 <nav class="main-nav">
   <a href="../../../index.html" aria-label="Log" title="Log">
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
-    <span class="menu-label">Log</span>
+    <span class="menu-label" data-i18n="nav_log">Log</span>
   </a>
   <a href="../../battles/pages/battles.html" aria-label="Battles" title="Battles">
     <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
-    <span class="menu-label">Battles</span>
+    <span class="menu-label" data-i18n="nav_battles">Battles</span>
   </a>
   <a href="../../events/pages/events.html" aria-label="Events" title="Events">
     <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
-    <span class="menu-label">Events</span>
+    <span class="menu-label" data-i18n="nav_events">Events</span>
   </a>
   <a href="../../clans/pages/clans.html" aria-label="Klan" title="Klan">
     <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
-    <span class="menu-label">Klan</span>
+    <span class="menu-label" data-i18n="nav_clan">Klan</span>
   </a>
   <a href="../../friends/pages/friends.html" aria-label="Vänner" title="Vänner">
     <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
-    <span class="menu-label">Vänner</span>
+    <span class="menu-label" data-i18n="nav_friends">Vänner</span>
   </a>
   <a href="../../historik/historik.html" aria-label="Historik" title="Historik">
     <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
-    <span class="menu-label">Historik</span>
+    <span class="menu-label" data-i18n="nav_historik">Historik</span>
   </a>
   <a href="../../profile/pages/profile.html" class="active" aria-label="Profil" title="Profil">
     <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
-    <span class="menu-label">Profil</span>
+    <span class="menu-label" data-i18n="nav_profil">Profil</span>
   </a>
 </nav>
 <nav class="mobile-bottom-menu">
   <a href="../../../index.html" class="menu-item" aria-label="Log" title="Log">
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
-    <span class="menu-label">Log</span>
+    <span class="menu-label" data-i18n="nav_log">Log</span>
   </a>
   <a href="../../battles/pages/battles.html" class="menu-item" aria-label="Battles" title="Battles">
     <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
-    <span class="menu-label">Battles</span>
+    <span class="menu-label" data-i18n="nav_battles">Battles</span>
   </a>
   <a href="../../events/pages/events.html" class="menu-item" aria-label="Events" title="Events">
     <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
-    <span class="menu-label">Events</span>
+    <span class="menu-label" data-i18n="nav_events">Events</span>
   </a>
   <a href="../../clans/pages/clans.html" class="menu-item" aria-label="Klan" title="Klan">
     <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
-    <span class="menu-label">Klan</span>
+    <span class="menu-label" data-i18n="nav_clan">Klan</span>
   </a>
   <a href="../../friends/pages/friends.html" class="menu-item" aria-label="Vänner" title="Vänner">
     <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
-    <span class="menu-label">Vänner</span>
+    <span class="menu-label" data-i18n="nav_friends">Vänner</span>
   </a>
   <a href="../../historik/historik.html" class="menu-item" aria-label="Historik" title="Historik">
     <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
-    <span class="menu-label">Historik</span>
+    <span class="menu-label" data-i18n="nav_historik">Historik</span>
   </a>
   <a href="../../profile/pages/profile.html" class="menu-item active" aria-label="Profil" title="Profil">
     <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
-    <span class="menu-label">Profil</span>
+    <span class="menu-label" data-i18n="nav_profil">Profil</span>
   </a>
 </nav>
-<div class="card">
-  <h2>Namn</h2>
+
+<div class="card" style="position:relative;">
+  <h2 data-i18n="profile_name_title">Namn</h2>
+  <!-- Settings gear button -->
+  <button class="settings-gear-btn" onclick="openSettingsPopup()" title="Inställningar" aria-label="Settings">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96a7.04 7.04 0 00-1.62-.94l-.36-2.54a.48.48 0 00-.48-.41h-3.84a.48.48 0 00-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87a.48.48 0 00.12.61l2.03 1.58c-.04.31-.06.63-.06.94 0 .31.02.63.06.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.26.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
+  </button>
   <select id="profileSelect" onchange="loadSelectedProfile()"></select>
-  <button onclick="window.location.href='../../register/pages/register.html'" style="background: #2ECC71;">Ny Krigare</button>
-</div>
-<div class="card" style="text-align:center;">
-  <h2>Din personliga kod</h2>
-  <div class="hash-text" id="myHashDisplay"></div>
-</div>
-<div class="card">
-  <h2>Profil</h2>
-  <div class="profile-pic-container">
-    <img id="picPreview" src="">
-    <label class="file-label" for="picInput">Lägg till profilbild</label>
-    <input type="file" id="picInput" class="file-input" accept="image/*">
-    <p style="font-size: 12px; color: #888; margin-top: 6px; font-weight: bold;">Max 1 MB</p>
-  </div>
-  <input type="text" id="profileName" placeholder="Namn">
-  <input type="number" id="profileWeight" placeholder="Vikt (kg)" min="1">
-  <select id="profileGender">
-    <option value="man">Man</option>
-    <option value="kvinna">Kvinna</option>
-  </select>
-  <h3 style="margin-top:20px; font-family:'Arial Black';">Funzone gräns</h3>
-  <input type="number" step="0.1" id="profileFunzone" placeholder="Funzone gräns (‰)">
-  <button onclick="saveCurrentProfile(this)" style="margin-top: 15px;">Spara</button>
-  <button onclick="logout()" style="margin-top: 15px; background: #E74C3C; color: white;">Logga Ut (Nollställ)</button>
+  <button onclick="window.location.href='../../register/pages/register.html'" style="background: #2ECC71;" data-i18n="profile_new_warrior">Ny Krigare</button>
 </div>
 
-<div class="card" style="margin-bottom: 40px;">
-  <h2 style="background: #E74C3C;">Kontoinställningar</h2>
-  <button onclick="removeProfilePicture(this)">Ta bort profilbild</button>
-  <button onclick="deleteAccount(this)" style="background: #E74C3C; color: white;">Radera konto</button>
-  <p style="font-size: 12px; color: #888; margin-top: 12px; font-weight: bold; line-height: 1.5;">Vid frågor, kontakta oss på <a href="mailto:redls@redls.se" style="color: #2A8CFF;">redls@redls.se</a>.</p>
+<div class="card" style="text-align:center;">
+  <h2 data-i18n="profile_qr_title">Din QR-kod</h2>
+  <div class="qr-section">
+    <div class="qr-canvas-wrap">
+      <canvas id="qrCanvas" width="160" height="160"></canvas>
+    </div>
+    <div class="hash-text" id="myHashDisplay"></div>
+  </div>
 </div>
+
+<div class="card">
+  <h2 data-i18n="profile_title">Profil</h2>
+  <div class="profile-pic-container">
+    <img id="picPreview" src="">
+    <label class="file-label" for="picInput" data-i18n="profile_add_pic">Lägg till profilbild</label>
+    <input type="file" id="picInput" class="file-input" accept="image/*">
+    <p style="font-size: 12px; color: #888; margin-top: 6px; font-weight: bold;" data-i18n="profile_max_size">Max 1 MB</p>
+  </div>
+  <input type="text" id="profileName" placeholder="Namn" data-i18n="profile_name_ph">
+  <input type="number" id="profileWeight" placeholder="Vikt (kg)" min="1" data-i18n="profile_weight_ph">
+  <select id="profileGender">
+    <option value="man" data-i18n="profile_gender_man">Man</option>
+    <option value="kvinna" data-i18n="profile_gender_kvinna">Kvinna</option>
+  </select>
+  <h3 style="margin-top:20px; font-family:'Arial Black';" data-i18n="profile_funzone_label">Funzone gräns</h3>
+  <input type="number" step="0.1" id="profileFunzone" placeholder="Funzone gräns (‰)" data-i18n="profile_funzone_ph">
+  <button onclick="saveCurrentProfile(this)" style="margin-top: 15px;" data-i18n="profile_save">Spara</button>
+</div>
+
+<!-- QR code generator (tiny, zero-dependency) -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<!-- QR code scanner fallback -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <script src="../../shared/scripts/hash.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/scripts/shared.js"></script>
+<script src="../../shared/scripts/i18n.js"></script>
 <script>
 let currentProfile = getActiveProfile() || null;
+
 function renderProfileSelect() {
   const select = document.getElementById('profileSelect');
   select.innerHTML = '';
@@ -143,12 +175,14 @@ function renderProfileSelect() {
     select.appendChild(opt);
   });
 }
+
 function loadSelectedProfile() {
   const id = document.getElementById('profileSelect').value;
   switchProfile(id);
   currentProfile = getActiveProfile();
   populateForm();
 }
+
 function populateForm() {
   currentProfile = getActiveProfile();
   if(!currentProfile) return;
@@ -165,7 +199,10 @@ function populateForm() {
     picPreview.style.display = 'none';
     picPreview.src = '';
   }
+  // Generate QR code
+  generateQRCode(currentProfile.id);
 }
+
 document.getElementById('picInput').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (file) {
@@ -183,6 +220,7 @@ document.getElementById('picInput').addEventListener('change', function(e) {
     reader.readAsDataURL(file);
   }
 });
+
 async function saveCurrentProfile(btn) {
   return runWithButtonLock(btn, function() {
     currentProfile.name = document.getElementById('profileName').value;
@@ -201,7 +239,11 @@ async function saveCurrentProfile(btn) {
 }
 
 function logout() {
-  if (confirm("Är du säker på att du vill logga ut? Detta tar bort all lokal data på denna enhet. (Din data finns fortfarande sparad på din personliga kod i databasen!)")) {
+  var lang = window.i18n ? window.i18n.getLang() : 'sv';
+  var msg = lang === 'en'
+    ? 'Are you sure you want to log out? This removes all local data on this device. (Your data is still saved on your personal code in the database!)'
+    : 'Är du säker på att du vill logga ut? Detta tar bort all lokal data på denna enhet. (Din data finns fortfarande sparad på din personliga kod i databasen!)';
+  if (confirm(msg)) {
     localStorage.clear();
     window.location.href = '../../register/pages/register.html';
   }
@@ -214,14 +256,22 @@ async function removeProfilePicture(btn) {
     saveProfile(currentProfile);
     document.getElementById('picPreview').style.display = 'none';
     document.getElementById('picPreview').src = '';
-    showToast('Profilbild borttagen!');
+    var lang = window.i18n ? window.i18n.getLang() : 'sv';
+    showToast(lang === 'en' ? 'Profile picture removed!' : 'Profilbild borttagen!');
   });
 }
 
 async function deleteAccount(btn) {
+  var lang = window.i18n ? window.i18n.getLang() : 'sv';
   var confirmed = await showConfirmModal(
-    'Är du säker på att du vill radera ditt konto? All din data kommer att tas bort permanent från både denna enhet och databasen. Detta kan inte ångras.',
-    { title: 'Radera konto', confirmText: 'Radera', cancelText: 'Avbryt' }
+    lang === 'en'
+      ? 'Are you sure you want to delete your account? All your data will be permanently removed from both this device and the database. This cannot be undone.'
+      : 'Är du säker på att du vill radera ditt konto? All din data kommer att tas bort permanent från både denna enhet och databasen. Detta kan inte ångras.',
+    {
+      title: lang === 'en' ? 'Delete account' : 'Radera konto',
+      confirmText: lang === 'en' ? 'Delete' : 'Radera',
+      cancelText: lang === 'en' ? 'Cancel' : 'Avbryt'
+    }
   );
   if (!confirmed) return;
   return runWithButtonLock(btn, async function() {
@@ -232,6 +282,398 @@ async function deleteAccount(btn) {
     localStorage.clear();
     window.location.href = '../../register/pages/register.html';
   });
+}
+
+// ---------------------------------------------------------------------------
+// QR Code Generation
+// ---------------------------------------------------------------------------
+function generateQRCode(hash) {
+  if (!hash || typeof qrcode === 'undefined') return;
+  var canvas = document.getElementById('qrCanvas');
+  if (!canvas) return;
+  var qr = qrcode(0, 'M');
+  qr.addData(hash);
+  qr.make();
+  var ctx = canvas.getContext('2d');
+  var size = 160;
+  var cellSize = size / qr.getModuleCount();
+  ctx.clearRect(0, 0, size, size);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#2C3E50';
+  for (var row = 0; row < qr.getModuleCount(); row++) {
+    for (var col = 0; col < qr.getModuleCount(); col++) {
+      if (qr.isDark(row, col)) {
+        ctx.fillRect(col * cellSize, row * cellSize, cellSize + 0.5, cellSize + 0.5);
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// QR Code Scanner
+// ---------------------------------------------------------------------------
+function openQRScanner() {
+  var lang = window.i18n ? window.i18n.getLang() : 'sv';
+  var overlay = document.createElement('div');
+  overlay.className = 'modal';
+  overlay.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);z-index:6000;transition:background-color 200ms ease-out;';
+  requestAnimationFrame(function() { overlay.style.backgroundColor = 'rgba(0,0,0,0.5)'; });
+
+  var content = document.createElement('div');
+  content.className = 'modal-content card';
+  content.style.cssText = 'box-sizing:border-box;width:min(92vw,400px);max-width:92vw;margin:clamp(24px,8vh,80px) auto;background:#FFFFFF;color:#2C3E50;border:1px solid rgba(44,62,80,0.12);border-radius:16px;box-shadow:0 8px 32px rgba(44,62,80,0.18);padding:0;text-align:center;position:relative;opacity:0;transform:translateY(12px) scale(0.97);transition:opacity 200ms ease-out,transform 200ms ease-out;';
+  requestAnimationFrame(function() { requestAnimationFrame(function() { content.style.opacity = '1'; content.style.transform = 'translateY(0) scale(1)'; }); });
+
+  var header = document.createElement('h2');
+  header.textContent = lang === 'en' ? 'Scan QR Code' : 'Skanna QR-kod';
+  header.style.cssText = "font-family:'Arial Black',sans-serif;text-transform:uppercase;color:#FFF;background:#2A8CFF;margin:0;padding:15px 52px 15px 15px;border-bottom:1px solid rgba(255,255,255,0.15);text-align:left;border-radius:16px 16px 0 0;";
+
+  var closeBtn = document.createElement('span');
+  closeBtn.className = 'close-modal';
+  closeBtn.innerHTML = '&times;';
+  closeBtn.style.cssText = 'color:#FFF;font-size:28px;font-weight:bold;cursor:pointer;position:absolute;right:15px;top:10px;line-height:1;z-index:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;';
+
+  var body = document.createElement('div');
+  body.style.cssText = 'padding:20px;';
+
+  var desc = document.createElement('p');
+  desc.textContent = lang === 'en' ? "Point the camera at a friend's QR code to add them." : 'Rikta kameran mot en väns QR-kod för att lägga till dem.';
+  desc.style.cssText = 'font-weight:600;color:#5a6570;margin:0 0 16px 0;font-size:14px;';
+
+  var video = document.createElement('video');
+  video.setAttribute('playsinline', '');
+  video.setAttribute('autoplay', '');
+  video.style.cssText = 'width:100%;max-height:300px;border-radius:12px;background:#000;';
+
+  var statusEl = document.createElement('p');
+  statusEl.style.cssText = 'font-weight:700;margin:12px 0 0 0;min-height:20px;';
+
+  body.appendChild(desc);
+  body.appendChild(video);
+  body.appendChild(statusEl);
+  content.appendChild(header);
+  content.appendChild(closeBtn);
+  content.appendChild(body);
+  overlay.appendChild(content);
+  document.body.appendChild(overlay);
+
+  var stream = null;
+  var scanning = true;
+  var scanCanvas = document.createElement('canvas');
+  var scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+
+  function cleanup() {
+    scanning = false;
+    if (stream) {
+      stream.getTracks().forEach(function(t) { t.stop(); });
+      stream = null;
+    }
+    content.style.opacity = '0';
+    content.style.transform = 'translateY(8px) scale(0.97)';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0)';
+    setTimeout(function() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 180);
+  }
+
+  closeBtn.addEventListener('click', cleanup);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) cleanup(); });
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(function(s) {
+    stream = s;
+    video.srcObject = stream;
+    video.play();
+    requestAnimationFrame(scanFrame);
+  }).catch(function() {
+    statusEl.textContent = lang === 'en' ? 'Could not access the camera.' : 'Kunde inte komma åt kameran.';
+    statusEl.style.color = '#E74C3C';
+  });
+
+  function scanFrame() {
+    if (!scanning) return;
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+      requestAnimationFrame(scanFrame);
+      return;
+    }
+    scanCanvas.width = video.videoWidth;
+    scanCanvas.height = video.videoHeight;
+    scanCtx.drawImage(video, 0, 0);
+    var imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+
+    var code = null;
+    // Try BarcodeDetector first (Chrome/Edge)
+    if (typeof BarcodeDetector !== 'undefined') {
+      new BarcodeDetector({ formats: ['qr_code'] }).detect(video).then(function(barcodes) {
+        if (barcodes.length > 0 && scanning) {
+          handleScannedCode(barcodes[0].rawValue, cleanup, statusEl, lang);
+        }
+      }).catch(function() {});
+    }
+    // jsQR fallback
+    if (typeof jsQR !== 'undefined') {
+      code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+      if (code && code.data && scanning) {
+        handleScannedCode(code.data, cleanup, statusEl, lang);
+        return;
+      }
+    }
+    requestAnimationFrame(scanFrame);
+  }
+}
+
+async function handleScannedCode(hash, cleanup, statusEl, lang) {
+  if (!hash || !sb) return;
+  statusEl.textContent = lang === 'en' ? 'Looking up profile...' : 'Söker profil...';
+
+  var profile = await fetchProfileFromSupabase(hash);
+  if (!profile) {
+    statusEl.textContent = lang === 'en' ? 'Profile not found.' : 'Profilen hittades inte.';
+    statusEl.style.color = '#E74C3C';
+    return;
+  }
+
+  // Check if already a friend
+  var myProfile = getActiveProfile();
+  if (myProfile && myProfile.id === hash) {
+    statusEl.textContent = lang === 'en' ? "That's your own code!" : 'Det är din egen kod!';
+    statusEl.style.color = '#E74C3C';
+    return;
+  }
+
+  var confirmMsg = (lang === 'en' ? 'Do you want to add ' : 'Vill du lägga till ') + profile.name + '?';
+  var confirmed = await showConfirmModal(confirmMsg, {
+    title: lang === 'en' ? 'Friend found!' : 'Vän hittad!',
+    confirmText: lang === 'en' ? 'Add' : 'Lägg till',
+    cancelText: lang === 'en' ? 'Cancel' : 'Avbryt'
+  });
+
+  if (!confirmed) return;
+
+  // Add friend via Supabase
+  var myId = myProfile ? myProfile.id : null;
+  if (!myId) return;
+
+  var { error } = await sb.from('friends').upsert(
+    { player_hash: myId, friend_hash: hash },
+    { onConflict: 'player_hash,friend_hash' }
+  );
+
+  if (error) {
+    statusEl.textContent = lang === 'en' ? 'Error adding friend.' : 'Kunde inte lägga till vän.';
+    statusEl.style.color = '#E74C3C';
+    return;
+  }
+
+  showToast(lang === 'en' ? 'Friend added!' : 'Vän tillagd!');
+  cleanup();
+}
+
+// ---------------------------------------------------------------------------
+// Settings Popup
+// ---------------------------------------------------------------------------
+function openSettingsPopup() {
+  var lang = window.i18n ? window.i18n.getLang() : 'sv';
+  var isDark = localStorage.getItem('redlos_darkmode') === '1';
+
+  var overlay = document.createElement('div');
+  overlay.className = 'modal';
+  overlay.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);z-index:6000;transition:background-color 200ms ease-out;';
+  requestAnimationFrame(function() { overlay.style.backgroundColor = 'rgba(0,0,0,0.5)'; });
+
+  var content = document.createElement('div');
+  content.className = 'modal-content card';
+  content.style.cssText = 'box-sizing:border-box;width:min(92vw,420px);max-width:92vw;margin:clamp(24px,6vh,60px) auto;max-height:88vh;overflow-y:auto;background:#FFFFFF;color:#2C3E50;border:1px solid rgba(44,62,80,0.12);border-radius:16px;box-shadow:0 8px 32px rgba(44,62,80,0.18);padding:0;text-align:left;position:relative;opacity:0;transform:translateY(12px) scale(0.97);transition:opacity 200ms ease-out,transform 200ms ease-out;';
+  requestAnimationFrame(function() { requestAnimationFrame(function() { content.style.opacity = '1'; content.style.transform = 'translateY(0) scale(1)'; }); });
+
+  var header = document.createElement('h2');
+  header.textContent = lang === 'en' ? 'Settings' : 'Inställningar';
+  header.style.cssText = "font-family:'Arial Black',sans-serif;text-transform:uppercase;color:#FFF;background:#2C3E50;margin:0;padding:15px 52px 15px 15px;border-bottom:1px solid rgba(255,255,255,0.15);text-align:left;border-radius:16px 16px 0 0;";
+
+  var closeBtn = document.createElement('span');
+  closeBtn.className = 'close-modal';
+  closeBtn.innerHTML = '&times;';
+  closeBtn.style.cssText = 'color:#FFF;font-size:28px;font-weight:bold;cursor:pointer;position:absolute;right:15px;top:10px;line-height:1;z-index:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;';
+
+  var body = document.createElement('div');
+  body.style.cssText = 'padding:20px;';
+
+  // Language section
+  var langSection = document.createElement('div');
+  langSection.className = 'settings-section';
+  langSection.innerHTML = '<div class="settings-section-title">' + (lang === 'en' ? 'Language' : 'Språk') + '</div>';
+  var langRow = document.createElement('div');
+  langRow.className = 'settings-toggle-row';
+
+  var svBtn = document.createElement('button');
+  svBtn.className = 'settings-toggle-btn' + (lang === 'sv' ? ' active' : '');
+  svBtn.textContent = '🇸🇪 Svenska';
+  svBtn.type = 'button';
+
+  var enBtn = document.createElement('button');
+  enBtn.className = 'settings-toggle-btn' + (lang === 'en' ? ' active' : '');
+  enBtn.textContent = '🇬🇧 English';
+  enBtn.type = 'button';
+
+  svBtn.addEventListener('click', function() {
+    window.i18n.applyLanguage('sv');
+    svBtn.classList.add('active');
+    enBtn.classList.remove('active');
+    // Refresh settings popup title
+    header.textContent = 'Inställningar';
+    // Update section titles
+    updateSettingsSectionTitles(body, 'sv');
+  });
+
+  enBtn.addEventListener('click', function() {
+    window.i18n.applyLanguage('en');
+    enBtn.classList.add('active');
+    svBtn.classList.remove('active');
+    header.textContent = 'Settings';
+    updateSettingsSectionTitles(body, 'en');
+  });
+
+  langRow.appendChild(svBtn);
+  langRow.appendChild(enBtn);
+  langSection.appendChild(langRow);
+
+  // Theme section
+  var themeSection = document.createElement('div');
+  themeSection.className = 'settings-section';
+  themeSection.innerHTML = '<div class="settings-section-title" data-settings-label="theme">' + (lang === 'en' ? 'Theme' : 'Tema') + '</div>';
+  var themeRow = document.createElement('div');
+  themeRow.className = 'settings-toggle-row';
+
+  var lightBtn = document.createElement('button');
+  lightBtn.className = 'settings-toggle-btn' + (!isDark ? ' active' : '');
+  lightBtn.textContent = '☀️ ' + (lang === 'en' ? 'Light' : 'Ljust');
+  lightBtn.type = 'button';
+
+  var darkBtn = document.createElement('button');
+  darkBtn.className = 'settings-toggle-btn' + (isDark ? ' active' : '');
+  darkBtn.textContent = '🌙 ' + (lang === 'en' ? 'Dark' : 'Mörkt');
+  darkBtn.type = 'button';
+
+  lightBtn.addEventListener('click', function() {
+    localStorage.setItem('redlos_darkmode', '0');
+    document.body.classList.remove('dark-mode');
+    lightBtn.classList.add('active');
+    darkBtn.classList.remove('active');
+  });
+
+  darkBtn.addEventListener('click', function() {
+    localStorage.setItem('redlos_darkmode', '1');
+    document.body.classList.add('dark-mode');
+    darkBtn.classList.add('active');
+    lightBtn.classList.remove('active');
+  });
+
+  themeRow.appendChild(lightBtn);
+  themeRow.appendChild(darkBtn);
+  themeSection.appendChild(themeRow);
+
+  // Account section
+  var accountSection = document.createElement('div');
+  accountSection.className = 'settings-section';
+  accountSection.innerHTML = '<div class="settings-section-title" data-settings-label="account">' + (lang === 'en' ? 'Account' : 'Konto') + '</div>';
+
+  var removePicBtn = document.createElement('button');
+  removePicBtn.className = 'settings-action-btn';
+  removePicBtn.type = 'button';
+  removePicBtn.innerHTML = '🖼️ ' + (lang === 'en' ? 'Remove profile picture' : 'Ta bort profilbild');
+  removePicBtn.setAttribute('data-settings-label', 'removepic');
+  removePicBtn.addEventListener('click', function() { removeProfilePicture(removePicBtn); });
+
+  var logoutBtn = document.createElement('button');
+  logoutBtn.className = 'settings-action-btn';
+  logoutBtn.type = 'button';
+  logoutBtn.innerHTML = '🚪 ' + (lang === 'en' ? 'Log out' : 'Logga ut');
+  logoutBtn.setAttribute('data-settings-label', 'logout');
+  logoutBtn.addEventListener('click', function() { logout(); });
+
+  var deleteBtn = document.createElement('button');
+  deleteBtn.className = 'settings-action-btn danger-action';
+  deleteBtn.type = 'button';
+  deleteBtn.innerHTML = '🗑️ ' + (lang === 'en' ? 'Delete account' : 'Radera konto');
+  deleteBtn.setAttribute('data-settings-label', 'delete');
+  deleteBtn.addEventListener('click', function() { deleteAccount(deleteBtn); });
+
+  accountSection.appendChild(removePicBtn);
+  accountSection.appendChild(logoutBtn);
+  accountSection.appendChild(deleteBtn);
+
+  // GDPR section
+  var gdprSection = document.createElement('div');
+  gdprSection.className = 'settings-section';
+  gdprSection.innerHTML = '<div class="settings-section-title" data-settings-label="gdpr">' + (lang === 'en' ? 'Data Protection & GDPR' : 'Dataskydd & GDPR') + '</div>';
+
+  var gdprText = document.createElement('p');
+  gdprText.style.cssText = 'font-size:13px;color:#5a6570;line-height:1.5;margin:0 0 8px 0;';
+  gdprText.setAttribute('data-settings-label', 'gdprtext');
+  gdprText.textContent = lang === 'en'
+    ? 'All your data is handled according to Swedish GDPR legislation. You can delete your account and all data at any time.'
+    : 'All din data hanteras enligt svensk GDPR-lagstiftning. Du kan radera ditt konto och all data när som helst.';
+
+  var contactText = document.createElement('p');
+  contactText.style.cssText = 'font-size:12px;color:#888;font-weight:bold;line-height:1.5;margin:0;';
+  contactText.innerHTML = (lang === 'en' ? 'For questions, contact us at ' : 'Vid frågor, kontakta oss på ') + '<a href="mailto:redls@redls.se" style="color:#2A8CFF;">redls@redls.se</a>';
+  contactText.setAttribute('data-settings-label', 'contact');
+
+  var cookieText = document.createElement('p');
+  cookieText.style.cssText = 'font-size:12px;color:#888;font-weight:bold;line-height:1.5;margin-top:8px;';
+  cookieText.innerHTML = (lang === 'en' ? 'Read our ' : 'Läs vår ') + '<a href="../../shared/pages/cookiepolicy.html" target="_blank" style="color:#2A8CFF;">Cookiepolicy</a>';
+
+  gdprSection.appendChild(gdprText);
+  gdprSection.appendChild(contactText);
+  gdprSection.appendChild(cookieText);
+
+  body.appendChild(langSection);
+  body.appendChild(themeSection);
+  body.appendChild(accountSection);
+  body.appendChild(gdprSection);
+
+  content.appendChild(header);
+  content.appendChild(closeBtn);
+  content.appendChild(body);
+  overlay.appendChild(content);
+  document.body.appendChild(overlay);
+
+  function cleanupSettings() {
+    content.style.opacity = '0';
+    content.style.transform = 'translateY(8px) scale(0.97)';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0)';
+    setTimeout(function() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 180);
+  }
+  closeBtn.addEventListener('click', cleanupSettings);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) cleanupSettings(); });
+}
+
+function updateSettingsSectionTitles(body, lang) {
+  var labels = body.querySelectorAll('[data-settings-label]');
+  var map = {
+    theme: { sv: 'Tema', en: 'Theme' },
+    account: { sv: 'Konto', en: 'Account' },
+    gdpr: { sv: 'Dataskydd & GDPR', en: 'Data Protection & GDPR' },
+    removepic: { sv: '🖼️ Ta bort profilbild', en: '🖼️ Remove profile picture' },
+    logout: { sv: '🚪 Logga ut', en: '🚪 Log out' },
+    delete: { sv: '🗑️ Radera konto', en: '🗑️ Delete account' },
+    gdprtext: { sv: 'All din data hanteras enligt svensk GDPR-lagstiftning. Du kan radera ditt konto och all data när som helst.', en: 'All your data is handled according to Swedish GDPR legislation. You can delete your account and all data at any time.' }
+  };
+  for (var i = 0; i < labels.length; i++) {
+    var key = labels[i].getAttribute('data-settings-label');
+    if (map[key]) {
+      if (key === 'contact') {
+        labels[i].innerHTML = (lang === 'en' ? 'For questions, contact us at ' : 'Vid frågor, kontakta oss på ') + '<a href="mailto:redls@redls.se" style="color:#2A8CFF;">redls@redls.se</a>';
+      } else {
+        labels[i].innerHTML = map[key][lang] || map[key]['sv'];
+      }
+    }
+  }
+  // Update theme button labels
+  var themeBtns = body.querySelectorAll('.settings-toggle-row')[1];
+  if (themeBtns) {
+    var btns = themeBtns.querySelectorAll('.settings-toggle-btn');
+    if (btns[0]) btns[0].textContent = '☀️ ' + (lang === 'en' ? 'Light' : 'Ljust');
+    if (btns[1]) btns[1].textContent = '🌙 ' + (lang === 'en' ? 'Dark' : 'Mörkt');
+  }
 }
 
 renderProfileSelect();

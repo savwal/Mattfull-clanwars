@@ -1,4 +1,4 @@
-const CACHE_NAME = 'redlos-v7';
+const CACHE_NAME = 'redlos-v10';
 
 // Injected at build time with the full list of app assets. Falls back to []
 // when the SW is served without a prior build step.

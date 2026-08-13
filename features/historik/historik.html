@@ -7,27 +7,22 @@
 <title>redlos - Historik</title>
 <link rel="manifest" href="../../manifest.json">
 <style>
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
-.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; transition: background-color 0.3s ease, color 0.3s ease; }
+.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 2px solid #7f8c8d; box-shadow: 0 2px 8px rgba(44,62,80,0.08); background: #fff; border-radius: 14px; overflow: hidden; }
 .main-nav::-webkit-scrollbar { display: none; }
-.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 12px; }
+.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 1px solid #bdc3c7; font-size: 12px; }
 .main-nav a:last-child { border-right: none; }
 .main-nav a:hover, .main-nav a.active { background: #FFCC00; }
-.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; text-align: center; }
-h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #9B59B6; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; text-align: left; }
-button { padding: 14px; margin: 15px 0; width: 100%; box-sizing: border-box; border-radius: 0; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
-button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+.card { background: #FFFFFF; border: 2px solid #bdc3c7; border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); position: relative; text-align: center; transition: background 0.3s ease, border-color 0.3s ease; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #9B59B6; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.15); text-align: left; border-radius: 14px 14px 0 0; }
+button { padding: 14px; margin: 15px 0; width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid rgba(44,62,80,0.15); font-size: 16px; outline: none; font-weight: bold; background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; box-shadow: 0 2px 6px rgba(44,62,80,0.12); transition: all 0.15s ease; }
+button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,0.10); }
 .event-meta { font-weight: 900; color: #2C3E50; }
 ul { list-style: none; padding: 0; margin: 0; text-align: left; }
-li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #2C3E50; }
+li { border-bottom: 1px solid rgba(44,62,80,0.08); padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #2C3E50; }
 li:last-child { border-bottom: none; }
-/* z-index sits above the mobile bottom menu (z-index 1100) so the popup is
-   placed over the menu bar and its full list can be scrolled to the end. */
-.modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
-.modal-content { background-color: #FFFFFF; color: #2C3E50; margin: 20% auto; padding: 20px; border: 6px solid #2C3E50; box-shadow: 8px 8px 0px #2C3E50; border-radius: 0; width: 90%; max-width: 520px; text-align: center; position: relative; }
-/* The drink-log popup uses a fixed header (title + close X) and a scrolling
-   body, so the X stays reachable even after scrolling. The body's bottom padding
-   clears the menu/safe-area and the touch scrolling gives an iOS rubberband. */
+.modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.modal-content { background-color: #FFFFFF; color: #2C3E50; margin: 20% auto; padding: 20px; border: 1px solid rgba(44,62,80,0.12); box-shadow: 0 8px 32px rgba(44,62,80,0.18); border-radius: 16px; width: 90%; max-width: 520px; text-align: center; position: relative; }
 #historicalLogsModal .modal-content {
   max-height: calc(100vh - 24px);
   display: flex;
@@ -46,12 +41,12 @@ li:last-child { border-bottom: none; }
   padding: 16px 20px calc(28px + env(safe-area-inset-bottom)) 20px;
 }
 #historicalLogsModal .close-modal { top: 8px; z-index: 1; }
-.close-modal { color: #FFF; font-size: 32px; font-weight: bold; cursor: pointer; position: absolute; right: 15px; top: 10px; }
+.close-modal { color: #FFF; font-size: 28px; font-weight: bold; cursor: pointer; position: absolute; right: 15px; top: 10px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
 .drink-log-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; }
 .drink-log-info { text-align: left; flex: 1 1 auto; min-width: 0; }
 .drink-log-name { display: block; font-size: 1.05em; color: #2C3E50; overflow-wrap: anywhere; word-break: break-word; }
 .drink-log-sub { display: block; font-size: 0.85em; color: #5a6570; overflow-wrap: anywhere; word-break: break-word; }
-.drink-log-cl { display: inline-flex; align-items: center; padding: 4px 8px; border: 3px solid #2C3E50; background: #FFCC00; color: #2C3E50; font-weight: 900; box-shadow: 2px 2px 0px #2C3E50; white-space: nowrap; flex: 0 0 auto; }
+.drink-log-cl { display: inline-flex; align-items: center; padding: 4px 8px; border: 1px solid rgba(44,62,80,0.12); border-radius: 8px; background: #FFCC00; color: #2C3E50; font-weight: 900; box-shadow: 0 1px 4px rgba(44,62,80,0.10); white-space: nowrap; flex: 0 0 auto; }
 #historicalLogsList { padding-bottom: 8px; }
 </style>
 <link rel="stylesheet" href="../shared/styles/nav.css">
@@ -142,5 +137,6 @@ li:last-child { border-bottom: none; }
 <script src="../shared/scripts/shared.js"></script>
 <script src="../shared/scripts/calculator.js"></script>
 <script src="scripts/historicalLogsPopup.js"></script>
+<script src="../shared/scripts/i18n.js"></script>
 </body>
 </html>

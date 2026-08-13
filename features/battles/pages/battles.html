@@ -7,29 +7,25 @@
 <title>redlös - Battles</title>
 <link rel="manifest" href="../../../manifest.json">
 <style>
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
-.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; transition: background-color 0.3s ease, color 0.3s ease; }
+.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 2px solid #7f8c8d; box-shadow: 0 2px 8px rgba(44,62,80,0.08); background: #fff; border-radius: 14px; overflow: hidden; }
 .main-nav::-webkit-scrollbar { display: none; }
-.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 12px; }
+.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 1px solid #bdc3c7; font-size: 12px; }
 .main-nav a:last-child { border-right: none; }
 .main-nav a:hover, .main-nav a.active { background: #FFCC00; }
-.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
-h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #E74C3C; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; text-align: left; }
-.logger-tile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; background-color: #D1EAFE; padding: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; }
-.logger-tile { border: 4px solid #2C3E50; background: #FFF; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-around; color: #2C3E50; font-weight: bold; text-align: center; box-shadow: 4px 4px 0px #2C3E50; min-height: 80px;}
+.card { background: #FFFFFF; border: 2px solid #bdc3c7; border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); position: relative; transition: background 0.3s ease, border-color 0.3s ease; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #E74C3C; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.15); text-align: left; border-radius: 14px 14px 0 0; }
+.logger-tile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; background-color: #D1EAFE; padding: 16px; border: 1px solid rgba(44,62,80,0.10); box-shadow: 0 2px 8px rgba(44,62,80,0.08); border-radius: 12px; }
+.logger-tile { border: 1px solid rgba(44,62,80,0.10); background: #FFF; padding: 18px; display: flex; flex-direction: column; align-items: center; justify-content: space-around; color: #2C3E50; font-weight: bold; text-align: center; box-shadow: 0 2px 6px rgba(44,62,80,0.08); min-height: 80px; border-radius: 12px; transition: all 0.15s ease; }
 .logger-tile:last-child:nth-child(odd) { grid-column: span 2; }
 .logger-text { font-size: 1.1em; font-weight: 800; text-transform: uppercase; }
-
-/* "Under maintenance" presentation. Battle features are temporarily disabled
-   while database access is reduced, so every interactive battle control is made
-   non-interactive (no dead taps) and clearly stamped as under maintenance. */
-.maintenance-banner { background: #FFCC00; color: #2C3E50; border: 4px solid #2C3E50; box-shadow: 6px 6px 0px #2C3E50; padding: 18px 20px; margin-bottom: 20px; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; gap: 14px; }
+.maintenance-banner { background: #FFCC00; color: #2C3E50; border: 1px solid rgba(44,62,80,0.12); box-shadow: 0 2px 8px rgba(44,62,80,0.08); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; gap: 14px; }
 .maintenance-banner .icon { font-size: 30px; line-height: 1; }
 .maintenance-banner .text { font-size: 14px; line-height: 1.4; }
 .maintenance-banner .text small { display: block; font-weight: 700; text-transform: none; color: #5a4a00; margin-top: 4px; font-size: 12px; }
 .maintenance-wrap { position: relative; }
 .maintenance-wrap .disabled-content { opacity: 0.45; filter: grayscale(0.4); pointer-events: none; user-select: none; }
-.maintenance-sticker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-8deg); background: #E74C3C; color: #FFF; font-family: 'Arial Black', sans-serif; text-transform: uppercase; font-weight: 900; padding: 12px 22px; border: 4px solid #2C3E50; box-shadow: 6px 6px 0px #2C3E50; font-size: 18px; letter-spacing: 1px; white-space: nowrap; z-index: 5; pointer-events: none; }
+.maintenance-sticker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-8deg); background: #E74C3C; color: #FFF; font-family: 'Arial Black', sans-serif; text-transform: uppercase; font-weight: 900; padding: 12px 22px; border: 1px solid rgba(44,62,80,0.15); border-radius: 10px; box-shadow: 0 4px 12px rgba(44,62,80,0.15); font-size: 18px; letter-spacing: 1px; white-space: nowrap; z-index: 5; pointer-events: none; }
 </style>
 <link rel="stylesheet" href="../../shared/styles/nav.css">
 </head>
@@ -132,5 +128,6 @@ h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #
      and the registration guard. No Supabase, chart or battle scripts are
      included, so this page makes ZERO database queries. -->
 <script src="../../shared/scripts/shared.js"></script>
+<script src="../../shared/scripts/i18n.js"></script>
 </body>
 </html>

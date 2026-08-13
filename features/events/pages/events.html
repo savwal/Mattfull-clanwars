@@ -7,23 +7,23 @@
 <title>redlös - Events</title>
 <link rel="manifest" href="../../../manifest.json">
 <style>
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
-.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; transition: background-color 0.3s ease, color 0.3s ease; }
+.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 2px solid #7f8c8d; box-shadow: 0 2px 8px rgba(44,62,80,0.08); background: #fff; border-radius: 14px; overflow: hidden; }
 .main-nav::-webkit-scrollbar { display: none; }
-.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 12px; }
+.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 1px solid #bdc3c7; font-size: 12px; }
 .main-nav a:last-child { border-right: none; }
 .main-nav a:hover, .main-nav a.active { background: #FFCC00; }
-.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
-h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #E74C3C; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; text-align: left; }
-input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
-button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
-button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+.card { background: #FFFFFF; border: 2px solid #bdc3c7; border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); position: relative; transition: background 0.3s ease, border-color 0.3s ease; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #E74C3C; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.15); text-align: left; border-radius: 14px 14px 0 0; }
+input, select, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 1px solid rgba(44,62,80,0.15); border-radius: 10px; font-size: 16px; outline: none; font-weight: bold; transition: all 0.2s ease; }
+button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 0 2px 6px rgba(44,62,80,0.12); transition: all 0.15s ease; }
+button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,0.10); }
 ul { list-style: none; padding: 0; margin: 0; }
-li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+li { border-bottom: 1px solid rgba(44,62,80,0.08); padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
 li:last-child { border-bottom: none; }
-.profile-img { width: 50px; height: 50px; border-radius: 0; object-fit: cover; border: 3px solid #2C3E50; background: #fff; }
+.profile-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #2C3E50; background: #fff; }
 .event-meta { font-weight: 900; color: #2C3E50; }
-.badge { display: inline-block; padding: 4px 8px; border: 3px solid #2C3E50; font-weight: 900; background: #FFCC00; }
+.badge { display: inline-block; padding: 4px 8px; border: 1px solid rgba(44,62,80,0.12); border-radius: 6px; font-weight: 900; background: #FFCC00; }
 .rank-badge {
   display: inline-flex;
   align-items: center;
@@ -31,11 +31,12 @@ li:last-child { border-bottom: none; }
   min-width: 42px;
   height: 42px;
   padding: 0 8px;
-  border: 4px solid #2C3E50;
+  border: 2px solid #2C3E50;
+  border-radius: 10px;
   background: #E5E5E5;
   color: #2C3E50;
   font-weight: 900;
-  box-shadow: 2px 2px 0px #2C3E50;
+  box-shadow: 0 1px 4px rgba(44,62,80,0.10);
   flex: 0 0 auto;
 }
 #liveTopFive li, #eventLeaderboard li {
@@ -635,6 +636,7 @@ async function joinCustomEventImpl() {
 function getPresetEvents(year) {
   const midsummer = getMidsummerEve(year);
   return [
+    { id: 'nollbrickstillverkning', name: 'Nollbrickstillverkning', city: 'Sverige', start: dateAt(year, 8, 21), end: dateAt(year, 8, 22, 23, 59) },
     { id: 'lundakarnevalen', name: 'Lundakarnevalen (Lund)', city: 'Lund', start: dateAt(year, 5, 22), end: dateAt(year, 5, 24, 23, 59) },
     { id: 'valborg', name: 'Valborg (Uppsala)', city: 'Uppsala', start: dateAt(year, 4, 30), end: dateAt(year, 4, 30, 23, 59) },
     { id: 'forsta-maj', name: 'Forsta maj (Sverige)', city: 'Sverige', start: dateAt(year, 5, 1), end: dateAt(year, 5, 1, 23, 59) },
@@ -643,7 +645,7 @@ function getPresetEvents(year) {
     { id: 'nyarsafton', name: 'Nyarsafton (Sverige)', city: 'Sverige', start: dateAt(year, 12, 31), end: dateAt(year, 12, 31, 23, 59) },
     { id: 'uppsala-reggae', name: 'Uppsala Reggae Festival', city: 'Uppsala', start: dateAt(year, 7, 25), end: dateAt(year, 7, 27, 23, 59) },
     { id: 'kulturnatten-uppsala', name: 'Kulturnatten Uppsala', city: 'Uppsala', start: dateAt(year, 9, 13), end: dateAt(year, 9, 13, 23, 59) },
-    { id: 'wow', name: 'Way Out West', city: 'Goteborg', start: dateAt(year, 8, 7), end: dateAt(year, 8, 9, 23, 59) },
+    { id: 'wow', name: 'Way Out West', city: 'Goteborg', start: dateAt(year, 8, 13), end: dateAt(year, 8, 15, 23, 59) },
     { id: 'kulturkalaset', name: 'Kulturkalaset', city: 'Goteborg', start: dateAt(year, 8, 13), end: dateAt(year, 8, 17, 23, 59) },
     { id: 'stockholm-pride', name: 'Stockholm Pride', city: 'Stockholm', start: dateAt(year, 8, 4), end: dateAt(year, 8, 10, 23, 59) },
     { id: 'kulturfestivalen', name: 'Kulturfestivalen (Stockholm)', city: 'Stockholm', start: dateAt(year, 8, 13), end: dateAt(year, 8, 17, 23, 59) },
@@ -1029,6 +1031,13 @@ async function renderLiveTopFive() {
     const statValue = li.querySelector('.badge .stat-value');
     applyStatUpdate(statValue, Math.abs(entry.promille).toFixed(2));
 
+    const activeProf = getActiveProfile();
+    if (activeProf && entry.profile.id === activeProf.id) {
+      li.classList.add('active-user-row');
+    } else {
+      li.classList.remove('active-user-row');
+    }
+
     list.appendChild(li);
     existingItems.delete(entry.profile.id);
   });
@@ -1043,11 +1052,14 @@ async function renderLiveTopFive() {
 }
 
 function liveRowHtml(entry, index) {
-  return '<li style="display:flex;align-items:center;gap:12px;border-bottom:4px solid #E5E9F0;padding:12px 0;font-weight:bold;">'
-    + '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;border:3px solid #2C3E50;background:' + rankBadgeColor(index + 1) + ';color:#2C3E50;font-weight:900;box-shadow:2px 2px 0 #2C3E50;flex:0 0 auto;">' + formatRankLabel(index + 1) + '</span>'
+  const activeProfile = getActiveProfile();
+  const isMe = !!(activeProfile && (entry.profile.id === activeProfile.id));
+  const activeClass = isMe ? ' class="active-user-row"' : '';
+  return '<li' + activeClass + ' style="display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(44,62,80,0.08);padding:12px 0;font-weight:bold;">'
+    + '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;border:2px solid #2C3E50;border-radius:10px;background:' + rankBadgeColor(index + 1) + ';color:#2C3E50;font-weight:900;box-shadow:0 1px 4px rgba(44,62,80,0.10);flex:0 0 auto;">' + formatRankLabel(index + 1) + '</span>'
     + avatarImgHtml(entry.profile.pic)
-    + '<span style="flex:1;min-width:0;"><span style="display:block;font-size:1.05em;color:#2C3E50;word-break:break-word;">' + escapeHtml(entry.profile.name) + '</span></span>'
-    + '<span style="margin-left:auto;border:3px solid #2C3E50;background:#FFCC00;padding:4px 8px;font-weight:900;white-space:nowrap;flex:0 0 auto;">' + Math.abs(entry.promille).toFixed(2) + ' ‰</span>'
+    + '<span style="flex:1;min-width:0;"><span class="leader-name" style="display:block;font-size:1.05em;color:#2C3E50;word-break:break-word;">' + escapeHtml(entry.profile.name) + '</span></span>'
+    + '<span class="badge" style="margin-left:auto;border:1px solid rgba(44,62,80,0.12);border-radius:8px;background:#FFCC00;padding:4px 8px;font-weight:900;white-space:nowrap;flex:0 0 auto;">' + Math.abs(entry.promille).toFixed(2) + ' ‰</span>'
     + '</li>';
 }
 
@@ -1127,6 +1139,7 @@ setInterval(loadMyCustomEvents, CUSTOM_EVENT_REFRESH_MS);
 // Leaderboard updates are now pushed via the Supabase Realtime broadcast
 // channel (see shared.js). No polling interval needed.
 </script>
+<script src="../../shared/scripts/i18n.js"></script>
 </body>
 </html>
 

@@ -22,7 +22,7 @@ function initGDPR() {
               <li style="padding: 5px 0;">Dina vänner, klannamn, strider (battles) och antagna utmaningar.</li>
             </ul>
             <p><strong>Dataskydd & Tredje part:</strong> All data bevaras säkert och kommer varken att säljas eller lämnas ut till några tredje parter.</p>
-            <p><strong>Lokal webblagring:</strong> Vi använder lokal webblagring (localStorage) för att spara dina preferenser och sessionsdata lokalt på din enhet för en bättre användarupplevelse.</p>
+            <p><strong>Lokal webblagring:</strong> Vi använder lokal webblagring (localStorage) för att spara dina preferenser och sessionsdata lokalt på din enhet för en bättre användarupplevelse. <a href="/features/shared/pages/cookiepolicy.html" target="_blank" style="color: #2A8CFF;">Läs vår fullständiga Cookiepolicy här.</a></p>
             <p><strong>Notiser:</strong> Appen kan visa lokala påminnelser om att logga fler drycker. Dessa notiser skapas lokalt på din enhet och fungerar endast när appen är igång. De är endast en påminnelse och inte medicinsk rådgivning.</p>
             <p><strong>Immateriell egendom:</strong> Alla funktioner och features på redlös är skapade inom kreativa gränser. All immateriell egendom och upphovsrätt tillhör redlös-ägarna.</p>
             <p><strong>Ansvarsbegränsning:</strong> redlös.se är inte ansvarigt för någon skada, förlust eller påföljd som uppstår från din användning av tjänsten. Du samtycker att du inte kan väcka juridisk talan eller stämning mot skaparna eller ägarna av redlös.</p>

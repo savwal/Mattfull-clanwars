@@ -2,8 +2,11 @@
 // volume/abv calculation when grams_alcohol was not stored. Values are only
 // read here — never modified — so what is shown matches what was logged.
 function resolveDrinkGrams(log) {
+  if (window.sharedData && typeof window.sharedData.resolveDrinkGrams === 'function') {
+    return window.sharedData.resolveDrinkGrams(log);
+  }
   const grams = Number(log.grams_alcohol);
-  if (Number.isFinite(grams)) return grams;
+  if (log.grams_alcohol !== null && log.grams_alcohol !== undefined && Number.isFinite(grams) && grams !== 0) return grams;
   const volumeMl = Number(log.volume_ml) || 0;
   const abv = Number(log.abv) || 0;
   return volumeMl * (abv / 100) * 0.789;
@@ -54,9 +57,6 @@ async function openHistoricalLogsPopup() {
     await ensureSupabaseAuth();
   }
 
-  // Read every drink from the shared drink_logs cache (the same single fetch the
-  // leaderboards use) and keep just this player's, newest first — no dedicated
-  // query for this popup.
   let allDrinks = [];
   if (window.sharedData && typeof window.sharedData.getDrinkLogs === 'function') {
     allDrinks = await window.sharedData.getDrinkLogs();
@@ -84,8 +84,8 @@ async function openHistoricalLogsPopup() {
 
   summary.innerHTML = `
     <div style="display:grid; gap:10px; text-align:left;">
-      <div style="display:flex; align-items:center; gap:8px;"><strong>Antal enheter:</strong> <span style="display:inline-block; background:#FF6FB5; color:#111; border:3px solid #2C3E50; padding:4px 8px; font-weight:900; box-shadow:2px 2px 0 #2C3E50;">${logs.length}</span></div>
-      <div style="display:flex; align-items:center; gap:8px;"><strong>Ren alkohol:</strong> <span style="display:inline-block; background:#2ECC71; color:#111; border:3px solid #2C3E50; padding:4px 8px; font-weight:900; box-shadow:2px 2px 0 #2C3E50;">${totalCl.toFixed(1)} cl</span></div>
+      <div style="display:flex; align-items:center; gap:8px;"><strong>Antal enheter:</strong> <span style="display:inline-block; background:#FF6FB5; color:#fff; border:1px solid rgba(44,62,80,0.15); border-radius:8px; padding:4px 10px; font-weight:900; box-shadow:0 1px 4px rgba(44,62,80,0.10);">${logs.length}</span></div>
+      <div style="display:flex; align-items:center; gap:8px;"><strong>Ren alkohol:</strong> <span style="display:inline-block; background:#2ECC71; color:#fff; border:1px solid rgba(44,62,80,0.15); border-radius:8px; padding:4px 10px; font-weight:900; box-shadow:0 1px 4px rgba(44,62,80,0.10);">${totalCl.toFixed(1)} cl</span></div>
     </div>
   `;
 

@@ -7,32 +7,32 @@
 <title>redlös - Klan</title>
 <link rel="manifest" href="../../../manifest.json">
 <style>
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
-.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; transition: background-color 0.3s ease, color 0.3s ease; }
+.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 2px solid #7f8c8d; box-shadow: 0 2px 8px rgba(44,62,80,0.08); background: #fff; border-radius: 14px; overflow: hidden; }
 .main-nav::-webkit-scrollbar { display: none; }
-.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 12px; }
+.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 1px solid #bdc3c7; font-size: 12px; }
 .main-nav a:last-child { border-right: none; }
 .main-nav a:hover, .main-nav a.active { background: #FFCC00; }
-.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
-h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #9B59B6; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; text-align: left; }
-input, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
-input:focus { background: #f1f2f6; }
-button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
-button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+.card { background: #FFFFFF; border: 2px solid #bdc3c7; border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); position: relative; transition: background 0.3s ease, border-color 0.3s ease; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #9B59B6; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.15); text-align: left; border-radius: 14px 14px 0 0; }
+input, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 1px solid rgba(44,62,80,0.15); border-radius: 10px; font-size: 16px; outline: none; font-weight: bold; transition: all 0.2s ease; }
+input:focus { background: #f1f2f6; border-color: #2A8CFF; }
+button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 0 2px 6px rgba(44,62,80,0.12); transition: all 0.15s ease; }
+button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,0.10); }
 ul { list-style: none; padding: 0; margin: 0; }
-li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+li { border-bottom: 1px solid rgba(44,62,80,0.08); padding: 15px 0; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
 li:last-child { border-bottom: none; }
-.profile-img { width: 50px; height: 50px; border-radius: 0; object-fit: cover; border: 3px solid #2C3E50; background: #fff; }
+.profile-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #2C3E50; background: #fff; }
 .member-info { flex: 1; margin-left: 15px; }
-.member-stats { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 3px solid #2C3E50; background: #FFCC00; color: #2C3E50; font-weight: 900; box-shadow: 2px 2px 0px #2C3E50; white-space: nowrap; flex: 0 0 auto; }
+.member-stats { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid rgba(44,62,80,0.12); border-radius: 8px; background: #FFCC00; color: #2C3E50; font-weight: 900; box-shadow: 0 1px 4px rgba(44,62,80,0.10); white-space: nowrap; flex: 0 0 auto; }
 .stat-value { transition: opacity 2s ease; display: inline-block; }
 .stat-bump { opacity: 0.35; }
-.clan-shield { display: block; margin: 0 auto 15px auto; width: 100px; height: 110px; background: #9B59B6; border: 6px solid #2C3E50; border-radius: 10px 10px 50px 50px; box-shadow: inset -10px -10px 0px rgba(0,0,0,0.2), 6px 6px 0px #2C3E50; }
-.highlight-text { font-size: 1.5em; color: #E74C3C; font-family: 'Arial Black', sans-serif; text-shadow: 1px 1px 0px #2C3E50; }
-.hash-text { display: inline-block; background: #2C3E50; color: #FFF; padding: 5px 10px; font-family: monospace; font-size: 1.2em; margin: 10px 0; letter-spacing: 2px; }
-.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
-.modal-content { background-color: #2A8CFF; color: white; margin: 30% auto; padding: 25px; border: 6px solid #2C3E50; box-shadow: 8px 8px 0px #2C3E50; border-radius: 0; width: 90%; max-width: 400px; text-align: center; position: relative; }
-.close-modal { color: #FFF; font-size: 32px; font-weight: bold; cursor: pointer; position: absolute; right: 15px; top: 10px; }
+.clan-shield { display: block; margin: 0 auto 15px auto; width: 100px; height: 110px; background: #9B59B6; border: 3px solid #2C3E50; border-radius: 16px 16px 50px 50px; box-shadow: inset -10px -10px 0px rgba(0,0,0,0.2), 0 4px 12px rgba(44,62,80,0.15); }
+.highlight-text { font-size: 1.5em; color: #E74C3C; font-family: 'Arial Black', sans-serif; }
+.hash-text { display: inline-block; background: #2C3E50; color: #FFF; padding: 5px 10px; font-family: monospace; font-size: 1.2em; margin: 10px 0; letter-spacing: 2px; border-radius: 8px; }
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.modal-content { background-color: #2A8CFF; color: white; margin: 30% auto; padding: 25px; border: 1px solid rgba(44,62,80,0.12); box-shadow: 0 8px 32px rgba(44,62,80,0.18); border-radius: 16px; width: 90%; max-width: 400px; text-align: center; position: relative; }
+.close-modal { color: #FFF; font-size: 28px; font-weight: bold; cursor: pointer; position: absolute; right: 15px; top: 10px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
 
 #clanLeaderboard li {
   justify-content: flex-start;
@@ -48,11 +48,12 @@ li:last-child { border-bottom: none; }
   min-width: 34px;
   height: 34px;
   padding: 0 8px;
-  border: 3px solid #2C3E50;
+  border: 2px solid #2C3E50;
+  border-radius: 10px;
   background: #E5E5E5;
   color: #2C3E50;
   font-weight: 900;
-  box-shadow: 2px 2px 0px #2C3E50;
+  box-shadow: 0 1px 4px rgba(44,62,80,0.10);
   flex: 0 0 auto;
 }
 
@@ -82,7 +83,8 @@ li:last-child { border-bottom: none; }
   margin-left: auto;
   display: inline-block;
   padding: 4px 8px;
-  border: 3px solid #2C3E50;
+  border: 1px solid rgba(44,62,80,0.12);
+  border-radius: 6px;
   font-weight: 900;
   background: #FFCC00;
   color: #111;
@@ -171,7 +173,7 @@ li:last-child { border-bottom: none; }
     <h1 id="clanTitle" style="margin: 0 0 5px 0; color: #2C3E50; font-family: 'Arial Black'; text-transform: uppercase; white-space: normal; word-break: break-word; line-height: 1.05;"></h1>
     <div class="hash-text" id="clanHashDisplay"></div>
     <p style="margin: 10px 0 0 0; font-weight: bold;">Klanens Totala Poäng:</p>
-    <div class="highlight-text stat-value" id="clanTotalElo">0.0 cl</div>
+    <div class="highlight-text" id="clanTotalElo"><span class="stat-value">0.0</span> cl</div>
     <button onclick="leaveClan()" style="background: #E74C3C; color: #FFF; width: auto; display: block; margin: 20px auto 0 auto;">Lämna Klan</button>
   </div>
   <div class="card">
@@ -208,27 +210,14 @@ var myClanHash = localStorage.getItem('myClanHash') || null;
 var activeProfile = getActiveProfile();
 
 // The clan leaderboard (and the member scores + clan total that share this
-// period) runs in MONTHLY periods that turn over on the 24th: a period covers
-// the 25th of one month through the 24th of the next, mirroring the monthly
-// Wrapped. This is the one leaderboard that does NOT reset weekly — every other
-// board resets each Monday.
+// period) runs in calendar MONTHLY periods: from the 1st of the month through
+// the last day of the current month.
 function getClanScorePeriod() {
   var now = new Date();
   var y = now.getFullYear();
   var m = now.getMonth(); // 0–11
-  var start, end;
-  if (now.getDate() >= 25) {
-    // We're past this month's 24th turnover: current period is 25th this month
-    // through the 24th of next month.
-    start = new Date(y, m, 25, 0, 0, 0, 0);
-    end = new Date(y, m + 1, 24, 23, 59, 59, 999);
-  } else {
-    // On/before the 24th: current period started on the 25th of last month.
-    start = new Date(y, m - 1, 25, 0, 0, 0, 0);
-    end = new Date(y, m, 24, 23, 59, 59, 999);
-  }
-  // Date arithmetic with out-of-range months (m+1 in Dec, m-1 in Jan) rolls the
-  // year over automatically.
+  var start = new Date(y, m, 1, 0, 0, 0, 0);
+  var end = new Date(y, m + 1, 0, 23, 59, 59, 999);
   return { start: start.toISOString(), end: end.toISOString() };
 }
 
@@ -267,13 +256,23 @@ function gramsByPlayerInPeriod(allDrinks, period) {
 
 // Build every clan's score for the period from already-fetched clans + members
 // and the per-player grams map (no further DB calls).
+// Clan score is mathematically equal to the sum of unique member points displayed in the list.
 function buildClanRanking(allClans, allMembers, gramsByPlayer) {
-  var gramsByClan = {};
+  var clByClan = {};
+  var seenInClan = {};
   (allMembers || []).forEach(function(m) {
-    gramsByClan[m.clan_id] = (gramsByClan[m.clan_id] || 0) + (gramsByPlayer[m.player_hash] || 0);
+    if (!m.clan_id || !m.player_hash) return;
+    var key = m.clan_id + ':' + m.player_hash;
+    if (seenInClan[key]) return;
+    seenInClan[key] = true;
+
+    var grams = gramsByPlayer[m.player_hash] || 0;
+    var memberCl = Number(Math.abs(calculateCl(grams)).toFixed(1));
+    clByClan[m.clan_id] = (clByClan[m.clan_id] || 0) + memberCl;
   });
   return (allClans || []).map(function(clan) {
-    return { id: clan.id, name: clan.name, cl: Math.abs(calculateCl(gramsByClan[clan.id] || 0)) };
+    var clanTotalCl = Number((clByClan[clan.id] || 0).toFixed(1));
+    return { id: clan.id, name: clan.name, cl: clanTotalCl };
   }).sort(function(a, b) { return b.cl - a.cl; });
 }
 
@@ -284,7 +283,7 @@ async function loadOngoingEvent() {
   var eventContent = document.getElementById('ongoingEventContent');
   try {
     var result = await sb.from('events')
-      .select('id, name, start_time, end_time, hash')
+      .select('id, name, start_time, end_time')
       .lte('start_time', now)
       .gte('end_time', now);
     var events = result.data;
@@ -341,6 +340,9 @@ async function updateClanUI() {
   var gramsByPlayer = gramsByPlayerInPeriod(allDrinks, getClanScorePeriod());
   var ranked = membersError ? null : buildClanRanking(allClans, allMembers, gramsByPlayer);
 
+  // Render the clan leaderboard card immediately so it never gets stuck loading
+  try { await renderClanLeaderboard(ranked); } catch (e) {}
+
   var myMembership = null;
   for (var mi = 0; mi < allMembers.length; mi++) {
     if (allMembers[mi].player_hash === activeProfile.id) { myMembership = allMembers[mi]; break; }
@@ -392,6 +394,13 @@ async function updateClanUI() {
   await loadOngoingEvent();
 
   var membersData = allMembers.filter(function(m) { return m.clan_id === myClanHash; });
+  var seenMemberHash = {};
+  var uniqueMembersData = [];
+  membersData.forEach(function(m) {
+    if (!m.player_hash || seenMemberHash[m.player_hash]) return;
+    seenMemberHash[m.player_hash] = true;
+    uniqueMembersData.push(m);
+  });
 
   // On a fetch error, don't blank the member list — keep what's already shown so
   // a transient/offline failure can't look like everyone left the clan. Show a
@@ -412,7 +421,7 @@ async function updateClanUI() {
   // whenever they are themselves a confirmed member of this clan, so in that
   // case all codes are visible (and you can always see your own code).
   var iAmClanMember = false;
-  membersData.forEach(function(m) { if (m.player_hash === activeProfile.id) iAmClanMember = true; });
+  uniqueMembersData.forEach(function(m) { if (m.player_hash === activeProfile.id) iAmClanMember = true; });
   function canSeeMemberHash(memberId) {
     if (memberId === activeProfile.id) return true;
     return iAmClanMember;
@@ -428,21 +437,22 @@ async function updateClanUI() {
     existingItems[items[i].getAttribute('data-member-id')] = items[i];
   }
 
-  if (membersData && membersData.length > 0) {
-    var memberHashes = membersData.map(function(m) { return m.player_hash; });
+  if (uniqueMembersData && uniqueMembersData.length > 0) {
+    var memberHashes = uniqueMembersData.map(function(m) { return m.player_hash; });
 
     // Profiles from the shared, cross-page cache (one fetch for any new hashes).
     var profilesByHash = await window.sharedData.getProfiles(memberHashes);
 
-    var membersList = membersData.map(function(m) {
+    var membersList = uniqueMembersData.map(function(m) {
       var profile = profilesByHash[m.player_hash];
       var grams = gramsByPlayer[m.player_hash] || 0;
+      var memberCl = Number(Math.abs(calculateCl(grams)).toFixed(1));
       return {
         id: m.player_hash,
         name: profile && profile.display_name ? profile.display_name : m.player_hash,
         pic: profile && profile.avatar_url ? profile.avatar_url : null,
         role: m.role,
-        elo: Math.abs(calculateCl(grams))
+        elo: memberCl
       };
     });
 
@@ -466,59 +476,61 @@ async function updateClanUI() {
         li.appendChild(stats);
       }
 
-      li.style.background = member.id === activeProfile.id ? 'rgba(46, 204, 113, 0.1)' : '';
+      if (member.id === activeProfile.id) {
+        li.classList.add('active-user-row');
+      } else {
+        li.classList.remove('active-user-row');
+      }
+
       var img = li.querySelector('img.profile-img');
       img.src = member.pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
       var info = li.querySelector('.member-info');
-      // Formatted to match the "Mina vänner" list (friends.html): a name line
-      // (1.1em) above a grey player_hash line (0.8em), same font.
       var hashLine = canSeeMemberHash(member.id)
         ? '<span style="display:block; font-size:0.8em; color:#5a6570; overflow-wrap:anywhere; word-break:break-word;">' + member.id + '</span>'
         : '';
       info.innerHTML = '<span style="display:block; font-size:1.1em; color:#2C3E50; overflow-wrap:anywhere; word-break:break-word;">' + member.name + '</span>' + hashLine;
-      var statValue = li.querySelector('.stat-value');
-      applyStatUpdate(statValue, Math.abs(member.elo).toFixed(1));
+      applyStatUpdate(li.querySelector('.member-stats .stat-value'), Math.abs(member.elo).toFixed(1));
 
       list.appendChild(li);
       delete existingItems[member.id];
     });
+
+    Object.keys(existingItems).forEach(function(id) { existingItems[id].remove(); });
+  } else {
+    list.innerHTML = '<p style="text-align:center; color:#5a6570; font-weight:bold;">Inga medlemmar hittades.</p>';
   }
 
-  var totalEl = document.getElementById('clanTotalElo');
-  applyStatUpdate(totalEl, Math.abs(totalElo).toFixed(1) + ' cl');
+  var clanTotalScore = Number(totalElo.toFixed(1));
 
-  Object.keys(existingItems).forEach(function(id) {
-    existingItems[id].remove();
-  });
+  var memberCountEl = document.getElementById('clanMemberCount');
+  if (memberCountEl) memberCountEl.innerText = uniqueMembersData ? uniqueMembersData.length : 0;
+
+  var totalEloEl = document.getElementById('clanTotalElo');
+  if (totalEloEl) {
+    var valSpan = totalEloEl.querySelector('.stat-value');
+    if (valSpan) {
+      valSpan.textContent = clanTotalScore.toFixed(1);
+    } else {
+      totalEloEl.textContent = clanTotalScore.toFixed(1) + ' cl';
+    }
+  }
+
+  var myClanEntry = (ranked || []).find(function(c) { return c.id === myClanHash; });
+  if (myClanEntry) {
+    myClanEntry.cl = clanTotalScore;
+  }
 
   await renderClanLeaderboard(ranked);
 }
 
-// Compute every clan's score for the current period, sorted high to low.
-// Used standalone by the "Visa Alla" modal: fetches clans + members, then scores
-// them from the shared drink_logs cache (no per-clan drink_logs queries).
-// Returns null when the DB is unavailable so callers can show an error state.
-async function computeClanRanking() {
-  if (!sb) return null;
-
-  var clansResult = await sb.from('clans').select('id, name');
-  if (clansResult.error) return null;
-  var clans = clansResult.data;
-  if (!clans || clans.length === 0) return [];
-
-  var membersResult = await sb.from('clan_members').select('clan_id, player_hash');
-  if (membersResult.error) return null;
-  var members = membersResult.data;
-  if (!members || members.length === 0) return [];
-
-  var allDrinks = await window.sharedData.getDrinkLogs();
-  var gramsByPlayer = gramsByPlayerInPeriod(allDrinks, getClanScorePeriod());
-  return buildClanRanking(clans, members, gramsByPlayer);
-}
-
 function _renderClanRankingInList(list, ranked) {
+  if (!list) return;
   var loadingRow = list.querySelector('.loading-row');
   if (loadingRow) loadingRow.remove();
+  if (!ranked || ranked.length === 0) {
+    list.innerHTML = '<p style="text-align:center; color:#5a6570; font-weight:bold; margin:10px 0;">Inga klaner att visa.</p>';
+    return;
+  }
   var existing = {};
   Array.from(list.querySelectorAll('li[data-clan-id]')).forEach(function(li) {
     existing[li.getAttribute('data-clan-id')] = li;
@@ -549,11 +561,43 @@ function _renderClanRankingInList(list, ranked) {
     li.querySelector('.rank-badge').style.background = rankBadgeColor(index + 1);
     li.querySelector('.leader-name').textContent = clan.name;
     li.querySelector('.leader-hash').textContent = clan.id;
-    applyStatUpdate(li.querySelector('.badge .stat-value'), Math.abs(clan.cl).toFixed(1));
+    var statValEl = li.querySelector('.badge .stat-value');
+    if (statValEl) statValEl.textContent = Math.abs(clan.cl).toFixed(1);
+
+    if (myClanHash && clan.id === myClanHash) {
+      li.classList.add('active-user-row');
+    } else {
+      li.classList.remove('active-user-row');
+    }
+
     list.appendChild(li);
     delete existing[clan.id];
   });
   Object.keys(existing).forEach(function(id) { existing[id].remove(); });
+}
+
+// Compute every clan's score for the current period, sorted high to low.
+// Used standalone by the "Visa Alla" modal: fetches clans + members, then scores
+// them from the shared drink_logs cache (no per-clan drink_logs queries).
+async function computeClanRanking() {
+  if (!sb) return null;
+  try {
+    var clansResult = await sb.from('clans').select('id, name');
+    if (clansResult.error) return null;
+    var clans = clansResult.data;
+    if (!clans || clans.length === 0) return [];
+
+    var membersResult = await sb.from('clan_members').select('clan_id, player_hash');
+    if (membersResult.error) return null;
+    var members = membersResult.data;
+    if (!members || members.length === 0) return [];
+
+    var allDrinks = await window.sharedData.getDrinkLogs();
+    var gramsByPlayer = gramsByPlayerInPeriod(allDrinks, getClanScorePeriod());
+    return buildClanRanking(clans, members, gramsByPlayer);
+  } catch (e) {
+    return null;
+  }
 }
 
 // Render the inline top-5 clan leaderboard. updateClanUI passes the ranking it
@@ -747,6 +791,7 @@ safeUpdateClanUI();
 // refreshPageData() -> safeUpdateClanUI(), so a >1h lock can't leave the page
 // querying with a dead token.
 </script>
+<script src="../../shared/scripts/i18n.js"></script>
 </body>
 </html>
 

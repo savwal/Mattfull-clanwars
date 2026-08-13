@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cookiepolicy - redlös</title>
+  <link rel="stylesheet" href="../../../index.css">
+  <style>
+    body {
+      background: #F4F6F8;
+      color: #2C3E50;
+      font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #FFF;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #E74C3C;
+      text-transform: uppercase;
+      font-family: 'Arial Black', sans-serif;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    h2 {
+      color: #2A8CFF;
+      margin-top: 30px;
+    }
+    ul {
+      margin-left: 20px;
+    }
+    li {
+      margin-bottom: 10px;
+    }
+    .back-btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #2C3E50;
+      color: #FFF;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+    .back-btn:hover {
+      background: #34495E;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Cookiepolicy</h1>
+    <p>Senast uppdaterad: 12 augusti 2026</p>
+
+    <h2>Använder vi cookies?</h2>
+    <p>På redlös använder vi inte traditionella HTTP-cookies. Istället förlitar vi oss helt på moderna webbtekniker som <strong>Lokal webblagring (localStorage)</strong> och <strong>Cache Storage (Service Workers)</strong>. Detta ger en snabbare, säkrare och mer privat användarupplevelse där all din data sparas lokalt på din egen enhet.</p>
+
+    <h2>Vad lagrar vi lokalt?</h2>
+    <p>För att appen ska fungera sparar vi följande typ av data direkt på din enhet via <code>localStorage</code>:</p>
+    <ul>
+      <li><strong>Användardata & Inställningar:</strong> Vilken profil som är aktiv, dina lokala profiler, valt språk (svenska/engelska) och ditt val för mörkt/ljust tema (Dark Mode).</li>
+      <li><strong>Dryckeshistorik:</strong> De drycker du har loggat, arkiverade drycker och planerade drycker. Detta gör att din historik och promillegraf kan ritas upp omedelbart utan att vänta på nätverket.</li>
+      <li><strong>Klan & Nätverk:</strong> Ditt klans-ID (för att du ska slippa logga in på nytt) och cachad data för de vänner och klaner du har hämtat.</li>
+      <li><strong>Godkännande av användaravtal:</strong> Vi lagrar ett värde som bekräftar att du har accepterat vårt GDPR-användaravtal så att popupen inte visas varje gång du besöker sidan.</li>
+    </ul>
+
+    <h2>Cache Storage (Service Worker)</h2>
+    <p>Vi använder en Service Worker för att spara appens filer (HTML, CSS, JavaScript, ikoner) i webbläsarens cache. Detta gör att redlös fungerar offline som en PWA (Progressive Web App) och laddar extremt snabbt.</p>
+
+    <h2>Tredjepartslagring</h2>
+    <p>När du interagerar med funktioner som klaner och leaderboards, synkroniseras viss data (ditt hash-ID, profilnamn, avatar och totalpoäng) med vår molndatabas (Supabase). Inga annonseringscookies eller spårningscookies från tredje part (t.ex. Google Analytics eller Meta Pixel) används.</p>
+
+    <h2>Dina val och rättigheter</h2>
+    <p>Eftersom all lagring sker lokalt i din webbläsare, har du full kontroll över den. Du kan när som helst radera all data genom att:</p>
+    <ul>
+      <li>Gå till <strong>Profil</strong> i appen och klicka på "Logga ut (Rensa data)".</li>
+      <li>Rensa din webbläsares webbplatsdata/cache i inställningarna.</li>
+    </ul>
+    
+    <p>Har du frågor om vår hantering av data? Kontakta oss på <a href="mailto:redls@redls.se" style="color: #2A8CFF;">redls@redls.se</a>.</p>
+
+    <div style="text-align: center;">
+      <a href="javascript:window.close();" class="back-btn" onclick="if(!window.opener){window.history.back();}">Stäng</a>
+    </div>
+  </div>
+</body>
+</html>

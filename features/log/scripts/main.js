@@ -455,14 +455,14 @@ function renderPendingPlan() {
     var declineBtn = document.createElement('button');
     declineBtn.textContent = '✕';
     declineBtn.title = 'Avböj dryck';
-    declineBtn.style.cssText = 'background:#E74C3C; color:#FFF; width:auto; padding:8px 12px; font-size:14px; box-shadow:3px 3px 0px #2C3E50; border:3px solid #2C3E50; font-weight:900; text-transform:uppercase; cursor:pointer; margin:0;';
+    declineBtn.style.cssText = 'background:#E74C3C; color:#FFF; width:auto; padding:8px 14px; font-size:14px; box-shadow:0 2px 6px rgba(44,62,80,0.12); border:1px solid rgba(44,62,80,0.15); border-radius:8px; font-weight:900; text-transform:uppercase; cursor:pointer; margin:0; transition:all 0.15s ease;';
     (function(idx) {
       declineBtn.onclick = function() { declinePlannedDrink(idx); };
     })(i);
 
     var btn = document.createElement('button');
     btn.textContent = '✓ Druckit';
-    btn.style.cssText = 'background:#2ECC71; color:#FFF; width:auto; padding:8px 16px; font-size:14px; box-shadow:3px 3px 0px #2C3E50; border:3px solid #2C3E50; font-weight:900; text-transform:uppercase; cursor:pointer; margin:0;';
+    btn.style.cssText = 'background:#2ECC71; color:#FFF; width:auto; padding:8px 16px; font-size:14px; box-shadow:0 2px 6px rgba(44,62,80,0.12); border:1px solid rgba(44,62,80,0.15); border-radius:8px; font-weight:900; text-transform:uppercase; cursor:pointer; margin:0; transition:all 0.15s ease;';
     (function(idx) {
       btn.onclick = function() { acceptPlannedDrink(idx); };
     })(i);

@@ -198,26 +198,30 @@ function ensureTequilaModal() {
           padding:14px;
           background:#E74C3C;
           color:#fff;
-          border:4px solid #2C3E50;
-          box-shadow:4px 4px 0px #2C3E50;
+          border:1px solid rgba(44,62,80,0.15);
+          border-radius:10px;
+          box-shadow:0 2px 6px rgba(44,62,80,0.12);
           font-size:16px;
           font-weight:900;
           text-transform:uppercase;
           cursor:pointer;
           font-family:inherit;
+          transition:all 0.15s ease;
         ">Ja, självklart!</button>
         <button id="tequilaConfirmNo" style="
           flex:1;
           padding:14px;
           background:#FFCC00;
           color:#2C3E50;
-          border:4px solid #2C3E50;
-          box-shadow:4px 4px 0px #2C3E50;
+          border:1px solid rgba(44,62,80,0.15);
+          border-radius:10px;
+          box-shadow:0 2px 6px rgba(44,62,80,0.12);
           font-size:16px;
           font-weight:900;
           text-transform:uppercase;
           cursor:pointer;
           font-family:inherit;
+          transition:all 0.15s ease;
         ">Nej, ångrar mig</button>
       </div>
     </div>

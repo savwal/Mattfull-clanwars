@@ -7,23 +7,23 @@
 <title>Vänner - Måttfull</title>
 <link rel="manifest" href="../../../manifest.json">
 <style>
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; }
-.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 4px solid #2C3E50; box-shadow: 4px 4px 0px #2C3E50; background: #fff; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #E5E9F0; color: #111; min-height: 100vh; transition: background-color 0.3s ease, color 0.3s ease; }
+.main-nav { display: flex; flex-wrap: wrap; margin-bottom: 20px; border: 2px solid #7f8c8d; box-shadow: 0 2px 8px rgba(44,62,80,0.08); background: #fff; border-radius: 14px; overflow: hidden; }
 .main-nav::-webkit-scrollbar { display: none; }
-.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 4px solid #2C3E50; font-size: 12px; }
+.main-nav a { flex: 1 1 140px; text-align: center; padding: 12px 10px; background: #fff; text-decoration: none; color: #2C3E50; font-weight: 900; text-transform: uppercase; border-right: 1px solid #bdc3c7; font-size: 12px; }
 .main-nav a:last-child { border-right: none; }
 .main-nav a:hover, .main-nav a.active { background: #FFCC00; }
-.card { background: #FFFFFF; border: 4px solid #2C3E50; border-radius: 0; padding: 20px; margin-bottom: 20px; box-shadow: 6px 6px 0px #2C3E50; position: relative; }
-h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #2ECC71; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 4px solid #2C3E50; text-align: left; }
-input, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 4px solid #2C3E50; font-size: 16px; outline: none; font-weight: bold; }
-input:focus { background: #f1f2f6; }
-button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 4px 4px 0px #2C3E50; transition: all 0.1s; }
-button:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #2C3E50; }
+.card { background: #FFFFFF; border: 2px solid #bdc3c7; border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); position: relative; transition: background 0.3s ease, border-color 0.3s ease; }
+h2 { font-family: 'Arial Black', sans-serif; text-transform: uppercase; color: #FFF; background: #2ECC71; margin: -20px -20px 20px -20px; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.15); text-align: left; border-radius: 14px 14px 0 0; }
+input, button { padding: 14px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 1px solid rgba(44,62,80,0.15); border-radius: 10px; font-size: 16px; outline: none; font-weight: bold; transition: all 0.2s ease; }
+input:focus { background: #f1f2f6; border-color: #2A8CFF; }
+button { background: #FFCC00; color: #2C3E50; cursor: pointer; text-transform: uppercase; font-weight: 900; box-shadow: 0 2px 6px rgba(44,62,80,0.12); transition: all 0.15s ease; }
+button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,0.10); }
 button.magic { background: #2A8CFF; color: white; margin-top: 10px; }
 ul { list-style: none; padding: 0; margin: 0; }
-li { border-bottom: 4px solid #E5E9F0; padding: 15px 0; display: flex; justify-content: flex-start; align-items: center; gap: 12px; font-weight: bold; flex-wrap: nowrap; }
+li { border-bottom: 1px solid rgba(44,62,80,0.08); padding: 15px 0; display: flex; justify-content: flex-start; align-items: center; gap: 12px; font-weight: bold; flex-wrap: nowrap; }
 li:last-child { border-bottom: none; }
-.profile-img { width: 50px; height: 50px; border-radius: 0; object-fit: cover; border: 3px solid #2C3E50; background: #fff; }
+.profile-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #2C3E50; background: #fff; }
 .friend-info { flex: 1; min-width: 0; margin-left: 0; }
 .friend-name { display: block; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
 .friend-hash { display: block; overflow-wrap: anywhere; word-break: break-word; }
@@ -32,9 +32,9 @@ li:last-child { border-bottom: none; }
 .view-toggle { display: flex; gap: 10px; flex-wrap: wrap; }
 .view-toggle button { width: auto; flex: 1 1 140px; }
 .hidden { display: none; }
-.stat-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 76px; padding: 6px 10px; border: 3px solid #2C3E50; background: #FFCC00; box-shadow: 2px 2px 0px #2C3E50; font-weight: 900; color: #2C3E50; flex: 0 0 auto; white-space: nowrap; }
+.stat-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 76px; padding: 6px 10px; border: 1px solid rgba(44,62,80,0.12); border-radius: 8px; background: #FFCC00; box-shadow: 0 1px 4px rgba(44,62,80,0.10); font-weight: 900; color: #2C3E50; flex: 0 0 auto; white-space: nowrap; }
 .stat-pill .stat-value { margin-right: 4px; }
-.rank-box { display: inline-flex; align-items: center; justify-content: center; min-width: 42px; height: 42px; border: 4px solid #2C3E50; background: #E5E5E5; color: #2C3E50; font-weight: 900; box-shadow: 2px 2px 0px #2C3E50; flex: 0 0 auto; }
+.rank-box { display: inline-flex; align-items: center; justify-content: center; min-width: 42px; height: 42px; border: 2px solid #2C3E50; border-radius: 10px; background: #E5E5E5; color: #2C3E50; font-weight: 900; box-shadow: 0 1px 4px rgba(44,62,80,0.10); flex: 0 0 auto; }
 .stat-value { transition: opacity 2s ease; display: inline-block; }
 .stat-bump { opacity: 0.35; }
 </style>
@@ -104,11 +104,14 @@ li:last-child { border-bottom: none; }
 </nav>
 
 <div class="card">
-  <h2 style="background: #2A8CFF;">Lägg till Vän</h2>
-  <div style="display: flex; gap: 10px;">
-    <input type="text" id="friendHash" placeholder="Personlig kod">
-    <button onclick="addFriend(this)" class="magic" style="width: auto; margin: 8px 0;">SÖK</button>
+  <h2 style="background: #2A8CFF;" data-i18n="friends_add_title">Lägg till Vän</h2>
+  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+    <input type="text" id="friendHash" placeholder="Personlig kod" data-i18n="friends_hash_ph" style="flex: 1 1 180px; margin: 0;">
+    <button onclick="openQRScanner()" type="button" style="width: auto; padding: 14px 18px; margin: 0; background: #2A8CFF; color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 6px;" title="Skanna QR-kod">
+      📷 <span data-i18n="profile_scan_qr">Skanna QR</span>
+    </button>
   </div>
+  <button onclick="addFriend(this)" class="magic" style="width: 100%; margin-top: 10px;" data-i18n="friends_add_btn">SÖK</button>
 </div>
 
 <div class="card" id="liveView">
@@ -128,6 +131,7 @@ li:last-child { border-bottom: none; }
 
 <script src="../../shared/scripts/hash.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script src="../../shared/scripts/shared.js"></script>
 <script src="../../shared/scripts/calculator.js"></script>
 <script>
@@ -200,7 +204,7 @@ async function fetchFriendsData() {
     if (friendsData[d.player_hash]) {
       friendsData[d.player_hash].drinks.push({
         timestamp: t,
-        grams: d.grams_alcohol,
+        grams: window.sharedData ? window.sharedData.resolveDrinkGrams(d) : Number(d.grams_alcohol || 0),
         // abv drives getAbsorptionTime() so the leaderboard absorbs at the
         // same pace as the log graph (omitting it defaults to the fastest rate).
         abv: d.abv
@@ -347,6 +351,13 @@ function renderWeeklyLeaderboard() {
     const statValue = li.querySelector('.stat-pill .stat-value');
     applyStatUpdate(statValue, Math.abs(friend.cl).toFixed(1));
 
+    const activeProfile = getActiveProfile();
+    if (activeProfile && friend.hash === activeProfile.id) {
+      li.classList.add('active-user-row');
+    } else {
+      li.classList.remove('active-user-row');
+    }
+
     list.appendChild(li);
     existingItems.delete(friend.hash);
   });
@@ -416,6 +427,13 @@ function renderLiveStats() {
 
     const statValue = li.querySelector('.stat-pill .stat-value');
     applyStatUpdate(statValue, Math.abs(item.promille).toFixed(2));
+
+    const activeProf = getActiveProfile();
+    if (activeProf && item.hash === activeProf.id) {
+      li.classList.add('active-user-row');
+    } else {
+      li.classList.remove('active-user-row');
+    }
 
     list.appendChild(li);
     existingItems.delete(item.hash);
@@ -619,11 +637,166 @@ async function safeUpdateFriendsUI() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// QR Code Scanner on Friends Page
+// ---------------------------------------------------------------------------
+function openQRScanner() {
+  var lang = window.i18n ? window.i18n.getLang() : 'sv';
+  var overlay = document.createElement('div');
+  overlay.className = 'modal';
+  overlay.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);z-index:6000;transition:background-color 200ms ease-out;';
+  requestAnimationFrame(function() { overlay.style.backgroundColor = 'rgba(0,0,0,0.5)'; });
+
+  var content = document.createElement('div');
+  content.className = 'modal-content card';
+  content.style.cssText = 'box-sizing:border-box;width:min(92vw,400px);max-width:92vw;margin:clamp(24px,8vh,80px) auto;background:#FFFFFF;color:#2C3E50;border:1px solid rgba(44,62,80,0.12);border-radius:16px;box-shadow:0 8px 32px rgba(44,62,80,0.18);padding:0;text-align:center;position:relative;opacity:0;transform:translateY(12px) scale(0.97);transition:opacity 200ms ease-out,transform 200ms ease-out;';
+  requestAnimationFrame(function() { requestAnimationFrame(function() { content.style.opacity = '1'; content.style.transform = 'translateY(0) scale(1)'; }); });
+
+  var header = document.createElement('h2');
+  header.textContent = lang === 'en' ? 'Scan QR Code' : 'Skanna QR-kod';
+  header.style.cssText = "font-family:'Arial Black',sans-serif;text-transform:uppercase;color:#FFF;background:#2A8CFF;margin:0;padding:15px 52px 15px 15px;border-bottom:1px solid rgba(255,255,255,0.15);text-align:left;border-radius:16px 16px 0 0;";
+
+  var closeBtn = document.createElement('span');
+  closeBtn.className = 'close-modal';
+  closeBtn.innerHTML = '&times;';
+  closeBtn.style.cssText = 'color:#FFF;font-size:28px;font-weight:bold;cursor:pointer;position:absolute;right:15px;top:10px;line-height:1;z-index:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;';
+
+  var body = document.createElement('div');
+  body.style.cssText = 'padding:20px;';
+
+  var desc = document.createElement('p');
+  desc.textContent = lang === 'en' ? "Point the camera at a friend's QR code to add them." : 'Rikta kameran mot en väns QR-kod för att lägga till dem.';
+  desc.style.cssText = 'font-weight:600;color:#5a6570;margin:0 0 16px 0;font-size:14px;';
+
+  var video = document.createElement('video');
+  video.setAttribute('playsinline', '');
+  video.setAttribute('autoplay', '');
+  video.style.cssText = 'width:100%;max-height:300px;border-radius:12px;background:#000;';
+
+  var statusEl = document.createElement('p');
+  statusEl.style.cssText = 'font-weight:700;margin:12px 0 0 0;min-height:20px;';
+
+  body.appendChild(desc);
+  body.appendChild(video);
+  body.appendChild(statusEl);
+  content.appendChild(header);
+  content.appendChild(closeBtn);
+  content.appendChild(body);
+  overlay.appendChild(content);
+  document.body.appendChild(overlay);
+
+  var stream = null;
+  var scanning = true;
+  var scanCanvas = document.createElement('canvas');
+  var scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+
+  function cleanup() {
+    scanning = false;
+    if (stream) {
+      stream.getTracks().forEach(function(t) { t.stop(); });
+      stream = null;
+    }
+    content.style.opacity = '0';
+    content.style.transform = 'translateY(8px) scale(0.97)';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0)';
+    setTimeout(function() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 180);
+  }
+
+  closeBtn.addEventListener('click', cleanup);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) cleanup(); });
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(function(s) {
+    stream = s;
+    video.srcObject = stream;
+    video.play();
+    requestAnimationFrame(scanFrame);
+  }).catch(function() {
+    statusEl.textContent = lang === 'en' ? 'Could not access the camera.' : 'Kunde inte komma åt kameran.';
+    statusEl.style.color = '#E74C3C';
+  });
+
+  function scanFrame() {
+    if (!scanning) return;
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+      requestAnimationFrame(scanFrame);
+      return;
+    }
+    scanCanvas.width = video.videoWidth;
+    scanCanvas.height = video.videoHeight;
+    scanCtx.drawImage(video, 0, 0);
+    var imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+
+    var code = null;
+    if (typeof BarcodeDetector !== 'undefined') {
+      new BarcodeDetector({ formats: ['qr_code'] }).detect(video).then(function(barcodes) {
+        if (barcodes.length > 0 && scanning) {
+          handleScannedCode(barcodes[0].rawValue, cleanup, statusEl, lang);
+        }
+      }).catch(function() {});
+    }
+    if (typeof jsQR !== 'undefined') {
+      code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+      if (code && code.data && scanning) {
+        handleScannedCode(code.data, cleanup, statusEl, lang);
+        return;
+      }
+    }
+    requestAnimationFrame(scanFrame);
+  }
+}
+
+async function handleScannedCode(hash, cleanup, statusEl, lang) {
+  if (!hash || !sb) return;
+  statusEl.textContent = lang === 'en' ? 'Looking up profile...' : 'Söker profil...';
+
+  var profile = await fetchProfileFromSupabase(hash);
+  if (!profile) {
+    statusEl.textContent = lang === 'en' ? 'Profile not found.' : 'Profilen hittades inte.';
+    statusEl.style.color = '#E74C3C';
+    return;
+  }
+
+  var myProfile = getActiveProfile();
+  if (myProfile && myProfile.id === hash) {
+    statusEl.textContent = lang === 'en' ? "That's your own code!" : 'Det är din egen kod!';
+    statusEl.style.color = '#E74C3C';
+    return;
+  }
+
+  var confirmMsg = (lang === 'en' ? 'Do you want to add ' : 'Vill du lägga till ') + profile.name + '?';
+  var confirmed = await showConfirmModal(confirmMsg, {
+    title: lang === 'en' ? 'Friend found!' : 'Vän hittad!',
+    confirmText: lang === 'en' ? 'Add' : 'Lägg till',
+    cancelText: lang === 'en' ? 'Cancel' : 'Avbryt'
+  });
+
+  if (!confirmed) return;
+
+  var myId = myProfile ? myProfile.id : null;
+  if (!myId) return;
+
+  var { error } = await sb.from('friends').upsert(
+    { player_hash: myId, friend_hash: hash },
+    { onConflict: 'player_hash,friend_hash' }
+  );
+
+  if (error) {
+    statusEl.textContent = lang === 'en' ? 'Error adding friend.' : 'Kunde inte lägga till vän.';
+    statusEl.style.color = '#E74C3C';
+    return;
+  }
+
+  showToast(lang === 'en' ? 'Friend added!' : 'Vän tillagd!');
+  cleanup();
+  safeUpdateFriendsUI();
+}
+
 window.refreshPageData = function() { safeUpdateFriendsUI(); };
 
 safeUpdateFriendsUI();
 // Leaderboard updates are now pushed via the Supabase Realtime broadcast
 // channel (see shared.js). No polling interval needed.
 </script>
+<script src="../../shared/scripts/i18n.js"></script>
 </body>
 </html>

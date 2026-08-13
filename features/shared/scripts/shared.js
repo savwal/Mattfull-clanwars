@@ -1,6 +1,19 @@
 const SUPABASE_URL = 'https://zynyfrqdrihrltdcbnfm.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_v9oyPX430I7TusN4mKFYIw_AO4r033c';
-const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+const customFetch = function(url, options) {
+  return window.fetch(url, options).catch(function(err) {
+    return new Response(JSON.stringify({ error: { message: err ? err.message : 'Network error' } }), {
+      status: 500,
+      statusText: 'Internal Server Error',
+      headers: { 'Content-Type': 'application/json' }
+    });
+  });
+};
+
+const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  global: { fetch: customFetch }
+}) : null;
 
 async function syncProfileToSupabase(profile) {
   if (!sb) return;
@@ -144,6 +157,16 @@ function initApp() {
   localStorage.setItem('redlös_global', JSON.stringify(globalData));
 }
 initApp();
+
+// ---------------------------------------------------------------------------
+// Dark mode — apply on every page load from localStorage.
+// ---------------------------------------------------------------------------
+(function() {
+  if (localStorage.getItem('redlos_darkmode') === '1') {
+    document.body.classList.add('dark-mode');
+  }
+})();
+
 
 function enablePageTransitions() {
   document.body.classList.add('pwa-transitions');
@@ -749,11 +772,14 @@ window.formatRankLabel = function(n) {
   }
 
   // Resolve the grams of alcohol for a logged drink, falling back to the
-  // volume/abv calculation when grams_alcohol was not stored. Shared so every
-  // leaderboard scores a drink identically.
+  // volume/abv calculation when grams_alcohol was not stored or is null/0.
+  // Shared so every leaderboard scores a drink identically.
   function resolveDrinkGrams(row) {
+    if (!row) return 0;
     var grams = Number(row.grams_alcohol);
-    if (Number.isFinite(grams)) return grams;
+    if (row.grams_alcohol !== null && row.grams_alcohol !== undefined && row.grams_alcohol !== '' && Number.isFinite(grams) && grams !== 0) {
+      return grams;
+    }
     var vol = Number(row.volume_ml) || 0;
     var abv = Number(row.abv) || 0;
     return vol * (abv / 100) * 0.789;
@@ -885,28 +911,26 @@ window.showListModal = function(title, contentHtml, options) {
   // above the mobile bottom menu (1100).
   var overlay = document.createElement('div');
   overlay.className = 'modal';
-  overlay.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0.6);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);z-index:6000;';
+  overlay.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);z-index:6000;transition:background-color 200ms ease-out;';
+  requestAnimationFrame(function() { overlay.style.backgroundColor = 'rgba(0,0,0,0.5)'; });
 
-  // Flex column: the header (heading + close button) is fixed and only the body
-  // scrolls, so the close X stays reachable even after scrolling down the list.
   var content = document.createElement('div');
   content.className = 'modal-content card';
-  content.style.cssText = 'box-sizing:border-box;width:min(92vw,520px);max-width:92vw;margin:clamp(24px,8vh,80px) auto;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;background:#FFFFFF;color:#2C3E50;border:6px solid #2C3E50;box-shadow:8px 8px 0 #2C3E50;padding:0;text-align:left;position:relative;';
+  content.style.cssText = 'box-sizing:border-box;width:min(92vw,520px);max-width:92vw;margin:clamp(24px,8vh,80px) auto;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;background:#FFFFFF;color:#2C3E50;border:1px solid rgba(44,62,80,0.12);border-radius:16px;box-shadow:0 8px 32px rgba(44,62,80,0.18);padding:0;text-align:left;position:relative;opacity:0;transform:translateY(12px) scale(0.97);transition:opacity 200ms ease-out,transform 200ms ease-out;';
+  requestAnimationFrame(function() { requestAnimationFrame(function() { content.style.opacity = '1'; content.style.transform = 'translateY(0) scale(1)'; }); });
 
   var header = document.createElement('div');
   header.style.cssText = 'position:relative;flex:0 0 auto;';
 
   var heading = document.createElement('h2');
   heading.textContent = title;
-  // Tagged so callers can open the modal instantly with a loading spinner and
-  // then fill in the real title/body once the data resolves (no dead taps).
   heading.setAttribute('data-modal-title', '');
-  heading.style.cssText = "font-family:'Arial Black',sans-serif;text-transform:uppercase;color:#FFF;background:" + headerBg + ";margin:0;padding:15px 52px 15px 15px;border-bottom:4px solid #2C3E50;text-align:left;";
+  heading.style.cssText = "font-family:'Arial Black',sans-serif;text-transform:uppercase;color:#FFF;background:" + headerBg + ";margin:0;padding:15px 52px 15px 15px;border-bottom:1px solid rgba(255,255,255,0.15);text-align:left;border-radius:16px 16px 0 0;";
 
   var close = document.createElement('span');
   close.className = 'close-modal';
   close.innerHTML = '&times;';
-  close.style.cssText = 'color:#FFF;font-size:32px;font-weight:bold;cursor:pointer;position:absolute;right:15px;top:8px;line-height:1;z-index:1;';
+  close.style.cssText = 'color:#FFF;font-size:28px;font-weight:bold;cursor:pointer;position:absolute;right:15px;top:10px;line-height:1;z-index:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background 0.15s ease;';
 
   var body = document.createElement('div');
   body.setAttribute('data-modal-body', '');
@@ -914,7 +938,10 @@ window.showListModal = function(title, contentHtml, options) {
   body.innerHTML = contentHtml;
 
   function cleanup() {
-    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    content.style.opacity = '0';
+    content.style.transform = 'translateY(8px) scale(0.97)';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0)';
+    setTimeout(function() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 180);
   }
   close.addEventListener('click', cleanup);
   overlay.addEventListener('click', function(event) { if (event.target === overlay) cleanup(); });
@@ -1021,15 +1048,17 @@ window.showConfirmModal = function(message, options) {
     // Position inline so the dialog works on pages without a `.modal` rule.
     var overlay = document.createElement('div');
     overlay.className = 'modal';
-    overlay.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0.6);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);z-index:6000;';
+    overlay.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);z-index:6000;transition:background-color 200ms ease-out;';
+    requestAnimationFrame(function() { overlay.style.backgroundColor = 'rgba(0,0,0,0.5)'; });
 
     var content = document.createElement('div');
     content.className = 'modal-content card';
-    content.style.cssText = 'box-sizing:border-box;width:min(92vw,440px);max-width:92vw;margin:clamp(24px,12vh,120px) auto;max-height:85vh;overflow-y:auto;background:#2A8CFF;color:#fff;border:6px solid #2C3E50;box-shadow:8px 8px 0 #2C3E50;padding:25px;text-align:center;position:relative;';
+    content.style.cssText = 'box-sizing:border-box;width:min(92vw,440px);max-width:92vw;margin:clamp(24px,12vh,120px) auto;max-height:85vh;overflow-y:auto;background:#2A8CFF;color:#fff;border:1px solid rgba(44,62,80,0.12);border-radius:16px;box-shadow:0 8px 32px rgba(44,62,80,0.18);padding:25px;text-align:center;position:relative;opacity:0;transform:translateY(12px) scale(0.97);transition:opacity 200ms ease-out,transform 200ms ease-out;';
+    requestAnimationFrame(function() { requestAnimationFrame(function() { content.style.opacity = '1'; content.style.transform = 'translateY(0) scale(1)'; }); });
 
     var heading = document.createElement('h2');
     heading.textContent = title;
-    heading.style.cssText = "font-family:'Arial Black',sans-serif;color:#FFF;background:#2C3E50;margin:-25px -25px 20px -25px;padding:15px;border-bottom:4px solid #E74C3C;text-transform:uppercase;text-align:left;";
+    heading.style.cssText = "font-family:'Arial Black',sans-serif;color:#FFF;background:#2C3E50;margin:-25px -25px 20px -25px;padding:15px;border-bottom:1px solid rgba(255,255,255,0.15);text-transform:uppercase;text-align:left;border-radius:16px 16px 0 0;";
 
     var text = document.createElement('p');
     text.textContent = message;
@@ -1041,16 +1070,18 @@ window.showConfirmModal = function(message, options) {
     var cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
     cancelBtn.textContent = cancelText;
-    cancelBtn.style.cssText = 'flex:1;width:auto;margin:0;background:#FFF;color:#2C3E50;border:4px solid #2C3E50;box-shadow:4px 4px 0 #2C3E50;padding:14px;font-weight:900;text-transform:uppercase;cursor:pointer;';
+    cancelBtn.style.cssText = 'flex:1;width:auto;margin:0;background:#FFF;color:#2C3E50;border:1px solid rgba(44,62,80,0.15);border-radius:10px;box-shadow:0 2px 6px rgba(44,62,80,0.10);padding:14px;font-weight:900;text-transform:uppercase;cursor:pointer;transition:all 0.15s ease;';
 
     var confirmBtn = document.createElement('button');
     confirmBtn.type = 'button';
     confirmBtn.textContent = confirmText;
-    confirmBtn.style.cssText = 'flex:1;width:auto;margin:0;background:#E74C3C;color:#FFF;border:4px solid #2C3E50;box-shadow:4px 4px 0 #2C3E50;padding:14px;font-weight:900;text-transform:uppercase;cursor:pointer;';
+    confirmBtn.style.cssText = 'flex:1;width:auto;margin:0;background:#E74C3C;color:#FFF;border:1px solid rgba(44,62,80,0.15);border-radius:10px;box-shadow:0 2px 6px rgba(44,62,80,0.10);padding:14px;font-weight:900;text-transform:uppercase;cursor:pointer;transition:all 0.15s ease;';
 
     function cleanup(result) {
-      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-      resolve(result);
+      content.style.opacity = '0';
+      content.style.transform = 'translateY(8px) scale(0.97)';
+      overlay.style.backgroundColor = 'rgba(0,0,0,0)';
+      setTimeout(function() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); resolve(result); }, 180);
     }
     cancelBtn.addEventListener('click', function() { cleanup(false); });
     confirmBtn.addEventListener('click', function() { cleanup(true); });
