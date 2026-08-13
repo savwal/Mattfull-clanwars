@@ -44,11 +44,11 @@ function renderChart(canvasId, labels, dataPoints, zones, options = {}) {
       datasets: [{
         label: 'Promille',
         data: dataPoints,
-        borderColor: '#FFCC00',
-        backgroundColor: 'rgba(255, 204, 0, 0.2)',
+        borderColor: '#D4AC0D',
+        backgroundColor: 'rgba(212, 172, 13, 0.2)',
         borderWidth: 5,
         pointBackgroundColor: '#2C3E50',
-        pointBorderColor: '#FFCC00',
+        pointBorderColor: '#D4AC0D',
         pointBorderWidth: 3,
         pointRadius: 6,
         pointHoverRadius: 8,
@@ -63,9 +63,13 @@ function renderChart(canvasId, labels, dataPoints, zones, options = {}) {
         y: { 
           beginAtZero: true,
           suggestedMax: zones.greenMax + 0.5,
-          grid: { color: '#bdc3c7', lineWidth: 2 }
+          grid: { color: 'rgba(255, 255, 255, 0.1)', lineWidth: 1 },
+          ticks: { color: '#FFF', font: { weight: 'bold' } }
         },
-        x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } }
+        x: { 
+          grid: { display: false }, 
+          ticks: { font: { weight: 'bold' }, color: '#FFF' } 
+        }
       },
       plugins: {
         legend: { display: false },

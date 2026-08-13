@@ -8,7 +8,7 @@ function initGDPR() {
             <p>Välkommen till redlös – din personliga drinklogg med statistik, events och vänleaderboards.</p>
             <p><strong>Viktigt:</strong> Allt innehåll är endast för underhållning och är <em>inte</em> medicinsk rådgivning eller en hälsorekommendation.</p>
             <p><strong>Användaransvar:</strong> Du är fullt ansvarig för all din aktivitet och alla dina handlingar medan du använder redlös. Du accepterar att din användning av tjänsten är helt på ditt eget ansvar.</p>
-            <p>För att använda redlös måste du godkänna vår hantering av din data. Vi följer svensk GDPR-lagstiftning.</p>
+            <p>För att använda redlös måste du godkänna vår hantering av din data. Vi försöker följa EU:s GDPR-lagar.</p>
             <p><strong>Funktioner du kan använda:</strong></p>
             <ul style="list-style-type: disc; padding-left: 20px; margin: 10px 0;">
               <li style="padding: 5px 0;">Logga drycker och se promillegraf.</li>

@@ -784,3 +784,16 @@ body.dark-mode .drink-log-cl {
     }
   }
 }
+
+body.dark-mode #promilleChart {
+  position: relative;
+  z-index: 10;
+}
+
+body.dark-mode a[aria-label="Log"] .menu-icon { content: url('../../../icons/menu-log-white.svg'); }
+body.dark-mode a[aria-label="Battles"] .menu-icon { content: url('../../../icons/menu-battles-white.svg'); }
+body.dark-mode a[aria-label="Events"] .menu-icon { content: url('../../../icons/menu-events-white.svg'); }
+body.dark-mode a[aria-label="Klan"] .menu-icon { content: url('../../../icons/menu-clans-white.svg'); }
+body.dark-mode a[aria-label="Vänner"] .menu-icon { content: url('../../../icons/menu-friends-white.svg'); }
+body.dark-mode a[aria-label="Historik"] .menu-icon { content: url('../../../icons/menu-wrapped-white.svg'); }
+body.dark-mode a[aria-label="Profil"] .menu-icon { content: url('../../../icons/menu-profile-white.svg'); }

@@ -80,7 +80,7 @@
     settings_theme_dark: { sv: 'Mörkt', en: 'Dark' },
     settings_account: { sv: 'Konto', en: 'Account' },
     settings_gdpr: { sv: 'Dataskydd & GDPR', en: 'Data Protection & GDPR' },
-    settings_gdpr_text: { sv: 'All din data hanteras enligt svensk GDPR-lagstiftning. Du kan radera ditt konto och all data när som helst.', en: 'All your data is handled according to Swedish GDPR legislation. You can delete your account and all data at any time.' },
+    settings_gdpr_text: { sv: 'Vi försöker följa EU:s GDPR-lagar. Du kan radera ditt konto och all data när som helst.', en: 'We are trying to follow EU GDPR laws. You can delete your account and all data at any time.' },
     settings_logout: { sv: 'Logga ut', en: 'Log out' },
     settings_delete: { sv: 'Radera konto', en: 'Delete account' },
     settings_remove_pic: { sv: 'Ta bort profilbild', en: 'Remove profile picture' },

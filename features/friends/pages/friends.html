@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
@@ -40,7 +40,7 @@ li:last-child { border-bottom: none; }
 </style>
 <link rel="stylesheet" href="../../shared/styles/nav.css">
 </head>
-<body>
+<body class="dark-mode">
 
 <nav class="main-nav">
   <a href="../../../index.html" aria-label="Log" title="Log">
@@ -727,15 +727,18 @@ function openQRScanner() {
     var imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
 
     var code = null;
-    if (typeof BarcodeDetector !== 'undefined') {
-      new BarcodeDetector({ formats: ['qr_code'] }).detect(video).then(function(barcodes) {
+    if (typeof BarcodeDetector !== 'undefined' && !window.redlosBarcodeDetector) {
+      try { window.redlosBarcodeDetector = new BarcodeDetector({ formats: ['qr_code'] }); } catch(e) {}
+    }
+    if (window.redlosBarcodeDetector) {
+      window.redlosBarcodeDetector.detect(video).then(function(barcodes) {
         if (barcodes.length > 0 && scanning) {
           handleScannedCode(barcodes[0].rawValue, cleanup, statusEl, lang);
         }
       }).catch(function() {});
     }
     if (typeof jsQR !== 'undefined') {
-      code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+      code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
       if (code && code.data && scanning) {
         handleScannedCode(code.data, cleanup, statusEl, lang);
         return;
@@ -760,6 +763,22 @@ async function handleScannedCode(hash, cleanup, statusEl, lang) {
   if (myProfile && myProfile.id === hash) {
     statusEl.textContent = lang === 'en' ? "That's your own code!" : 'Det är din egen kod!';
     statusEl.style.color = '#E74C3C';
+    return;
+  }
+
+  var myId = myProfile ? myProfile.id : null;
+  if (!myId) return;
+
+  var { data: existingFriend } = await sb.from('friends')
+    .select('id')
+    .eq('player_hash', myId)
+    .eq('friend_hash', hash)
+    .maybeSingle();
+
+  if (existingFriend) {
+    statusEl.textContent = lang === 'en' ? 'User is already friend.' : 'Användaren är redan en vän.';
+    statusEl.style.color = '#E74C3C';
+    setTimeout(cleanup, 2000);
     return;
   }
 

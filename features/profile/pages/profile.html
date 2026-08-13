@@ -32,6 +32,10 @@ button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,
 .settings-gear-btn:hover { background: rgba(44,62,80,0.12); }
 .settings-gear-btn:active { transform: translateY(1px); }
 .settings-gear-btn svg { width: 20px; height: 20px; fill: #2C3E50; }
+.qr-popup-btn { position: absolute; top: 12px; right: 60px; width: 40px; height: 40px; padding: 0; margin: 0; background: rgba(44,62,80,0.06); border: 1px solid rgba(44,62,80,0.10); border-radius: 50%; box-shadow: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s ease; z-index: 10; }
+.qr-popup-btn:hover { background: rgba(44,62,80,0.12); }
+.qr-popup-btn:active { transform: translateY(1px); }
+.qr-popup-btn svg { width: 20px; height: 20px; fill: #2C3E50; }
 /* QR code display */
 .qr-section { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .qr-canvas-wrap { background: #fff; padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(44,62,80,0.10); display: inline-block; }
@@ -50,7 +54,7 @@ button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,
 </style>
 <link rel="stylesheet" href="../../shared/styles/nav.css">
 </head>
-<body>
+<body class="dark-mode">
 <nav class="main-nav">
   <a href="../../../index.html" aria-label="Log" title="Log">
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
@@ -114,6 +118,10 @@ button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,
 
 <div class="card" style="position:relative;">
   <h2 data-i18n="profile_name_title">Namn</h2>
+  <!-- QR code button -->
+  <button class="qr-popup-btn" onclick="openQRPopup()" title="QR-kod" aria-label="QR Code">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 3h8v8H3zm2 2v4h4V5zm8-2h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zm13-2h2v2h-2zm-2 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm2-2h2v2h-2zm0-4h2v2h-2z" fill="#2C3E50"/></svg>
+  </button>
   <!-- Settings gear button -->
   <button class="settings-gear-btn" onclick="openSettingsPopup()" title="Inställningar" aria-label="Settings">
     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96a7.04 7.04 0 00-1.62-.94l-.36-2.54a.48.48 0 00-.48-.41h-3.84a.48.48 0 00-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87a.48.48 0 00.12.61l2.03 1.58c-.04.31-.06.63-.06.94 0 .31.02.63.06.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.26.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
@@ -122,13 +130,18 @@ button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,
   <button onclick="window.location.href='../../register/pages/register.html'" style="background: #2ECC71;" data-i18n="profile_new_warrior">Ny Krigare</button>
 </div>
 
-<div class="card" style="text-align:center;">
-  <h2 data-i18n="profile_qr_title">Din QR-kod</h2>
-  <div class="qr-section">
-    <div class="qr-canvas-wrap">
-      <canvas id="qrCanvas" width="160" height="160"></canvas>
+<div id="qrModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.5); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); z-index:6000;">
+  <div class="modal-content card" style="box-sizing:border-box;width:min(92vw,420px);max-width:92vw;margin:clamp(24px,6vh,60px) auto;max-height:88vh;overflow-y:auto;background:#FFFFFF;color:#2C3E50;border:1px solid rgba(44,62,80,0.12);border-radius:16px;box-shadow:0 8px 32px rgba(44,62,80,0.18);padding:0;text-align:center;position:relative;">
+    <h2 data-i18n="profile_qr_title" style="font-family:'Arial Black',sans-serif;text-transform:uppercase;color:#FFF;background:#2C3E50;margin:0;padding:15px;border-bottom:1px solid rgba(255,255,255,0.15);text-align:center;border-radius:16px 16px 0 0;">Din QR-kod</h2>
+    <span class="close-modal" onclick="closeQRPopup()" style="color:#FFF;font-size:28px;font-weight:bold;cursor:pointer;position:absolute;right:15px;top:10px;line-height:1;z-index:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;">&times;</span>
+    <div style="padding: 20px;">
+      <div class="qr-section">
+        <div class="qr-canvas-wrap">
+          <canvas id="qrCanvas" width="160" height="160"></canvas>
+        </div>
+        <div class="hash-text" id="myHashDisplay"></div>
+      </div>
     </div>
-    <div class="hash-text" id="myHashDisplay"></div>
   </div>
 </div>
 
@@ -401,8 +414,11 @@ function openQRScanner() {
 
     var code = null;
     // Try BarcodeDetector first (Chrome/Edge)
-    if (typeof BarcodeDetector !== 'undefined') {
-      new BarcodeDetector({ formats: ['qr_code'] }).detect(video).then(function(barcodes) {
+    if (typeof BarcodeDetector !== 'undefined' && !window.redlosBarcodeDetector) {
+      try { window.redlosBarcodeDetector = new BarcodeDetector({ formats: ['qr_code'] }); } catch(e) {}
+    }
+    if (window.redlosBarcodeDetector) {
+      window.redlosBarcodeDetector.detect(video).then(function(barcodes) {
         if (barcodes.length > 0 && scanning) {
           handleScannedCode(barcodes[0].rawValue, cleanup, statusEl, lang);
         }
@@ -410,7 +426,7 @@ function openQRScanner() {
     }
     // jsQR fallback
     if (typeof jsQR !== 'undefined') {
-      code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+      code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
       if (code && code.data && scanning) {
         handleScannedCode(code.data, cleanup, statusEl, lang);
         return;
@@ -436,6 +452,22 @@ async function handleScannedCode(hash, cleanup, statusEl, lang) {
   if (myProfile && myProfile.id === hash) {
     statusEl.textContent = lang === 'en' ? "That's your own code!" : 'Det är din egen kod!';
     statusEl.style.color = '#E74C3C';
+    return;
+  }
+
+  var myId = myProfile ? myProfile.id : null;
+  if (!myId) return;
+
+  var { data: existingFriend } = await sb.from('friends')
+    .select('id')
+    .eq('player_hash', myId)
+    .eq('friend_hash', hash)
+    .maybeSingle();
+
+  if (existingFriend) {
+    statusEl.textContent = lang === 'en' ? 'User is already friend.' : 'Användaren är redan en vän.';
+    statusEl.style.color = '#E74C3C';
+    setTimeout(cleanup, 2000);
     return;
   }
 
@@ -535,41 +567,6 @@ function openSettingsPopup() {
   langRow.appendChild(enBtn);
   langSection.appendChild(langRow);
 
-  // Theme section
-  var themeSection = document.createElement('div');
-  themeSection.className = 'settings-section';
-  themeSection.innerHTML = '<div class="settings-section-title" data-settings-label="theme">' + (lang === 'en' ? 'Theme' : 'Tema') + '</div>';
-  var themeRow = document.createElement('div');
-  themeRow.className = 'settings-toggle-row';
-
-  var lightBtn = document.createElement('button');
-  lightBtn.className = 'settings-toggle-btn' + (!isDark ? ' active' : '');
-  lightBtn.textContent = '☀️ ' + (lang === 'en' ? 'Light' : 'Ljust');
-  lightBtn.type = 'button';
-
-  var darkBtn = document.createElement('button');
-  darkBtn.className = 'settings-toggle-btn' + (isDark ? ' active' : '');
-  darkBtn.textContent = '🌙 ' + (lang === 'en' ? 'Dark' : 'Mörkt');
-  darkBtn.type = 'button';
-
-  lightBtn.addEventListener('click', function() {
-    localStorage.setItem('redlos_darkmode', '0');
-    document.body.classList.remove('dark-mode');
-    lightBtn.classList.add('active');
-    darkBtn.classList.remove('active');
-  });
-
-  darkBtn.addEventListener('click', function() {
-    localStorage.setItem('redlos_darkmode', '1');
-    document.body.classList.add('dark-mode');
-    darkBtn.classList.add('active');
-    lightBtn.classList.remove('active');
-  });
-
-  themeRow.appendChild(lightBtn);
-  themeRow.appendChild(darkBtn);
-  themeSection.appendChild(themeRow);
-
   // Account section
   var accountSection = document.createElement('div');
   accountSection.className = 'settings-section';
@@ -609,8 +606,8 @@ function openSettingsPopup() {
   gdprText.style.cssText = 'font-size:13px;color:#5a6570;line-height:1.5;margin:0 0 8px 0;';
   gdprText.setAttribute('data-settings-label', 'gdprtext');
   gdprText.textContent = lang === 'en'
-    ? 'All your data is handled according to Swedish GDPR legislation. You can delete your account and all data at any time.'
-    : 'All din data hanteras enligt svensk GDPR-lagstiftning. Du kan radera ditt konto och all data när som helst.';
+    ? 'We are trying to follow EU GDPR laws. You can delete your account and all data at any time.'
+    : 'Vi försöker följa EU:s GDPR-lagar. Du kan radera ditt konto och all data när som helst.';
 
   var contactText = document.createElement('p');
   contactText.style.cssText = 'font-size:12px;color:#888;font-weight:bold;line-height:1.5;margin:0;';
@@ -626,7 +623,6 @@ function openSettingsPopup() {
   gdprSection.appendChild(cookieText);
 
   body.appendChild(langSection);
-  body.appendChild(themeSection);
   body.appendChild(accountSection);
   body.appendChild(gdprSection);
 
@@ -655,7 +651,7 @@ function updateSettingsSectionTitles(body, lang) {
     removepic: { sv: '🖼️ Ta bort profilbild', en: '🖼️ Remove profile picture' },
     logout: { sv: '🚪 Logga ut', en: '🚪 Log out' },
     delete: { sv: '🗑️ Radera konto', en: '🗑️ Delete account' },
-    gdprtext: { sv: 'All din data hanteras enligt svensk GDPR-lagstiftning. Du kan radera ditt konto och all data när som helst.', en: 'All your data is handled according to Swedish GDPR legislation. You can delete your account and all data at any time.' }
+    gdprtext: { sv: 'Vi försöker följa EU:s GDPR-lagar. Du kan radera ditt konto och all data när som helst.', en: 'We are trying to follow EU GDPR laws. You can delete your account and all data at any time.' }
   };
   for (var i = 0; i < labels.length; i++) {
     var key = labels[i].getAttribute('data-settings-label');
@@ -667,13 +663,14 @@ function updateSettingsSectionTitles(body, lang) {
       }
     }
   }
-  // Update theme button labels
-  var themeBtns = body.querySelectorAll('.settings-toggle-row')[1];
-  if (themeBtns) {
-    var btns = themeBtns.querySelectorAll('.settings-toggle-btn');
-    if (btns[0]) btns[0].textContent = '☀️ ' + (lang === 'en' ? 'Light' : 'Ljust');
-    if (btns[1]) btns[1].textContent = '🌙 ' + (lang === 'en' ? 'Dark' : 'Mörkt');
-  }
+}
+
+function openQRPopup() {
+  document.getElementById('qrModal').style.display = 'block';
+}
+
+function closeQRPopup() {
+  document.getElementById('qrModal').style.display = 'none';
 }
 
 renderProfileSelect();
