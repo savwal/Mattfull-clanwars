@@ -53,8 +53,9 @@ button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,
 .settings-action-btn.danger-action:hover { background: rgba(231,76,60,0.06); }
 </style>
 <link rel="stylesheet" href="../../shared/styles/nav.css">
+<link rel="stylesheet" href="../../shared/styles/old-design.css">
 </head>
-<body class="dark-mode">
+<body>
 <nav class="main-nav">
   <a href="../../../index.html" aria-label="Log" title="Log">
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
@@ -567,6 +568,73 @@ function openSettingsPopup() {
   langRow.appendChild(enBtn);
   langSection.appendChild(langRow);
 
+  // Design section
+  var isOld = localStorage.getItem('redlos_old_design') === '1';
+  var designSection = document.createElement('div');
+  designSection.className = 'settings-section';
+  designSection.innerHTML = '<div class="settings-section-title" data-settings-label="design">' + (lang === 'en' ? 'Design / Layout' : 'Design / Utseende') + '</div>';
+  var designRow = document.createElement('div');
+  designRow.className = 'settings-toggle-row';
+
+  var newBtn = document.createElement('button');
+  newBtn.className = 'settings-toggle-btn' + (!isOld ? ' active' : '');
+  newBtn.textContent = 'Redlös 2.0 (New)';
+  newBtn.type = 'button';
+
+  var oldBtn = document.createElement('button');
+  oldBtn.className = 'settings-toggle-btn' + (isOld ? ' active' : '');
+  oldBtn.textContent = 'Redlös 1.0 (Old)';
+  oldBtn.type = 'button';
+
+  newBtn.addEventListener('click', function() {
+    localStorage.setItem('redlos_old_design', '0');
+    window.location.reload();
+  });
+
+  oldBtn.addEventListener('click', function() {
+    localStorage.setItem('redlos_old_design', '1');
+    localStorage.setItem('redlos_darkmode', '0');
+    window.location.reload();
+  });
+
+  designRow.appendChild(newBtn);
+  designRow.appendChild(oldBtn);
+  designSection.appendChild(designRow);
+
+  // Theme section
+  var themeSection = document.createElement('div');
+  themeSection.className = 'settings-section';
+  themeSection.innerHTML = '<div class="settings-section-title" data-settings-label="theme">' + (lang === 'en' ? 'Theme' : 'Tema') + '</div>';
+  if (isOld) {
+    themeSection.style.display = 'none'; // Only available in 2.0
+  }
+  var themeRow = document.createElement('div');
+  themeRow.className = 'settings-toggle-row';
+
+  var lightBtn = document.createElement('button');
+  lightBtn.className = 'settings-toggle-btn' + (!isDark ? ' active' : '');
+  lightBtn.innerHTML = '☀️ ' + (lang === 'en' ? 'Light' : 'Ljust');
+  lightBtn.type = 'button';
+
+  var darkBtn = document.createElement('button');
+  darkBtn.className = 'settings-toggle-btn' + (isDark ? ' active' : '');
+  darkBtn.innerHTML = '🌙 ' + (lang === 'en' ? 'Dark' : 'Mörkt');
+  darkBtn.type = 'button';
+
+  lightBtn.addEventListener('click', function() {
+    localStorage.setItem('redlos_darkmode', '0');
+    window.location.reload();
+  });
+
+  darkBtn.addEventListener('click', function() {
+    localStorage.setItem('redlos_darkmode', '1');
+    window.location.reload();
+  });
+
+  themeRow.appendChild(lightBtn);
+  themeRow.appendChild(darkBtn);
+  themeSection.appendChild(themeRow);
+
   // Account section
   var accountSection = document.createElement('div');
   accountSection.className = 'settings-section';
@@ -623,6 +691,8 @@ function openSettingsPopup() {
   gdprSection.appendChild(cookieText);
 
   body.appendChild(langSection);
+  body.appendChild(designSection);
+  body.appendChild(themeSection);
   body.appendChild(accountSection);
   body.appendChild(gdprSection);
 
@@ -647,6 +717,7 @@ function updateSettingsSectionTitles(body, lang) {
   var map = {
     theme: { sv: 'Tema', en: 'Theme' },
     account: { sv: 'Konto', en: 'Account' },
+    design: { sv: 'Design / Utseende', en: 'Design / Layout' },
     gdpr: { sv: 'Dataskydd & GDPR', en: 'Data Protection & GDPR' },
     removepic: { sv: '🖼️ Ta bort profilbild', en: '🖼️ Remove profile picture' },
     logout: { sv: '🚪 Logga ut', en: '🚪 Log out' },

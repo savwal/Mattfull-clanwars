@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="sv">
 <head>
+<script>if(localStorage.getItem('redlos_old_design')==='1')document.documentElement.classList.add('old-design');if(localStorage.getItem('redlos_darkmode')==='1')document.documentElement.classList.add('dark-mode');</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#2C3E50">
@@ -69,8 +70,9 @@ canvas { max-height: 300px; margin-top: 10px; }
 .toast.error { background: #E74C3C; }
 </style>
 <link rel="stylesheet" href="features/shared/styles/nav.css">
+<link rel="stylesheet" href="features/shared/styles/old-design.css">
 </head>
-<body class="dark-mode">
+<body>
 <nav class="main-nav">
   <a href="index.html" class="active" aria-label="Log" title="Log">
     <img class="menu-icon" src="icons/menu-log.svg" alt="Log">

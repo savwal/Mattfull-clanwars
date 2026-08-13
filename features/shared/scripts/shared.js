@@ -1,3 +1,21 @@
+var isOldDesign = localStorage.getItem('redlos_old_design') === '1';
+var isDarkMode = localStorage.getItem('redlos_darkmode') === '1';
+
+if (isOldDesign) {
+  document.documentElement.classList.add('old-design');
+  if (document.body) document.body.classList.add('old-design');
+  else document.addEventListener('DOMContentLoaded', () => document.body.classList.add('old-design'));
+  
+  // Enforce light mode for old design
+  localStorage.setItem('redlos_darkmode', '0');
+  isDarkMode = false;
+}
+
+if (isDarkMode) {
+  if (document.body) document.body.classList.add('dark-mode');
+  else document.addEventListener('DOMContentLoaded', () => document.body.classList.add('dark-mode'));
+}
+
 const SUPABASE_URL = 'https://zynyfrqdrihrltdcbnfm.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_v9oyPX430I7TusN4mKFYIw_AO4r033c';
 

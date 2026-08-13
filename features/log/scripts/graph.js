@@ -21,6 +21,10 @@ function renderChart(canvasId, labels, dataPoints, zones, options = {}) {
     chartInstances[canvasId].destroy();
   }
 
+  const isDark = document.body.classList.contains('dark-mode');
+  const tickColor = isDark ? '#FFF' : '#2C3E50';
+  const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(44, 62, 80, 0.1)';
+
   const currentLabel = options.currentLabel || null;
   const currentTimeLine = currentLabel ? {
     type: 'line',
@@ -63,12 +67,12 @@ function renderChart(canvasId, labels, dataPoints, zones, options = {}) {
         y: { 
           beginAtZero: true,
           suggestedMax: zones.greenMax + 0.5,
-          grid: { color: 'rgba(255, 255, 255, 0.1)', lineWidth: 1 },
-          ticks: { color: '#FFF', font: { weight: 'bold' } }
+          grid: { color: gridColor, lineWidth: 1 },
+          ticks: { color: tickColor, font: { weight: 'bold' } }
         },
         x: { 
           grid: { display: false }, 
-          ticks: { font: { weight: 'bold' }, color: '#FFF' } 
+          ticks: { font: { weight: 'bold' }, color: tickColor } 
         }
       },
       plugins: {

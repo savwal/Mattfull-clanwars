@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="sv">
 <head>
+<script>if(localStorage.getItem('redlos_old_design')==='1')document.documentElement.classList.add('old-design');if(localStorage.getItem('redlos_darkmode')==='1')document.documentElement.classList.add('dark-mode');</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#2C3E50">
@@ -21,7 +22,7 @@ button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,
 #iosInstallHint { display: none; font-size: 13px; color: #2C3E50; font-weight: bold; line-height: 1.6; margin: 8px 0 0 0; }
 </style>
 </head>
-<body class="dark-mode">
+<body>
 <div id="descriptionModal" class="modal" style="display: block; z-index: 10000;">
   <div class="card" style="margin: 10% auto; width: 90%; max-width: 500px;">
     <h2 style="background: #2A8CFF;">Om redlös</h2>
@@ -42,8 +43,13 @@ button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,
   </div>
 </div>
 
-<div class="card">
-  <h2>Ny Krigare</h2>
+  <div style="background: linear-gradient(135deg, #FFCC00, #FFD700); color: #2C3E50; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(44, 62, 80, 0.15); font-weight: bold; text-align: center; max-width: 400px; width: 100%; box-sizing: border-box; border: 1px solid rgba(44,62,80,0.1);">
+    <span style="font-size: 1.2em; display: block; margin-bottom: 4px;">🎉 Redlös 2.0 är här!</span>
+    <span style="font-size: 0.9em;">En ny design har släppts. Om du föredrar den gamla, kan du byta tillbaka under inställningar i din profil!</span>
+  </div>
+
+  <div class="card">
+    <h2>Ny Krigare</h2>
 
   <p style="font-weight: 900; color:#2C3E50; margin: 14px 0 2px 0;">Har du redan ett konto?</p>
   <p style="color:#4A4A4A; font-size: 15px; line-height: 1.4; margin: 0 0 4px 0;">Skriv in din personliga kod här och tryck på knappen för att logga in.</p>
