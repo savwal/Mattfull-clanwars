@@ -78,10 +78,6 @@ canvas { max-height: 300px; margin-top: 10px; }
     <img class="menu-icon" src="icons/menu-log.svg" alt="Log">
     <span class="menu-label">Log</span>
   </a>
-  <a href="features/battles/pages/battles.html" aria-label="Battles" title="Battles">
-    <img class="menu-icon" src="icons/menu-battles.svg" alt="Battles">
-    <span class="menu-label">Battles</span>
-  </a>
   <a href="features/events/pages/events.html" aria-label="Events" title="Events">
     <img class="menu-icon" src="icons/menu-events.svg" alt="Events">
     <span class="menu-label">Events</span>
@@ -107,10 +103,6 @@ canvas { max-height: 300px; margin-top: 10px; }
   <a href="index.html" class="menu-item active" aria-label="Log" title="Log">
     <img class="menu-icon" src="icons/menu-log.svg" alt="Log">
     <span class="menu-label">Log</span>
-  </a>
-  <a href="features/battles/pages/battles.html" class="menu-item" aria-label="Battles" title="Battles">
-    <img class="menu-icon" src="icons/menu-battles.svg" alt="Battles">
-    <span class="menu-label">Battles</span>
   </a>
   <a href="features/events/pages/events.html" class="menu-item" aria-label="Events" title="Events">
     <img class="menu-icon" src="icons/menu-events.svg" alt="Events">
@@ -140,37 +132,37 @@ canvas { max-height: 300px; margin-top: 10px; }
   </div>
   <div class="legend">
     <div class="legend-item"><span class="dot line"></span> Promille</div>
-    <div class="legend-item"><span class="dot blue"></span> Tiger Woods zone</div>
-    <div class="legend-item"><span class="dot red"></span> Farthållare</div>
-    <div class="legend-item"><span class="dot green"></span> Funzone</div>
-    <div class="legend-item"><span class="dot purple"></span> Sangriagränsen</div>
+    <div class="legend-item"><span class="dot blue"></span> <span data-i18n="log_legend_tiger">Tiger Woods zone</span></div>
+    <div class="legend-item"><span class="dot red"></span> <span data-i18n="log_legend_fart">Farthållare</span></div>
+    <div class="legend-item"><span class="dot green"></span> <span data-i18n="log_legend_funzone">Funzone</span></div>
+    <div class="legend-item"><span class="dot purple"></span> <span data-i18n="log_legend_sangria">Sangriagränsen</span></div>
   </div>
 </div>
 <div class="card">
   <h2 data-i18n="log_manual_title">Manuellt registrera</h2>
   <select id="name" style="width: 100%;">
-    <option value="">Välj dryck...</option>
-    <option value="Öl">Öl/Cider</option>
-    <option value="Rött vin">Rött vin</option>
-    <option value="Vitt vin">Vitt vin</option>
-    <option value="Champagne">Champagne</option>
-    <option value="Sprit">Sprit</option>
-    <option value="Drink">Drink</option>
+    <option value="" data-i18n="log_choose_drink">Välj dryck...</option>
+    <option value="Öl" data-i18n="log_beer">Öl/Cider</option>
+    <option value="Rött vin" data-i18n="log_red_wine">Rött vin</option>
+    <option value="Vitt vin" data-i18n="log_white_wine">Vitt vin</option>
+    <option value="Champagne" data-i18n="log_champagne">Champagne</option>
+    <option value="Sprit" data-i18n="log_spirits">Sprit</option>
+    <option value="Drink" data-i18n="log_cocktail">Drink</option>
   </select>
-  <input type="number" id="volume" placeholder="Volym (ml, t.ex. 330)" min="1" max="1000" step="1">
-  <input type="number" id="abv" placeholder="Alkoholhalt (%, t.ex. 5.0)" min="0" max="98" step="0.1">
-  <button onclick="addDrink()">Registrera</button>
+  <input type="number" id="volume" placeholder="Volym (ml, t.ex. 330)" min="1" max="1000" step="1" data-i18n="log_volume_ph">
+  <input type="number" id="abv" placeholder="Alkoholhalt (%, t.ex. 5.0)" min="0" max="98" step="0.1" data-i18n="log_abv_ph">
+  <button onclick="addDrink()" data-i18n="log_register_btn">Registrera</button>
 </div>
 <div class="card">
   <h2 style="background: #9B59B6;" data-i18n="log_tactical_title">Tactical Retreat</h2>
-  <button class="magic" onclick="ulta()" style="background: #9B59B6;">ULTA (SPY)</button>
+  <button class="magic" onclick="ulta()" style="background: #9B59B6;" data-i18n="log_ulta_btn">ULTA (SPY)</button>
 </div>
 <div class="card" style="display: flex; align-items: center;">
   <img id="userPic" style="width: 60px; height: 60px; border: 4px solid #2C3E50; background: #fff; object-fit: cover; display: none; margin-right: 15px;">
   <div style="flex: 1;">
-    <h3 style="margin:0; background:none; color:#2C3E50; text-shadow:none; padding:0; border:none;">STATS</h3>
-    <p style="margin: 5px 0 0 0; font-weight:bold;">Totalt intag: <strong class="highlight-text"><span id="totalCl">0</span> cl</strong> alkohol</p>
-    <p style="margin: 5px 0 0 0; font-weight:bold;">Uppskattad promille: <strong class="highlight-text"><span id="promille">0.00</span> ‰</strong></p>
+    <h3 style="margin:0; background:none; color:#2C3E50; text-shadow:none; padding:0; border:none;" data-i18n="log_stats_label">STATS</h3>
+    <p style="margin: 5px 0 0 0; font-weight:bold;"><span data-i18n="log_total_intake">Totalt intag:</span> <strong class="highlight-text"><span id="totalCl">0</span> <span data-i18n="log_cl_unit">cl</span></strong> <span data-i18n="log_alcohol">alkohol</span></p>
+    <p style="margin: 5px 0 0 0; font-weight:bold;"><span data-i18n="log_estimated_bac">Uppskattad promille:</span> <strong class="highlight-text"><span id="promille">0.00</span> ‰</strong></p>
   </div>
 </div>
 <div class="card">
@@ -179,20 +171,20 @@ canvas { max-height: 300px; margin-top: 10px; }
 </div>
 <div class="card" style="text-align: center;">
   <h2 style="background: #2ECC71;" data-i18n="log_planner_title">Schemalaggare</h2>
-  <p style="font-weight:bold; color:#2C3E50; margin-bottom:15px;">Planera kvällen — se din promilleprognos innan du börjar.</p>
-  <a href="features/log/pages/schemalaggare.html" style="display:inline-block; text-decoration:none; background:#FFCC00; color:#2C3E50; font-weight:900; text-transform:uppercase; padding:14px 28px; border:1px solid rgba(44,62,80,0.15); border-radius:10px; box-shadow:0 2px 6px rgba(44,62,80,0.12); font-size:16px; transition:all 0.15s ease;">Öppna planner →</a>
+  <p style="font-weight:bold; color:#2C3E50; margin-bottom:15px;" data-i18n="log_planner_desc">Planera kvällen — se din promilleprognos innan du börjar.</p>
+  <a href="features/log/pages/schemalaggare.html" style="display:inline-block; text-decoration:none; background:#FFCC00; color:#2C3E50; font-weight:900; text-transform:uppercase; padding:14px 28px; border:1px solid rgba(44,62,80,0.15); border-radius:10px; box-shadow:0 2px 6px rgba(44,62,80,0.12); font-size:16px; transition:all 0.15s ease;" data-i18n="log_planner_btn">Öppna planner →</a>
   <ul id="pendingPlan" style="text-align:left; margin-top:15px;"></ul>
 </div>
 <div id="drinkModal" class="modal">
   <div class="modal-content card" style="position: relative; text-align: left;">
     <span class="close-modal" onclick="closeDrinkModal()">&times;</span>
-    <h2 style="font-family: 'Arial Black'; color: #FFF; background: #2C3E50; margin: -25px -25px 20px -25px; padding: 15px; border-bottom: 4px solid #0984E3;">Snabbvals Menu</h2>
+    <h2 style="font-family: 'Arial Black'; color: #FFF; background: #2C3E50; margin: -25px -25px 20px -25px; padding: 15px; border-bottom: 4px solid #0984E3;" data-i18n="log_quick_menu">Snabbvals Menu</h2>
     <div id="modalContentContainer" class="logger-tile-grid"></div>
   </div>
 </div>
 <button onclick="openDrinkModal()" class="quick-add-bubble">
   <span class="quick-add-icon">+</span>
-  <span class="quick-add-label">Registrera snabbt</span>
+  <span class="quick-add-label" data-i18n="log_quick_add">Registrera snabbt</span>
 </button>
 <div id="zoneToast" class="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
 <script>if(localStorage.getItem('redlos_old_design')==='1')document.documentElement.classList.add('old-design');if(localStorage.getItem('redlos_darkmode')==='1')document.documentElement.classList.add('dark-mode');</script>
@@ -30,91 +30,86 @@ button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,
 <nav class="main-nav">
   <a href="../../../index.html" aria-label="Log" title="Log">
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
-    <span class="menu-label">Log</span>
+    <span class="menu-label" data-i18n="nav_log">Log</span>
   </a>
-  <a href="../../battles/pages/battles.html" aria-label="Battles" title="Battles">
-    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
-    <span class="menu-label">Battles</span>
-  </a>
+
   <a href="../../events/pages/events.html" aria-label="Events" title="Events">
     <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
-    <span class="menu-label">Events</span>
+    <span class="menu-label" data-i18n="nav_events">Events</span>
   </a>
   <a href="../../clans/pages/clans.html" aria-label="Klan" title="Klan">
     <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
-    <span class="menu-label">Klan</span>
+    <span class="menu-label" data-i18n="nav_clan">Klan</span>
   </a>
   <a href="../../friends/pages/friends.html" aria-label="Vänner" title="Vänner">
     <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
-    <span class="menu-label">Vänner</span>
+    <span class="menu-label" data-i18n="nav_friends">Vänner</span>
   </a>
   <a href="../../historik/historik.html" class="active" aria-label="Historik" title="Historik">
     <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
-    <span class="menu-label">Historik</span>
+    <span class="menu-label" data-i18n="nav_historik">Historik</span>
   </a>
   <a href="../../profile/pages/profile.html" aria-label="Profil" title="Profil">
     <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
-    <span class="menu-label">Profil</span>
+    <span class="menu-label" data-i18n="nav_profil">Profil</span>
   </a>
 </nav>
 <nav class="mobile-bottom-menu">
   <a href="../../../index.html" class="menu-item" aria-label="Log" title="Log">
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
-    <span class="menu-label">Log</span>
+    <span class="menu-label" data-i18n="nav_log">Log</span>
   </a>
-  <a href="../../battles/pages/battles.html" class="menu-item" aria-label="Battles" title="Battles">
-    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
-    <span class="menu-label">Battles</span>
-  </a>
+
   <a href="../../events/pages/events.html" class="menu-item" aria-label="Events" title="Events">
     <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
-    <span class="menu-label">Events</span>
+    <span class="menu-label" data-i18n="nav_events">Events</span>
   </a>
   <a href="../../clans/pages/clans.html" class="menu-item" aria-label="Klan" title="Klan">
     <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
-    <span class="menu-label">Klan</span>
+    <span class="menu-label" data-i18n="nav_clan">Klan</span>
   </a>
   <a href="../../friends/pages/friends.html" class="menu-item" aria-label="Vänner" title="Vänner">
     <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
-    <span class="menu-label">Vänner</span>
+    <span class="menu-label" data-i18n="nav_friends">Vänner</span>
   </a>
   <a href="../../historik/historik.html" class="menu-item active" aria-label="Historik" title="Historik">
     <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
-    <span class="menu-label">Historik</span>
+    <span class="menu-label" data-i18n="nav_historik">Historik</span>
   </a>
   <a href="../../profile/pages/profile.html" class="menu-item" aria-label="Profil" title="Profil">
     <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
-    <span class="menu-label">Profil</span>
+    <span class="menu-label" data-i18n="nav_profil">Profil</span>
   </a>
 </nav>
 <div class="card">
-  <h2>redlös Wrapped</h2>
-  <p style="font-weight: bold; color: #2C3E50;">Släpps den 24:e varje månad!</p>
-  <button onclick="openWrapped('monthly')">Se Månadens Wrapped</button>
-  <button onclick="openWrapped('yearly')" style="background: #E74C3C; color: #FFF;">Se Årets Wrapped</button>
+  <h2 data-i18n="wrapped_title">redlös Wrapped</h2>
+  <p style="font-weight: bold; color: #2C3E50;" data-i18n="wrapped_release_desc">Släpps den 24:e varje månad!</p>
+  <button onclick="openWrapped('monthly')" data-i18n="wrapped_monthly_btn">Se Månadens Wrapped</button>
+  <button onclick="openWrapped('yearly')" style="background: #E74C3C; color: #FFF;" data-i18n="wrapped_yearly_btn">Se Årets Wrapped</button>
 </div>
 <div id="wrappedModal" class="modal">
   <div class="modal-content">
     <span class="close-modal" onclick="closeWrapped()">&times;</span>
     <h1 id="wrappedTitle" style="font-family: 'Arial Black'; text-transform: uppercase; margin-top: 0;">Wrapped</h1>
     <div class="stat-box">
-      Total Konsumtion:<br>
+      <span data-i18n="wrapped_total_consumption">Total Konsumtion:</span><br>
       <span id="wrappedGrams" style="color: #E74C3C; font-size: 1.5em;">0cl</span>
     </div>
     <div class="stat-box">
-      Klan Poäng:<br>
+      <span data-i18n="wrapped_clan_points">Klan Poäng:</span><br>
       <span id="wrappedElo" style="color: #2ECC71; font-size: 1.5em;">0.00 ‰</span>
     </div>
     <div class="stat-box">
-      Öl/Cider: <span id="wrappedBeer" style="color: #F39C12;">0</span> st<br>
-      Vin: <span id="wrappedWine" style="color: #8E44AD;">0</span> st<br>
-      Sprit/Drinkar: <span id="wrappedSprit" style="color: #3498DB;">0</span> st
+      <span data-i18n="wrapped_beer">Öl/Cider:</span> <span id="wrappedBeer" style="color: #F39C12;">0</span> st<br>
+      <span data-i18n="wrapped_wine">Vin:</span> <span id="wrappedWine" style="color: #8E44AD;">0</span> st<br>
+      <span data-i18n="wrapped_sprit">Sprit/Drinkar:</span> <span id="wrappedSprit" style="color: #3498DB;">0</span> st
     </div>
-    <button onclick="closeWrapped()" style="background: #FFCC00; color: #2C3E50;">Dela Resultat</button>
+    <button onclick="closeWrapped()" style="background: #FFCC00; color: #2C3E50;" data-i18n="wrapped_share_btn">Dela Resultat</button>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/scripts/shared.js"></script>
 <script src="../scripts/wrappedLogic.js"></script>
+<script src="../../shared/scripts/i18n.js"></script>
 </body>
 </html>

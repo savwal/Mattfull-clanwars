@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
 <script>if(localStorage.getItem('redlos_old_design')==='1')document.documentElement.classList.add('old-design');if(localStorage.getItem('redlos_darkmode')==='1')document.documentElement.classList.add('dark-mode');</script>
@@ -92,6 +92,12 @@ li:last-child { border-bottom: none; }
   flex: 0 0 auto;
   white-space: nowrap;
 }
+.qr-popup-btn { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; padding: 0; margin: 0; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; box-shadow: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s ease; z-index: 10; }
+.qr-popup-btn:hover { background: rgba(255,255,255,0.35); }
+.qr-popup-btn:active { transform: translateY(1px); }
+.qr-popup-btn svg { width: 20px; height: 20px; fill: #FFF; }
+.qr-canvas-wrap { background: #fff; padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(44,62,80,0.10); display: inline-block; }
+.qr-section { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 </style>
 <link rel="stylesheet" href="../../shared/styles/nav.css">
 <link rel="stylesheet" href="../../shared/styles/old-design.css">
@@ -100,110 +106,125 @@ li:last-child { border-bottom: none; }
 <nav class="main-nav">
   <a href="../../../index.html" aria-label="Log" title="Log">
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
-    <span class="menu-label">Log</span>
-  </a>
-  <a href="../../battles/pages/battles.html" aria-label="Battles" title="Battles">
-    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
-    <span class="menu-label">Battles</span>
+    <span class="menu-label" data-i18n="nav_log">Log</span>
   </a>
   <a href="../../events/pages/events.html" aria-label="Events" title="Events">
     <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
-    <span class="menu-label">Events</span>
+    <span class="menu-label" data-i18n="nav_events">Events</span>
   </a>
   <a href="../../clans/pages/clans.html" class="active" aria-label="Klan" title="Klan">
     <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
-    <span class="menu-label">Klan</span>
+    <span class="menu-label" data-i18n="nav_clan">Klan</span>
   </a>
   <a href="../../friends/pages/friends.html" aria-label="Vänner" title="Vänner">
     <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
-    <span class="menu-label">Vänner</span>
+    <span class="menu-label" data-i18n="nav_friends">Vänner</span>
   </a>
   <a href="../../historik/historik.html" aria-label="Historik" title="Historik">
     <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
-    <span class="menu-label">Historik</span>
+    <span class="menu-label" data-i18n="nav_historik">Historik</span>
   </a>
   <a href="../../profile/pages/profile.html" aria-label="Profil" title="Profil">
     <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
-    <span class="menu-label">Profil</span>
+    <span class="menu-label" data-i18n="nav_profil">Profil</span>
   </a>
 </nav>
 <nav class="mobile-bottom-menu">
   <a href="../../../index.html" class="menu-item" aria-label="Log" title="Log">
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
-    <span class="menu-label">Log</span>
-  </a>
-  <a href="../../battles/pages/battles.html" class="menu-item" aria-label="Battles" title="Battles">
-    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
-    <span class="menu-label">Battles</span>
+    <span class="menu-label" data-i18n="nav_log">Log</span>
   </a>
   <a href="../../events/pages/events.html" class="menu-item" aria-label="Events" title="Events">
     <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
-    <span class="menu-label">Events</span>
+    <span class="menu-label" data-i18n="nav_events">Events</span>
   </a>
   <a href="../../clans/pages/clans.html" class="menu-item active" aria-label="Klan" title="Klan">
     <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
-    <span class="menu-label">Klan</span>
+    <span class="menu-label" data-i18n="nav_clan">Klan</span>
   </a>
   <a href="../../friends/pages/friends.html" class="menu-item" aria-label="Vänner" title="Vänner">
     <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
-    <span class="menu-label">Vänner</span>
+    <span class="menu-label" data-i18n="nav_friends">Vänner</span>
   </a>
   <a href="../../historik/historik.html" class="menu-item" aria-label="Historik" title="Historik">
     <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
-    <span class="menu-label">Historik</span>
+    <span class="menu-label" data-i18n="nav_historik">Historik</span>
   </a>
   <a href="../../profile/pages/profile.html" class="menu-item" aria-label="Profil" title="Profil">
     <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
-    <span class="menu-label">Profil</span>
+    <span class="menu-label" data-i18n="nav_profil">Profil</span>
   </a>
 </nav>
 <div id="clanLoadingView" class="card" style="display: flex; align-items: center; justify-content: center; gap: 10px; color: #5a6570; font-weight: 700;">
   <span class="loading-spinner"></span> Laddar klan...
 </div>
 <div id="noClanView" class="card" style="display: none;">
-  <h2>Hitta din Klan</h2>
-  <input type="text" id="newClanName" placeholder="Ny Klan Namn">
-  <button onclick="createClan(this)" style="background: #2ECC71; color: #FFF;">Skapa Ny Klan</button>
+  <h2 data-i18n="clan_find_title">Hitta din Klan</h2>
+  <input type="text" id="newClanName" placeholder="Ny Klan Namn" data-i18n="clan_new_name_ph">
+  <button onclick="createClan(this)" style="background: #2ECC71; color: #FFF;" data-i18n="clan_create_btn">Skapa Ny Klan</button>
   <div style="margin: 20px 0; border-top: 4px dashed #2C3E50;"></div>
-  <input type="text" id="joinClanHash" placeholder="Klan kod (5 tecken)">
-  <button onclick="joinClan(this)" style="background: #2A8CFF; color: #FFF;">Gå med i Klan</button>
+  <input type="text" id="joinClanHash" placeholder="Klan kod (5 tecken)" data-i18n="clan_code_ph">
+  <button onclick="joinClan(this)" style="background: #2A8CFF; color: #FFF; margin-bottom: 8px;" data-i18n="clan_join_btn">Gå med i Klan</button>
+  <button onclick="openClanQRScanner()" style="background: #34495E; color: #FFF;" data-i18n="qr_scanner_title">Skanna QR-kod</button>
 </div>
 <div id="hasClanView" style="display: none;">
-  <div class="card" style="text-align: center;">
-    <h2 style="background: #E74C3C;">Klanens Läger</h2>
+  <div class="card" style="text-align: center; position: relative;">
+    <button class="qr-popup-btn" onclick="openClanQRPopup()" title="QR-kod" aria-label="QR Code">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 3h8v8H3zm2 2v4h4V5zm8-2h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zm13-2h2v2h-2zm-2 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm2-2h2v2h-2zm0-4h2v2h-2z"/></svg>
+    </button>
+    <h2 style="background: #E74C3C;" data-i18n="clan_camp_title">Klanens Läger</h2>
     <div class="clan-shield"></div>
     <h1 id="clanTitle" style="margin: 0 0 5px 0; color: #2C3E50; font-family: 'Arial Black'; text-transform: uppercase; white-space: normal; word-break: break-word; line-height: 1.05;"></h1>
     <div class="hash-text" id="clanHashDisplay"></div>
-    <p style="margin: 10px 0 0 0; font-weight: bold;">Klanens Totala Poäng:</p>
+    <p style="margin: 10px 0 0 0; font-weight: bold;" data-i18n="clan_total_points">Klanens Totala Poäng:</p>
     <div class="highlight-text" id="clanTotalElo"><span class="stat-value">0.0</span> cl</div>
-    <button onclick="leaveClan()" style="background: #E74C3C; color: #FFF; width: auto; display: block; margin: 20px auto 0 auto;">Lämna Klan</button>
+    <button onclick="leaveClan()" style="background: #E74C3C; color: #FFF; width: auto; display: block; margin: 20px auto 0 auto;" data-i18n="clan_leave_btn">Lämna Klan</button>
   </div>
   <div class="card">
-    <h2 style="background: #FFCC00; color: #2C3E50;">Medlemmar</h2>
+    <h2 style="background: #FFCC00; color: #2C3E50;" data-i18n="clan_members_title">Medlemmar</h2>
     <ul id="clanMembers"><li class="loading-row"><span class="loading-spinner"></span> Laddar medlemmar...</li></ul>
   </div>
   <div id="ongoingEventCard" class="card" style="display: none;">
-    <h2 style="background: #9B59B6;">Pågående Event</h2>
+    <h2 style="background: #9B59B6;" data-i18n="clan_ongoing_event">Pågående Event</h2>
     <div id="ongoingEventContent"></div>
   </div>
   <div class="card" style="display: none;">
-    <h2 style="background: #2A8CFF;">Klan War</h2>
-    <button onclick="openClanWarModal()">Starta Klan War</button>
+    <h2 style="background: #2A8CFF;" data-i18n="clan_war_title">Klan War</h2>
+    <button onclick="openClanWarModal()" data-i18n="clan_war_start_btn">Starta Klan War</button>
   </div>
 </div>
 <div class="card">
-  <h2 style="background: #9B59B6;">Klan Leaderboard</h2>
+  <h2 style="background: #9B59B6;" data-i18n="clan_leaderboard_title">Klan Leaderboard</h2>
   <ul id="clanLeaderboard"><li class="loading-row"><span class="loading-spinner"></span> Laddar leaderboard...</li></ul>
-  <button onclick="openAllClansModal()">Visa Alla</button>
+  <button onclick="openAllClansModal()" data-i18n="clan_show_all_btn">Visa Alla</button>
 </div>
 <div id="clanWarModal" class="modal">
   <div class="modal-content card">
     <span class="close-modal" onclick="closeClanWarModal()">&times;</span>
-    <h2 style="font-family: 'Arial Black'; color: #FFF; background: #2C3E50; margin: -25px -25px 20px -25px; padding: 15px; border-bottom: 4px solid #0984E3;">Klan War</h2>
-    <input type="text" id="opponentClanHash" placeholder="Ange motståndares klan kod">
-    <button onclick="startClanWar()">Starta</button>
+    <h2 style="font-family: 'Arial Black'; color: #FFF; background: #2C3E50; margin: -25px -25px 20px -25px; padding: 15px; border-bottom: 4px solid #0984E3;" data-i18n="clan_war_title">Klan War</h2>
+    <input type="text" id="opponentClanHash" placeholder="Ange motståndares klan kod" data-i18n="clan_war_opponent_ph">
+    <button onclick="startClanWar()" data-i18n="clan_war_start">Starta</button>
   </div>
 </div>
+<!-- Clan QR Code Popup -->
+<div id="clanQrModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.5); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); z-index:6000;">
+  <div class="modal-content card" style="box-sizing:border-box;width:min(92vw,420px);max-width:92vw;margin:clamp(24px,6vh,60px) auto;max-height:88vh;overflow-y:auto;background:#FFFFFF;color:#2C3E50;border:1px solid rgba(44,62,80,0.12);border-radius:16px;box-shadow:0 8px 32px rgba(44,62,80,0.18);padding:0;text-align:center;position:relative;">
+    <h2 data-i18n="clan_qr_title" style="font-family:'Arial Black',sans-serif;text-transform:uppercase;color:#FFF;background:#2C3E50;margin:0;padding:15px;border-bottom:1px solid rgba(255,255,255,0.15);text-align:center;border-radius:16px 16px 0 0;">Klanens QR-kod</h2>
+    <span class="close-modal" onclick="closeClanQRPopup()" style="color:#FFF;font-size:28px;font-weight:bold;cursor:pointer;position:absolute;right:15px;top:10px;line-height:1;z-index:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;">&times;</span>
+    <div style="padding: 20px;">
+      <div class="qr-section">
+        <div class="qr-canvas-wrap">
+          <canvas id="clanQrCanvas" width="160" height="160"></canvas>
+        </div>
+        <div class="hash-text" id="clanQrHashDisplay"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- QR code generator (tiny, zero-dependency) -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<!-- QR code scanner fallback -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script src="../../shared/scripts/hash.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../../shared/scripts/shared.js"></script>
@@ -792,6 +813,191 @@ safeUpdateClanUI();
 // (resumeRefresh in shared.js): it refreshes the Supabase token before calling
 // refreshPageData() -> safeUpdateClanUI(), so a >1h lock can't leave the page
 // querying with a dead token.
+// ---------------------------------------------------------------------------
+// Clan QR Code Generation
+// ---------------------------------------------------------------------------
+function generateClanQRCode(hash) {
+  if (!hash || typeof qrcode === 'undefined') return;
+  var canvas = document.getElementById('clanQrCanvas');
+  if (!canvas) return;
+  var qr = qrcode(0, 'M');
+  qr.addData('CLAN:' + hash);
+  qr.make();
+  var ctx = canvas.getContext('2d');
+  var size = 160;
+  var cellSize = size / qr.getModuleCount();
+  ctx.clearRect(0, 0, size, size);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#2C3E50';
+  for (var row = 0; row < qr.getModuleCount(); row++) {
+    for (var col = 0; col < qr.getModuleCount(); col++) {
+      if (qr.isDark(row, col)) {
+        ctx.fillRect(col * cellSize, row * cellSize, cellSize + 0.5, cellSize + 0.5);
+      }
+    }
+  }
+}
+
+function openClanQRPopup() {
+  document.getElementById('clanQrModal').style.display = 'block';
+  if (myClanHash) {
+    generateClanQRCode(myClanHash);
+    document.getElementById('clanQrHashDisplay').textContent = myClanHash;
+  }
+}
+
+function closeClanQRPopup() {
+  document.getElementById('clanQrModal').style.display = 'none';
+}
+
+// ---------------------------------------------------------------------------
+// Clan QR Code Scanner (separate pipeline from profile/friend QR)
+// ---------------------------------------------------------------------------
+function openClanQRScanner() {
+  var lang = window.i18n ? window.i18n.getLang() : 'sv';
+  var overlay = document.createElement('div');
+  overlay.className = 'modal';
+  overlay.style.cssText = 'display:block;position:fixed;top:0;left:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);z-index:6000;transition:background-color 200ms ease-out;';
+  requestAnimationFrame(function() { overlay.style.backgroundColor = 'rgba(0,0,0,0.5)'; });
+
+  var content = document.createElement('div');
+  content.className = 'modal-content card';
+  content.style.cssText = 'box-sizing:border-box;width:min(92vw,400px);max-width:92vw;margin:clamp(24px,8vh,80px) auto;background:#FFFFFF;color:#2C3E50;border:1px solid rgba(44,62,80,0.12);border-radius:16px;box-shadow:0 8px 32px rgba(44,62,80,0.18);padding:0;text-align:center;position:relative;opacity:0;transform:translateY(12px) scale(0.97);transition:opacity 200ms ease-out,transform 200ms ease-out;';
+  requestAnimationFrame(function() { requestAnimationFrame(function() { content.style.opacity = '1'; content.style.transform = 'translateY(0) scale(1)'; }); });
+
+  var header = document.createElement('h2');
+  header.textContent = lang === 'en' ? 'Scan Clan QR Code' : lang === 'zh' ? '扫描部落二维码' : 'Skanna klan QR-kod';
+  header.style.cssText = "font-family:'Arial Black',sans-serif;text-transform:uppercase;color:#FFF;background:#2A8CFF;margin:0;padding:15px 52px 15px 15px;border-bottom:1px solid rgba(255,255,255,0.15);text-align:left;border-radius:16px 16px 0 0;";
+
+  var closeBtn = document.createElement('span');
+  closeBtn.className = 'close-modal';
+  closeBtn.innerHTML = '\u00d7';
+  closeBtn.style.cssText = 'color:#FFF;font-size:28px;font-weight:bold;cursor:pointer;position:absolute;right:15px;top:10px;line-height:1;z-index:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;';
+
+  var body = document.createElement('div');
+  body.style.cssText = 'padding:20px;';
+
+  var desc = document.createElement('p');
+  desc.textContent = lang === 'en' ? "Point the camera at a clan's QR code to join." : lang === 'zh' ? '将相机对准部落的二维码即可加入。' : 'Rikta kameran mot en klans QR-kod for att ga med.';
+  desc.style.cssText = 'font-weight:600;color:#5a6570;margin:0 0 16px 0;font-size:14px;';
+
+  var video = document.createElement('video');
+  video.setAttribute('playsinline', '');
+  video.setAttribute('autoplay', '');
+  video.style.cssText = 'width:100%;max-height:300px;border-radius:12px;background:#000;';
+
+  var statusEl = document.createElement('p');
+  statusEl.style.cssText = 'font-weight:700;margin:12px 0 0 0;min-height:20px;';
+
+  body.appendChild(desc);
+  body.appendChild(video);
+  body.appendChild(statusEl);
+  content.appendChild(header);
+  content.appendChild(closeBtn);
+  content.appendChild(body);
+  overlay.appendChild(content);
+  document.body.appendChild(overlay);
+
+  var stream = null;
+  var scanning = true;
+  var scanCanvas = document.createElement('canvas');
+  var scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+
+  function cleanup() {
+    scanning = false;
+    if (stream) {
+      stream.getTracks().forEach(function(t) { t.stop(); });
+      stream = null;
+    }
+    content.style.opacity = '0';
+    content.style.transform = 'translateY(8px) scale(0.97)';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0)';
+    setTimeout(function() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 180);
+  }
+
+  closeBtn.addEventListener('click', cleanup);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) cleanup(); });
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(function(s) {
+    stream = s;
+    video.srcObject = stream;
+    video.play();
+    requestAnimationFrame(scanFrame);
+  }).catch(function() {
+    statusEl.textContent = lang === 'en' ? 'Could not access the camera.' : lang === 'zh' ? '无法访问相机。' : 'Kunde inte komma at kameran.';
+    statusEl.style.color = '#E74C3C';
+  });
+
+  function scanFrame() {
+    if (!scanning) return;
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+      requestAnimationFrame(scanFrame);
+      return;
+    }
+    scanCanvas.width = video.videoWidth;
+    scanCanvas.height = video.videoHeight;
+    scanCtx.drawImage(video, 0, 0);
+    var imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+
+    var code = null;
+    if (typeof BarcodeDetector !== 'undefined' && !window.redlosClanBarcodeDetector) {
+      try { window.redlosClanBarcodeDetector = new BarcodeDetector({ formats: ['qr_code'] }); } catch(e) {}
+    }
+    if (window.redlosClanBarcodeDetector) {
+      window.redlosClanBarcodeDetector.detect(video).then(function(barcodes) {
+        if (barcodes.length > 0 && scanning) {
+          handleScannedClanCode(barcodes[0].rawValue, cleanup, statusEl, lang);
+        }
+      }).catch(function() {});
+    }
+    if (typeof jsQR !== 'undefined') {
+      code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+      if (code && code.data && scanning) {
+        handleScannedClanCode(code.data, cleanup, statusEl, lang);
+        return;
+      }
+    }
+    requestAnimationFrame(scanFrame);
+  }
+}
+
+async function handleScannedClanCode(rawData, cleanup, statusEl, lang) {
+  if (!rawData || !sb) return;
+  // Extract clan hash from CLAN: prefix
+  var clanHash = rawData;
+  if (rawData.startsWith('CLAN:')) {
+    clanHash = rawData.substring(5);
+  }
+  if (!clanHash || clanHash.length !== 5) {
+    statusEl.textContent = lang === 'en' ? 'Invalid clan code.' : lang === 'zh' ? '无效的部落代码。' : 'Ogiltig klan-kod.';
+    statusEl.style.color = '#E74C3C';
+    return;
+  }
+
+  statusEl.textContent = lang === 'en' ? 'Looking up clan...' : lang === 'zh' ? '正在查找部落...' : 'Soker klan...';
+
+  var { data: clan, error } = await sb.from('clans').select('id, name').eq('id', clanHash).maybeSingle();
+  if (error || !clan) {
+    statusEl.textContent = lang === 'en' ? 'Clan not found.' : lang === 'zh' ? '未找到部落。' : 'Klanen hittades inte.';
+    statusEl.style.color = '#E74C3C';
+    return;
+  }
+
+  var confirmMsg = (lang === 'en' ? 'Join clan ' : lang === 'zh' ? '加入部落 ' : 'Ga med i klan ') + clan.name + '?';
+  var confirmed = await showConfirmModal(confirmMsg, {
+    title: lang === 'en' ? 'Clan found!' : lang === 'zh' ? '找到部落!' : 'Klan hittad!',
+    confirmText: lang === 'en' ? 'Join' : lang === 'zh' ? '加入' : 'Ga med',
+    cancelText: lang === 'en' ? 'Cancel' : lang === 'zh' ? '取消' : 'Avbryt'
+  });
+
+  if (!confirmed) return;
+
+  // Use the existing join logic
+  document.getElementById('joinClanHash').value = clanHash;
+  await joinClan();
+  cleanup();
+}
 </script>
 <script src="../../shared/scripts/i18n.js"></script>
 </body>

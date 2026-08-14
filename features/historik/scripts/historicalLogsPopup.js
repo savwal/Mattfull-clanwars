@@ -15,11 +15,12 @@ function resolveDrinkGrams(log) {
 function renderDrinkLogItem(log) {
   const grams = resolveDrinkGrams(log);
   const cl = Math.abs(calculateCl(grams));
-  const name = log.drink_name || 'Okänd dryck';
+  var lang = window.i18n ? window.i18n.getLang() : 'sv';
+  const name = log.drink_name || (lang === 'zh' ? '未知饮品' : (lang === 'en' ? 'Unknown drink' : 'Okänd dryck'));
   const volumeMl = Number(log.volume_ml) || 0;
   const abv = Number(log.abv) || 0;
   const consumed = log.consumed_at ? new Date(log.consumed_at) : null;
-  const whenLabel = consumed ? consumed.toLocaleString('sv-SE') : 'Okänt datum';
+  const whenLabel = consumed ? consumed.toLocaleString(lang === 'zh' ? 'zh-CN' : (lang === 'en' ? 'en-US' : 'sv-SE')) : (lang === 'zh' ? '未知日期' : (lang === 'en' ? 'Unknown date' : 'Okänt datum'));
 
   return `<li>
     <div class="drink-log-item" style="width:100%;">
@@ -43,15 +44,17 @@ async function openHistoricalLogsPopup() {
 
   const profile = getActiveProfile();
   if (!sb || !profile || !profile.id) {
-    meta.textContent = 'Historiska loggar';
-    summary.innerHTML = '<p style="margin:0; color:#E74C3C; font-weight:bold;">Kunde inte hitta din profil.</p>';
+    var lang = window.i18n ? window.i18n.getLang() : 'sv';
+    meta.textContent = lang === 'zh' ? '历史记录' : (lang === 'en' ? 'Historical logs' : 'Historiska loggar');
+    summary.innerHTML = '<p style="margin:0; color:#E74C3C; font-weight:bold;">' + (lang === 'zh' ? '找不到您的个人资料。' : (lang === 'en' ? 'Could not find your profile.' : 'Kunde inte hitta din profil.')) + '</p>';
     list.innerHTML = '';
     return;
   }
 
-  meta.textContent = 'Dina registrerade drycker';
+  var lang = window.i18n ? window.i18n.getLang() : 'sv';
+  meta.textContent = lang === 'zh' ? '您记录的饮品' : (lang === 'en' ? 'Your registered drinks' : 'Dina registrerade drycker');
   summary.innerHTML = '';
-  list.innerHTML = '<li class="loading-row"><span class="loading-spinner"></span> Laddar dina loggar...</li>';
+  list.innerHTML = '<li class="loading-row"><span class="loading-spinner"></span> ' + (lang === 'zh' ? '正在加载您的记录...' : (lang === 'en' ? 'Loading your logs...' : 'Laddar dina loggar...')) + '</li>';
 
   if (typeof ensureSupabaseAuth === 'function') {
     await ensureSupabaseAuth();
@@ -65,7 +68,7 @@ async function openHistoricalLogsPopup() {
       .select('player_hash, drink_name, volume_ml, abv, grams_alcohol, consumed_at')
       .eq('player_hash', profile.id);
     if (error) {
-      summary.innerHTML = '<p style="margin:0; color:#E74C3C; font-weight:bold;">Kunde inte hämta loggarna.</p>';
+      summary.innerHTML = '<p style="margin:0; color:#E74C3C; font-weight:bold;">' + (lang === 'zh' ? '无法获取记录。' : (lang === 'en' ? 'Could not fetch logs.' : 'Kunde inte hämta loggarna.')) + '</p>';
       return;
     }
     allDrinks = data || [];
@@ -75,7 +78,7 @@ async function openHistoricalLogsPopup() {
     .filter(d => d.player_hash === profile.id)
     .sort((a, b) => new Date(b.consumed_at).getTime() - new Date(a.consumed_at).getTime());
   if (logs.length === 0) {
-    summary.innerHTML = '<p style="margin:0; color:#5a6570; font-weight:bold;">Du har inga registrerade drycker än.</p>';
+    summary.innerHTML = '<p style="margin:0; color:#5a6570; font-weight:bold;">' + (lang === 'zh' ? '您还没有记录任何饮品。' : (lang === 'en' ? 'You have no registered drinks yet.' : 'Du har inga registrerade drycker än.')) + '</p>';
     return;
   }
 
@@ -84,8 +87,8 @@ async function openHistoricalLogsPopup() {
 
   summary.innerHTML = `
     <div style="display:grid; gap:10px; text-align:left;">
-      <div style="display:flex; align-items:center; gap:8px;"><strong>Antal enheter:</strong> <span style="display:inline-block; background:#FF6FB5; color:#fff; border:1px solid rgba(44,62,80,0.15); border-radius:8px; padding:4px 10px; font-weight:900; box-shadow:0 1px 4px rgba(44,62,80,0.10);">${logs.length}</span></div>
-      <div style="display:flex; align-items:center; gap:8px;"><strong>Ren alkohol:</strong> <span style="display:inline-block; background:#2ECC71; color:#fff; border:1px solid rgba(44,62,80,0.15); border-radius:8px; padding:4px 10px; font-weight:900; box-shadow:0 1px 4px rgba(44,62,80,0.10);">${totalCl.toFixed(1)} cl</span></div>
+      <div style="display:flex; align-items:center; gap:8px;"><strong>' + (lang === 'zh' ? '饮品数量:' : (lang === 'en' ? 'Number of units:' : 'Antal enheter:')) + '</strong> <span style="display:inline-block; background:#FF6FB5; color:#fff; border:1px solid rgba(44,62,80,0.15); border-radius:8px; padding:4px 10px; font-weight:900; box-shadow:0 1px 4px rgba(44,62,80,0.10);">${logs.length}</span></div>
+      <div style="display:flex; align-items:center; gap:8px;"><strong>' + (lang === 'zh' ? '纯酒精:' : (lang === 'en' ? 'Pure alcohol:' : 'Ren alkohol:')) + '</strong> <span style="display:inline-block; background:#2ECC71; color:#fff; border:1px solid rgba(44,62,80,0.15); border-radius:8px; padding:4px 10px; font-weight:900; box-shadow:0 1px 4px rgba(44,62,80,0.10);">${totalCl.toFixed(1)} cl</span></div>
     </div>
   `;
 

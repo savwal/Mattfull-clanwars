@@ -76,67 +76,59 @@ li:last-child { border-bottom: none; }
 <nav class="main-nav">
   <a href="../../../index.html" aria-label="Log" title="Log">
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
-    <span class="menu-label">Log</span>
-  </a>
-  <a href="../../battles/pages/battles.html" aria-label="Battles" title="Battles">
-    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
-    <span class="menu-label">Battles</span>
+    <span class="menu-label" data-i18n="nav_log">Log</span>
   </a>
   <a href="../../events/pages/events.html" class="active" aria-label="Events" title="Events">
     <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
-    <span class="menu-label">Events</span>
+    <span class="menu-label" data-i18n="nav_events">Events</span>
   </a>
   <a href="../../clans/pages/clans.html" aria-label="Klan" title="Klan">
     <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
-    <span class="menu-label">Klan</span>
+    <span class="menu-label" data-i18n="nav_clan">Klan</span>
   </a>
   <a href="../../friends/pages/friends.html" aria-label="Vänner" title="Vänner">
     <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
-    <span class="menu-label">Vänner</span>
+    <span class="menu-label" data-i18n="nav_friends">Vänner</span>
   </a>
   <a href="../../historik/historik.html" aria-label="Historik" title="Historik">
     <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
-    <span class="menu-label">Historik</span>
+    <span class="menu-label" data-i18n="nav_historik">Historik</span>
   </a>
   <a href="../../profile/pages/profile.html" aria-label="Profil" title="Profil">
     <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
-    <span class="menu-label">Profil</span>
+    <span class="menu-label" data-i18n="nav_profil">Profil</span>
   </a>
 </nav>
 
 <nav class="mobile-bottom-menu">
   <a href="../../../index.html" class="menu-item" aria-label="Log" title="Log">
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
-    <span class="menu-label">Log</span>
-  </a>
-  <a href="../../battles/pages/battles.html" class="menu-item" aria-label="Battles" title="Battles">
-    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
-    <span class="menu-label">Battles</span>
+    <span class="menu-label" data-i18n="nav_log">Log</span>
   </a>
   <a href="../../events/pages/events.html" class="menu-item active" aria-label="Events" title="Events">
     <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
-    <span class="menu-label">Events</span>
+    <span class="menu-label" data-i18n="nav_events">Events</span>
   </a>
   <a href="../../clans/pages/clans.html" class="menu-item" aria-label="Klan" title="Klan">
     <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
-    <span class="menu-label">Klan</span>
+    <span class="menu-label" data-i18n="nav_clan">Klan</span>
   </a>
   <a href="../../friends/pages/friends.html" class="menu-item" aria-label="Vänner" title="Vänner">
     <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
-    <span class="menu-label">Vänner</span>
+    <span class="menu-label" data-i18n="nav_friends">Vänner</span>
   </a>
   <a href="../../historik/historik.html" class="menu-item" aria-label="Historik" title="Historik">
     <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
-    <span class="menu-label">Historik</span>
+    <span class="menu-label" data-i18n="nav_historik">Historik</span>
   </a>
   <a href="../../profile/pages/profile.html" class="menu-item" aria-label="Profil" title="Profil">
     <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
-    <span class="menu-label">Profil</span>
+    <span class="menu-label" data-i18n="nav_profil">Profil</span>
   </a>
 </nav>
 
 <div class="card">
-  <h2>Event Leaderboard</h2>
+  <h2 data-i18n="events_leaderboard">Event Leaderboard</h2>
   <select id="eventSelect" onchange="handleEventSelectChange()"></select>
   <div style="margin-top: 10px;">
     <span class="event-meta" id="eventMeta"></span>
@@ -144,34 +136,34 @@ li:last-child { border-bottom: none; }
 </div>
 
 <div class="card" id="livePromilleCard">
-  <h2 style="background: #2A8CFF;">Live Promille</h2>
+  <h2 style="background: #2A8CFF;" data-i18n="events_live_promille">Live Promille</h2>
   <ul id="liveTopFive"><li class="loading-row"><span class="loading-spinner"></span> Laddar...</li></ul>
-  <button id="showAllLiveBtn" onclick="openAllLivePromilleModal()">Visa Alla</button>
+  <button id="showAllLiveBtn" onclick="openAllLivePromilleModal()" data-i18n="events_show_all">Visa Alla</button>
 </div>
 
 <div class="card" id="eventClCard" style="display: none;">
-  <h2 style="background: #F39C12;">Leaderboard (cl)</h2>
+  <h2 style="background: #F39C12;" data-i18n="events_leaderboard_cl">Leaderboard (cl)</h2>
   <ul id="eventLeaderboard"></ul>
-  <button id="showAllEventBtn" onclick="openAllEventClModal()">Visa Alla</button>
+  <button id="showAllEventBtn" onclick="openAllEventClModal()" data-i18n="events_show_all">Visa Alla</button>
 </div>
 
 <div class="card">
-  <h2 style="background: #9B59B6;">Skapa custom event</h2>
+  <h2 style="background: #9B59B6;" data-i18n="events_create_custom">Skapa custom event</h2>
   <input type="text" id="customName" placeholder="Event namn">
   <input type="datetime-local" id="customStart" style="width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
   <input type="datetime-local" id="customEnd" style="width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;">
-  <button onclick="createCustomEvent(this)">Skapa event</button>
+  <button onclick="createCustomEvent(this)" data-i18n="events_create_btn">Skapa event</button>
   <p id="customHashInfo" style="font-weight: 900; color: #2C3E50;"></p>
 </div>
 
 <div class="card">
-  <h2 style="background: #2ECC71;">Mina custom events</h2>
+  <h2 style="background: #2ECC71;" data-i18n="events_my_custom">Mina custom events</h2>
   <ul id="myCustomEventsList"></ul>
   <p id="noCustomEventsMessage" style="text-align:center; color:#5a6570; font-weight: bold;">Inga custom events att visa.</p>
 </div>
 
 <div class="card">
-  <h2 style="background: #2A8CFF;">Gå med i custom event</h2>
+  <h2 style="background: #2A8CFF;" data-i18n="events_join_custom">Gå med i custom event</h2>
   <input type="text" id="joinHash" placeholder="Eventkod (4 tecken)">
   <button onclick="joinCustomEvent(this)">Gå med</button>
   <p id="joinStatus" style="font-weight: 900; color:#2C3E50;"></p>

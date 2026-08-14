@@ -61,10 +61,6 @@ button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
     <span class="menu-label" data-i18n="nav_log">Log</span>
   </a>
-  <a href="../../battles/pages/battles.html" aria-label="Battles" title="Battles">
-    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
-    <span class="menu-label" data-i18n="nav_battles">Battles</span>
-  </a>
   <a href="../../events/pages/events.html" aria-label="Events" title="Events">
     <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
     <span class="menu-label" data-i18n="nav_events">Events</span>
@@ -90,10 +86,6 @@ button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,
   <a href="../../../index.html" class="menu-item" aria-label="Log" title="Log">
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
     <span class="menu-label" data-i18n="nav_log">Log</span>
-  </a>
-  <a href="../../battles/pages/battles.html" class="menu-item" aria-label="Battles" title="Battles">
-    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
-    <span class="menu-label" data-i18n="nav_battles">Battles</span>
   </a>
   <a href="../../events/pages/events.html" class="menu-item" aria-label="Events" title="Events">
     <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
@@ -546,13 +538,17 @@ function openSettingsPopup() {
   enBtn.textContent = '🇬🇧 English';
   enBtn.type = 'button';
 
+  var zhBtn = document.createElement('button');
+  zhBtn.className = 'settings-toggle-btn' + (lang === 'zh' ? ' active' : '');
+  zhBtn.textContent = '🇨🇳 中文';
+  zhBtn.type = 'button';
+
   svBtn.addEventListener('click', function() {
     window.i18n.applyLanguage('sv');
     svBtn.classList.add('active');
     enBtn.classList.remove('active');
-    // Refresh settings popup title
-    header.textContent = 'Inställningar';
-    // Update section titles
+    zhBtn.classList.remove('active');
+    header.textContent = window.i18n.t('settings_title') || 'Inställningar';
     updateSettingsSectionTitles(body, 'sv');
   });
 
@@ -560,12 +556,23 @@ function openSettingsPopup() {
     window.i18n.applyLanguage('en');
     enBtn.classList.add('active');
     svBtn.classList.remove('active');
-    header.textContent = 'Settings';
+    zhBtn.classList.remove('active');
+    header.textContent = window.i18n.t('settings_title') || 'Settings';
     updateSettingsSectionTitles(body, 'en');
+  });
+
+  zhBtn.addEventListener('click', function() {
+    window.i18n.applyLanguage('zh');
+    zhBtn.classList.add('active');
+    svBtn.classList.remove('active');
+    enBtn.classList.remove('active');
+    header.textContent = window.i18n.t('settings_title') || '设置';
+    updateSettingsSectionTitles(body, 'zh');
   });
 
   langRow.appendChild(svBtn);
   langRow.appendChild(enBtn);
+  langRow.appendChild(zhBtn);
   langSection.appendChild(langRow);
 
   // Design section
@@ -643,21 +650,21 @@ function openSettingsPopup() {
   var removePicBtn = document.createElement('button');
   removePicBtn.className = 'settings-action-btn';
   removePicBtn.type = 'button';
-  removePicBtn.innerHTML = '🖼️ ' + (lang === 'en' ? 'Remove profile picture' : 'Ta bort profilbild');
+  removePicBtn.innerHTML = lang === 'en' ? 'Remove profile picture' : (lang === 'zh' ? '移除头像' : 'Ta bort profilbild');
   removePicBtn.setAttribute('data-settings-label', 'removepic');
   removePicBtn.addEventListener('click', function() { removeProfilePicture(removePicBtn); });
 
   var logoutBtn = document.createElement('button');
   logoutBtn.className = 'settings-action-btn';
   logoutBtn.type = 'button';
-  logoutBtn.innerHTML = '🚪 ' + (lang === 'en' ? 'Log out' : 'Logga ut');
+  logoutBtn.innerHTML = lang === 'en' ? 'Log out' : (lang === 'zh' ? '登出' : 'Logga ut');
   logoutBtn.setAttribute('data-settings-label', 'logout');
   logoutBtn.addEventListener('click', function() { logout(); });
 
   var deleteBtn = document.createElement('button');
   deleteBtn.className = 'settings-action-btn danger-action';
   deleteBtn.type = 'button';
-  deleteBtn.innerHTML = '🗑️ ' + (lang === 'en' ? 'Delete account' : 'Radera konto');
+  deleteBtn.innerHTML = lang === 'en' ? 'Delete account' : (lang === 'zh' ? '删除账户' : 'Radera konto');
   deleteBtn.setAttribute('data-settings-label', 'delete');
   deleteBtn.addEventListener('click', function() { deleteAccount(deleteBtn); });
 
@@ -715,14 +722,14 @@ function openSettingsPopup() {
 function updateSettingsSectionTitles(body, lang) {
   var labels = body.querySelectorAll('[data-settings-label]');
   var map = {
-    theme: { sv: 'Tema', en: 'Theme' },
-    account: { sv: 'Konto', en: 'Account' },
-    design: { sv: 'Design / Utseende', en: 'Design / Layout' },
-    gdpr: { sv: 'Dataskydd & GDPR', en: 'Data Protection & GDPR' },
-    removepic: { sv: '🖼️ Ta bort profilbild', en: '🖼️ Remove profile picture' },
-    logout: { sv: '🚪 Logga ut', en: '🚪 Log out' },
-    delete: { sv: '🗑️ Radera konto', en: '🗑️ Delete account' },
-    gdprtext: { sv: 'Vi försöker följa EU:s GDPR-lagar. Du kan radera ditt konto och all data när som helst.', en: 'We are trying to follow EU GDPR laws. You can delete your account and all data at any time.' }
+    theme: { sv: 'Tema', en: 'Theme', zh: '主题' },
+    account: { sv: 'Konto', en: 'Account', zh: '账户' },
+    design: { sv: 'Design / Utseende', en: 'Design / Layout', zh: '设计 / 布局' },
+    gdpr: { sv: 'Dataskydd & GDPR', en: 'Data Protection & GDPR', zh: '数据保护与 GDPR' },
+    removepic: { sv: 'Ta bort profilbild', en: 'Remove profile picture', zh: '移除头像' },
+    logout: { sv: 'Logga ut', en: 'Log out', zh: '登出' },
+    delete: { sv: 'Radera konto', en: 'Delete account', zh: '删除账户' },
+    gdprtext: { sv: 'Vi försöker följa EU:s GDPR-lagar. Du kan radera ditt konto och all data när som helst.', en: 'We are trying to follow EU GDPR laws. You can delete your account and all data at any time.', zh: '我们努力遵守欧盟的GDPR法律。您可以随时删除您的账户和所有数据。' }
   };
   for (var i = 0; i < labels.length; i++) {
     var key = labels[i].getAttribute('data-settings-label');

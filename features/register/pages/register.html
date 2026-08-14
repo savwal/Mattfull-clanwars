@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
 <script>if(localStorage.getItem('redlos_old_design')==='1')document.documentElement.classList.add('old-design');if(localStorage.getItem('redlos_darkmode')==='1')document.documentElement.classList.add('dark-mode');</script>
@@ -51,9 +51,12 @@ button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,
   <div class="card">
     <h2>Ny Krigare</h2>
 
-  <p style="font-weight: 900; color:#2C3E50; margin: 14px 0 2px 0;">Har du redan ett konto?</p>
-  <p style="color:#4A4A4A; font-size: 15px; line-height: 1.4; margin: 0 0 4px 0;">Skriv in din personliga kod här och tryck på knappen för att logga in.</p>
-  <input type="text" id="regHash" placeholder="Personlig kod">
+  <p style="font-weight: 900; color:#2C3E50; margin: 14px 0 2px 0;" data-i18n="register_has_account">Har du redan ett konto?</p>
+  <p style="color:#4A4A4A; font-size: 15px; line-height: 1.4; margin: 0 0 4px 0;" data-i18n="register_hash_desc">Skriv in din personliga kod, eller ladda upp din QR-kod, och tryck på knappen för att logga in.</p>
+  <label for="qrImageInput" style="display:inline-block; background: #FFCC00; color: #2C3E50; padding: 10px 12px; border: 1px solid rgba(44,62,80,0.15); font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(44,62,80,0.10); text-transform: uppercase; margin-bottom: 8px; border-radius: 10px; width: 100%; box-sizing: border-box;" data-i18n="register_upload_qr">Ladda upp QR-bild</label>
+  <input type="file" id="qrImageInput" accept="image/*" style="display: none;">
+  <canvas id="qrScanCanvas" style="display:none;"></canvas>
+  <input type="text" id="regHash" placeholder="Personlig kod" data-i18n="register_hash_ph">
 
   <p style="text-align:center; font-weight: 900; color:#2C3E50; margin: 16px 0 10px 0;">— eller —</p>
 
@@ -79,6 +82,7 @@ button:active { transform: translateY(2px); box-shadow: 0 1px 3px rgba(44,62,80,
   <p id="iosInstallHint"></p>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script src="../../shared/scripts/gdpr.js"></script>
 <script src="../../shared/scripts/hash.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -191,6 +195,43 @@ async function registerProfileImpl() {
   
   window.location.href = '../../../index.html';
 }
+
+document.getElementById('qrImageInput').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(event) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.getElementById('qrScanCanvas');
+      var ctx = canvas.getContext('2d');
+      var maxWidth = 800;
+      var width = img.width;
+      var height = img.height;
+      if (width > maxWidth) {
+        height = (maxWidth / width) * height;
+        width = maxWidth;
+      }
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+      var imageData = ctx.getImageData(0, 0, width, height);
+      var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+      if (code && code.data) {
+        document.getElementById('regHash').value = code.data;
+        document.getElementById('regStatus').textContent = 'QR-kod läst! Loggar in...';
+        document.getElementById('regStatus').classList.remove('error-text');
+        registerProfileImpl();
+      } else {
+        var lang = window.i18n ? window.i18n.getLang() : 'sv';
+        document.getElementById('regStatus').textContent = lang === 'en' ? 'Could not find a QR code in the image.' : 'Kunde inte hitta en QR-kod i bilden.';
+        document.getElementById('regStatus').classList.add('error-text');
+      }
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+});
 </script>
 <script src="../../shared/scripts/i18n.js"></script>
 </body>

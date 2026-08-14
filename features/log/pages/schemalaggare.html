@@ -61,115 +61,107 @@ canvas { max-height: 300px; margin-top: 10px; }
 <nav class="main-nav">
   <a href="../../../index.html" class="active" aria-label="Log" title="Log">
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
-    <span class="menu-label">Log</span>
-  </a>
-  <a href="../../battles/pages/battles.html" aria-label="Battles" title="Battles">
-    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
-    <span class="menu-label">Battles</span>
+    <span class="menu-label" data-i18n="nav_log">Log</span>
   </a>
   <a href="../../events/pages/events.html" aria-label="Events" title="Events">
     <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
-    <span class="menu-label">Events</span>
+    <span class="menu-label" data-i18n="nav_events">Events</span>
   </a>
   <a href="../../clans/pages/clans.html" aria-label="Klan" title="Klan">
     <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
-    <span class="menu-label">Klan</span>
+    <span class="menu-label" data-i18n="nav_clan">Klan</span>
   </a>
   <a href="../../friends/pages/friends.html" aria-label="Vänner" title="Vänner">
     <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
-    <span class="menu-label">Vänner</span>
+    <span class="menu-label" data-i18n="nav_friends">Vänner</span>
   </a>
   <a href="../../historik/historik.html" aria-label="Historik" title="Historik">
     <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
-    <span class="menu-label">Historik</span>
+    <span class="menu-label" data-i18n="nav_historik">Historik</span>
   </a>
   <a href="../../profile/pages/profile.html" aria-label="Profil" title="Profil">
     <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
-    <span class="menu-label">Profil</span>
+    <span class="menu-label" data-i18n="nav_profil">Profil</span>
   </a>
 </nav>
 <nav class="mobile-bottom-menu">
   <a href="../../../index.html" class="menu-item active" aria-label="Log" title="Log">
     <img class="menu-icon" src="../../../icons/menu-log.svg" alt="Log">
-    <span class="menu-label">Log</span>
-  </a>
-  <a href="../../battles/pages/battles.html" class="menu-item" aria-label="Battles" title="Battles">
-    <img class="menu-icon" src="../../../icons/menu-battles.svg" alt="Battles">
-    <span class="menu-label">Battles</span>
+    <span class="menu-label" data-i18n="nav_log">Log</span>
   </a>
   <a href="../../events/pages/events.html" class="menu-item" aria-label="Events" title="Events">
     <img class="menu-icon" src="../../../icons/menu-events.svg" alt="Events">
-    <span class="menu-label">Events</span>
+    <span class="menu-label" data-i18n="nav_events">Events</span>
   </a>
   <a href="../../clans/pages/clans.html" class="menu-item" aria-label="Klan" title="Klan">
     <img class="menu-icon" src="../../../icons/menu-clans.svg" alt="Klan">
-    <span class="menu-label">Klan</span>
+    <span class="menu-label" data-i18n="nav_clan">Klan</span>
   </a>
   <a href="../../friends/pages/friends.html" class="menu-item" aria-label="Vänner" title="Vänner">
     <img class="menu-icon" src="../../../icons/menu-friends.svg" alt="Vänner">
-    <span class="menu-label">Vänner</span>
+    <span class="menu-label" data-i18n="nav_friends">Vänner</span>
   </a>
   <a href="../../historik/historik.html" class="menu-item" aria-label="Historik" title="Historik">
     <img class="menu-icon" src="../../../icons/menu-wrapped.svg" alt="Historik">
-    <span class="menu-label">Historik</span>
+    <span class="menu-label" data-i18n="nav_historik">Historik</span>
   </a>
   <a href="../../profile/pages/profile.html" class="menu-item" aria-label="Profil" title="Profil">
     <img class="menu-icon" src="../../../icons/menu-profile.svg" alt="Profil">
-    <span class="menu-label">Profil</span>
+    <span class="menu-label" data-i18n="nav_profil">Profil</span>
   </a>
 </nav>
 
-<a href="../../../index.html" class="back-link">← Tillbaka till Log</a>
+<a href="../../../index.html" class="back-link" data-i18n="planner_back_btn">← Tillbaka till Log</a>
 
 <div class="card">
-  <h2 style="background: #2ECC71;">Schemalägg dryck</h2>
+  <h2 style="background: #2ECC71;" data-i18n="planner_schedule_drink">Schemalägg dryck</h2>
   <select id="planType" style="width: 100%;">
-    <option value="">Välj dryck...</option>
-    <option value="Öl">Öl/Cider</option>
-    <option value="Rött vin">Rött vin</option>
-    <option value="Vitt vin">Vitt vin</option>
-    <option value="Champagne">Champagne</option>
-    <option value="Sprit">Sprit</option>
-    <option value="Drink">Drink</option>
+    <option value="" data-i18n="log_choose_drink">Välj dryck...</option>
+    <option value="Öl" data-i18n="log_beer">Öl/Cider</option>
+    <option value="Rött vin" data-i18n="log_red_wine">Rött vin</option>
+    <option value="Vitt vin" data-i18n="log_white_wine">Vitt vin</option>
+    <option value="Champagne" data-i18n="log_champagne">Champagne</option>
+    <option value="Sprit" data-i18n="log_spirits">Sprit</option>
+    <option value="Drink" data-i18n="log_cocktail">Drink</option>
   </select>
-  <input type="number" id="planVolume" placeholder="Volym (ml, t.ex. 330)" min="1" max="1000" step="1">
-  <input type="number" id="planAbv" placeholder="Alkoholhalt (%, t.ex. 5.0)" min="0" max="98" step="0.1">
+  <input type="number" id="planVolume" placeholder="Volym (ml, t.ex. 330)" min="1" max="1000" step="1" data-i18n="log_volume_ph">
+  <input type="number" id="planAbv" placeholder="Alkoholhalt (%, t.ex. 5.0)" min="0" max="98" step="0.1" data-i18n="log_abv_ph">
   <input type="time" id="planTime">
-  <button onclick="addPlannedDrink()">Lägg till</button>
+  <button onclick="addPlannedDrink()" data-i18n="planner_add_btn">Lägg till</button>
 </div>
 
 <div class="card">
-  <h2>Prognos</h2>
+  <h2 data-i18n="planner_forecast_title">Prognos</h2>
   <div class="graph-scroll">
     <canvas id="forecastChart"></canvas>
   </div>
   <div class="legend">
-    <div class="legend-item"><span class="dot line"></span> Promille</div>
-    <div class="legend-item"><span class="dot blue"></span> Tiger Woods zone</div>
-    <div class="legend-item"><span class="dot red"></span> Farthållare</div>
-    <div class="legend-item"><span class="dot green"></span> Funzone</div>
-    <div class="legend-item"><span class="dot purple"></span> Sangriagränsen</div>
+    <div class="legend-item"><span class="dot line"></span> <span data-i18n="log_legend_promille">Promille</span></div>
+    <div class="legend-item"><span class="dot blue"></span> <span data-i18n="log_legend_tiger">Tiger Woods zone</span></div>
+    <div class="legend-item"><span class="dot red"></span> <span data-i18n="log_legend_fart">Farthållare</span></div>
+    <div class="legend-item"><span class="dot green"></span> <span data-i18n="log_legend_funzone">Funzone</span></div>
+    <div class="legend-item"><span class="dot purple"></span> <span data-i18n="log_legend_sangria">Sangriagränsen</span></div>
   </div>
   <div class="stats-row" id="statsRow" style="display:none;">
     <div class="stat-block">
-      <div class="stat-label">Topp promille</div>
+      <div class="stat-label" data-i18n="planner_peak_bac">Topp promille</div>
       <div class="stat-value" id="peakBac">0.00 ‰</div>
     </div>
     <div class="stat-block">
-      <div class="stat-label">Topp kl.</div>
+      <div class="stat-label" data-i18n="planner_peak_time">Topp kl.</div>
       <div class="stat-value" id="peakTime">--:--</div>
     </div>
     <div class="stat-block">
-      <div class="stat-label">Nykter kl.</div>
+      <div class="stat-label" data-i18n="planner_sober_time">Nykter kl.</div>
       <div class="stat-value" id="soberTime">--:--</div>
     </div>
   </div>
 </div>
 
 <div class="card">
-  <h2>Planerade drycker</h2>
+  <h2 data-i18n="planner_planned_title">Planerade drycker</h2>
   <ul id="plannedList">
-    <li class="empty-state">Inga drycker tillagda ännu.</li>
+    <li class="empty-state" data-i18n="planner_empty">Inga drycker tillagda ännu.</li>
   </ul>
 </div>
 
@@ -296,7 +288,8 @@ function updatePlanUI() {
   var zones = getZones(profile);
 
   if (plannedDrinks.length === 0) {
-    list.innerHTML = '<li class="empty-state">Inga drycker tillagda ännu.</li>';
+    var lang = window.i18n ? window.i18n.getLang() : 'sv';
+    list.innerHTML = '<li class="empty-state" data-i18n="planner_empty">' + (window.i18n ? window.i18n.t('planner_empty') : 'Inga drycker tillagda ännu.') + '</li>';
     document.getElementById('statsRow').style.display = 'none';
     var canvas = document.getElementById('forecastChart');
     if (canvas) {
