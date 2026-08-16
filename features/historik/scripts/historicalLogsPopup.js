@@ -87,8 +87,8 @@ async function openHistoricalLogsPopup() {
 
   summary.innerHTML = `
     <div style="display:grid; gap:10px; text-align:left;">
-      <div style="display:flex; align-items:center; gap:8px;"><strong>' + (lang === 'zh' ? '饮品数量:' : (lang === 'en' ? 'Number of units:' : 'Antal enheter:')) + '</strong> <span style="display:inline-block; background:#FF6FB5; color:#fff; border:1px solid rgba(44,62,80,0.15); border-radius:8px; padding:4px 10px; font-weight:900; box-shadow:0 1px 4px rgba(44,62,80,0.10);">${logs.length}</span></div>
-      <div style="display:flex; align-items:center; gap:8px;"><strong>' + (lang === 'zh' ? '纯酒精:' : (lang === 'en' ? 'Pure alcohol:' : 'Ren alkohol:')) + '</strong> <span style="display:inline-block; background:#2ECC71; color:#fff; border:1px solid rgba(44,62,80,0.15); border-radius:8px; padding:4px 10px; font-weight:900; box-shadow:0 1px 4px rgba(44,62,80,0.10);">${totalCl.toFixed(1)} cl</span></div>
+      <div style="display:flex; align-items:center; gap:8px;"><strong>${lang === 'zh' ? '饮品数量:' : (lang === 'en' ? 'Number of units:' : 'Antal enheter:')}</strong> <span style="display:inline-block; background:#FF6FB5; color:#fff; border:1px solid rgba(44,62,80,0.15); border-radius:8px; padding:4px 10px; font-weight:900; box-shadow:0 1px 4px rgba(44,62,80,0.10);">${logs.length}</span></div>
+      <div style="display:flex; align-items:center; gap:8px;"><strong>${lang === 'zh' ? '纯酒精:' : (lang === 'en' ? 'Pure alcohol:' : 'Ren alkohol:')}</strong> <span style="display:inline-block; background:#2ECC71; color:#fff; border:1px solid rgba(44,62,80,0.15); border-radius:8px; padding:4px 10px; font-weight:900; box-shadow:0 1px 4px rgba(44,62,80,0.10);">${totalCl.toFixed(1)} cl</span></div>
     </div>
   `;
 
