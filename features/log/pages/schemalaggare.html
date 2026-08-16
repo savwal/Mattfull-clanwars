@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
 <script>if(localStorage.getItem('redlos_old_design')==='1')document.documentElement.classList.add('old-design');if(localStorage.getItem('redlos_darkmode')==='1')document.documentElement.classList.add('dark-mode');</script>
@@ -307,7 +307,8 @@ function updatePlanUI() {
     var info = document.createElement('div');
     var ts = new Date(d.timestamp);
     var timeLabel = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    info.innerHTML = '<strong>' + timeLabel + '</strong>: ' + d.name +
+    var planDisplayName = typeof translateDrinkName === 'function' ? translateDrinkName(d.name) : d.name;
+    info.innerHTML = '<strong>' + timeLabel + '</strong>: ' + planDisplayName +
       ' <br><span style="color:#2C3E50;">' + d.volume + 'ml, ' + d.abv + '% (' + d.grams.toFixed(1) + 'g)</span>';
     li.appendChild(info);
 

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
 <script>if(localStorage.getItem('redlos_old_design')==='1')document.documentElement.classList.add('old-design');if(localStorage.getItem('redlos_darkmode')==='1')document.documentElement.classList.add('dark-mode');</script>
@@ -202,7 +202,7 @@ function escapeHtml(value) {
 // avatar), so the popups match the inline leaderboards.
 function avatarImgHtml(pic) {
   const fallback = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232C3E50"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-  return '<img src="' + escapeHtml(pic || fallback) + '" alt="" style="width:42px;height:42px;object-fit:cover;border:3px solid #2C3E50;background:#fff;flex:0 0 auto;">';
+  return '<img src="' + escapeHtml(pic || fallback) + '" alt="" class="profile-img leader-avatar">';
 }
 
 function parseDateInput(value) {
@@ -679,7 +679,7 @@ async function getSwedishPublicHolidays() {
 }
 
 function dateAt(year, month, day, hour = 0, minute = 0) {
-  return new Date(year, month - 1, day, hour, minute, 0, 0);
+  return new Date(year, month - 1, day, hour, minute, (hour === 23 && minute === 59) ? 59 : 0, (hour === 23 && minute === 59) ? 999 : 0);
 }
 
 function getMidsummerEve(year) {
@@ -698,13 +698,24 @@ async function getAllPresetEvents() {
   const windowStart = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
   const windowEnd = new Date(now.getTime() + 150 * 24 * 60 * 60 * 1000);
   const inWindow = evt => evt.end >= windowStart && evt.start <= windowEnd;
-  const prevYearPresetEvents = getPresetEvents(year - 1).filter(inWindow);
-  const presetEvents = getPresetEvents(year).filter(inWindow);
-  const nextYearPresetEvents = getPresetEvents(year + 1).filter(inWindow);
+  const prevYearPresetEvents = getPresetEvents(year - 1);
+  const presetEvents = getPresetEvents(year);
+  const nextYearPresetEvents = getPresetEvents(year + 1);
   const publicHolidays = await getSwedishPublicHolidays();
-  const allEvents = [...prevYearPresetEvents, ...presetEvents, ...nextYearPresetEvents, ...publicHolidays]
-    .filter(inWindow)
-    .sort((a, b) => a.start - b.start);
+
+  // Ensure the most recent past Midsommarafton is ALWAYS included regardless of date window
+  const pastMidsummers = [...prevYearPresetEvents, ...presetEvents]
+    .filter(e => e.id === 'midsommar' && e.end.getTime() < now.getTime())
+    .sort((a, b) => b.end - a.end);
+  const guaranteedMidsummer = pastMidsummers[0] ? [pastMidsummers[0]] : [];
+
+  const allEvents = [
+    ...prevYearPresetEvents.filter(inWindow),
+    ...presetEvents.filter(inWindow),
+    ...nextYearPresetEvents.filter(inWindow),
+    ...publicHolidays.filter(inWindow),
+    ...guaranteedMidsummer
+  ].sort((a, b) => a.start - b.start);
 
   const eventMap = new Map();
   allEvents.forEach(evt => {
@@ -782,7 +793,15 @@ async function buildEventOptions(allEvents) {
   // Split into upcoming/ongoing ("Kommande") and past ("Tidigare"). Kommande is
   // sorted soonest-first; Tidigare most-recent-first.
   const upcoming = allEvents.filter(evt => evt.end.getTime() >= now).sort((a, b) => a.start - b.start);
-  const past = allEvents.filter(evt => evt.end.getTime() < now).sort((a, b) => b.end - a.end);
+  const pastAll = allEvents.filter(evt => evt.end.getTime() < now).sort((a, b) => b.end - a.end);
+
+  // Keep only 3 most recent past events, plus Midsommarafton
+  const past = pastAll.slice(0, 3);
+  const midsummerPast = allEvents.find(evt => evt.id === 'midsommar' && evt.end.getTime() < now);
+  if (midsummerPast && !past.some(e => e.key === midsummerPast.key)) {
+    past.push(midsummerPast);
+  }
+  past.sort((a, b) => b.end - a.end);
 
   function addGroup(label, events) {
     if (!events.length) return;
@@ -798,9 +817,8 @@ async function buildEventOptions(allEvents) {
   }
 
   // "Kommande Event" group is added (and therefore shown) above "Tidigare Event".
-  // Only the 4 most recent past events are listed.
   addGroup('Kommande Event', upcoming);
-  addGroup('Tidigare Event', past.slice(0, 4));
+  addGroup('Tidigare Event', past);
 
   if (select.options.length === 0) return;
 
@@ -1050,10 +1068,10 @@ function liveRowHtml(entry, index) {
   const isMe = !!(activeProfile && (entry.profile.id === activeProfile.id));
   const activeClass = isMe ? ' class="active-user-row"' : '';
   return '<li' + activeClass + ' style="display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(44,62,80,0.08);padding:12px 0;font-weight:bold;">'
-    + '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;border:2px solid #2C3E50;border-radius:10px;background:' + rankBadgeColor(index + 1) + ';color:#2C3E50;font-weight:900;box-shadow:0 1px 4px rgba(44,62,80,0.10);flex:0 0 auto;">' + formatRankLabel(index + 1) + '</span>'
+    + '<span class="rank-badge rank-box" style="background:' + rankBadgeColor(index + 1) + ';">' + formatRankLabel(index + 1) + '</span>'
     + avatarImgHtml(entry.profile.pic)
-    + '<span style="flex:1;min-width:0;"><span class="leader-name" style="display:block;font-size:1.05em;color:#2C3E50;word-break:break-word;">' + escapeHtml(entry.profile.name) + '</span></span>'
-    + '<span class="badge" style="margin-left:auto;border:1px solid rgba(44,62,80,0.12);border-radius:8px;background:#FFCC00;padding:4px 8px;font-weight:900;white-space:nowrap;flex:0 0 auto;">' + Math.abs(entry.promille).toFixed(2) + ' ‰</span>'
+    + '<div class="leaderboard-info leader-info"><span class="leader-name" style="font-size:1.05em;color:#2C3E50;">' + escapeHtml(entry.profile.name) + '</span></div>'
+    + '<div class="badge stat-pill"><span class="stat-value">' + Math.abs(entry.promille).toFixed(2) + '</span> ‰</div>'
     + '</li>';
 }
 
@@ -1078,11 +1096,11 @@ async function openAllLivePromilleModal() {
 }
 
 function eventClRowHtml(entry, index) {
-  return '<li style="display:flex;align-items:center;gap:12px;border-bottom:4px solid #E5E9F0;padding:12px 0;font-weight:bold;">'
-    + '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;border:3px solid #2C3E50;background:' + rankBadgeColor(index + 1) + ';color:#2C3E50;font-weight:900;box-shadow:2px 2px 0 #2C3E50;flex:0 0 auto;">' + formatRankLabel(index + 1) + '</span>'
+  return '<li style="display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(44,62,80,0.08);padding:12px 0;font-weight:bold;">'
+    + '<span class="rank-badge rank-box" style="background:' + rankBadgeColor(index + 1) + ';">' + formatRankLabel(index + 1) + '</span>'
     + avatarImgHtml(entry.pic)
-    + '<span style="flex:1;min-width:0;"><span style="display:block;font-size:1.05em;color:#2C3E50;word-break:break-word;">' + escapeHtml(entry.name) + '</span></span>'
-    + '<span style="margin-left:auto;border:3px solid #2C3E50;background:#FFCC00;padding:4px 8px;font-weight:900;white-space:nowrap;flex:0 0 auto;">' + Math.abs(entry.cl).toFixed(1) + ' cl</span>'
+    + '<div class="leaderboard-info leader-info"><span class="leader-name" style="font-size:1.05em;color:#2C3E50;">' + escapeHtml(entry.name) + '</span></div>'
+    + '<div class="badge stat-pill"><span class="stat-value">' + Math.abs(entry.cl).toFixed(1) + '</span> cl</div>'
     + '</li>';
 }
 
@@ -1093,11 +1111,14 @@ async function openAllEventClModal() {
   // Open immediately with a spinner so the tap never feels dead, then fill in.
   const overlay = showLoadingModal('Leaderboard (cl)', { headerBg: '#F39C12' });
   const result = await computeEventClRanking();
-  let html;
+  let html = '';
+  if (result.meta) {
+    html += '<div style="margin-bottom:12px; font-weight:bold; font-size:0.9em; color:#5a6570;">' + escapeHtml(result.meta) + '</div>';
+  }
   if (!result.entries || result.entries.length === 0) {
-    html = '<p style="text-align:center; color:#5a6570; font-weight:bold; margin:0;">Inga deltagare.</p>';
+    html += '<p style="text-align:center; color:#5a6570; font-weight:bold; margin:0;">Inga deltagare.</p>';
   } else {
-    html = '<ul style="list-style:none; padding:0; margin:0;">' + result.entries.map(eventClRowHtml).join('') + '</ul>';
+    html += '<ul style="list-style:none; padding:0; margin:0;">' + result.entries.map(eventClRowHtml).join('') + '</ul>';
   }
   updateModalBody(overlay, html);
 }

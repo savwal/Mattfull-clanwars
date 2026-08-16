@@ -85,10 +85,23 @@
 }
 
 .old-design .stat-pill,
-.old-design .rank-box {
-  border: 2px solid #2C3E50 !important;
+.old-design .badge,
+.old-design .rank-box,
+.old-design .rank-badge {
+  border: 3px solid #2C3E50 !important;
   box-shadow: 2px 2px 0px #2C3E50 !important;
   border-radius: 0 !important;
+}
+
+.old-design .profile-img,
+.old-design .leader-avatar {
+  border: 3px solid #2C3E50 !important;
+  border-radius: 0 !important;
+  box-shadow: 2px 2px 0px #2C3E50 !important;
+}
+
+.old-design .modal li {
+  border-bottom: 4px solid #E5E9F0 !important;
 }
 
 .old-design button.danger-action {
@@ -113,6 +126,20 @@ body.dark-mode.old-design .logger-list,
 body.dark-mode.old-design .modal-content,
 body.dark-mode.old-design .toast {
   border-color: #bdc3c7 !important;
+}
+
+body.dark-mode.old-design .stat-pill,
+body.dark-mode.old-design .badge,
+body.dark-mode.old-design .rank-box,
+body.dark-mode.old-design .rank-badge,
+body.dark-mode.old-design .profile-img,
+body.dark-mode.old-design .leader-avatar {
+  border-color: #bdc3c7 !important;
+  box-shadow: 2px 2px 0px #bdc3c7 !important;
+}
+
+body.dark-mode.old-design .modal li {
+  border-bottom-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 body.dark-mode.old-design .card,

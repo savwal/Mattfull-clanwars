@@ -758,7 +758,8 @@ body.dark-mode .rank-value {
   color: #ffffff !important;
 }
 
-body.dark-mode .stat-pill {
+body.dark-mode .stat-pill,
+body.dark-mode .badge {
   background: #FFCC00 !important;
   color: #2C3E50 !important;
 }

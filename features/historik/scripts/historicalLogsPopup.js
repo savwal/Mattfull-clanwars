@@ -16,7 +16,8 @@ function renderDrinkLogItem(log) {
   const grams = resolveDrinkGrams(log);
   const cl = Math.abs(calculateCl(grams));
   var lang = window.i18n ? window.i18n.getLang() : 'sv';
-  const name = log.drink_name || (lang === 'zh' ? '未知饮品' : (lang === 'en' ? 'Unknown drink' : 'Okänd dryck'));
+  const rawName = log.drink_name || (lang === 'zh' ? '未知饮品' : (lang === 'en' ? 'Unknown drink' : 'Okänd dryck'));
+  const name = typeof translateDrinkName === 'function' ? translateDrinkName(rawName) : rawName;
   const volumeMl = Number(log.volume_ml) || 0;
   const abv = Number(log.abv) || 0;
   const consumed = log.consumed_at ? new Date(log.consumed_at) : null;

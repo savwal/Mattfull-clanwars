@@ -267,8 +267,11 @@ function updateUI() {
     var dateLabel = ts.toLocaleDateString();
     var timeLabel = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     var infoDiv = document.createElement('div');
-    infoDiv.innerHTML = '<strong>' + dateLabel + ' ' + timeLabel + '</strong>: ' + item.name +
-      ' <br><span style="color:#2C3E50;">' + Math.abs(clValue).toFixed(1) + 'cl alkohol</span>';
+    var displayName = typeof translateDrinkName === 'function' ? translateDrinkName(item.name) : item.name;
+    var lang = window.i18n ? window.i18n.getLang() : 'sv';
+    var alcLabel = lang === 'zh' ? '酒精' : (lang === 'en' ? 'alcohol' : 'alkohol');
+    infoDiv.innerHTML = '<strong>' + dateLabel + ' ' + timeLabel + '</strong>: ' + displayName +
+      ' <br><span style="color:#2C3E50;">' + Math.abs(clValue).toFixed(1) + 'cl ' + alcLabel + '</span>';
     li.appendChild(infoDiv);
     var btn = document.createElement('button');
     btn.className = 'danger';

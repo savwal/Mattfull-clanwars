@@ -665,11 +665,11 @@ function escapeHtml(value) {
 // popup). Computes the full ranking first, then renders it into a modal — no new
 // browser tab/window is opened.
 function clanRowHtml(clan, index) {
-  return '<li style="display:flex;align-items:center;gap:12px;border-bottom:4px solid #E5E9F0;padding:12px 0;font-weight:bold;">'
-    + '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;border:3px solid #2C3E50;background:' + rankBadgeColor(index + 1) + ';color:#2C3E50;font-weight:900;box-shadow:2px 2px 0 #2C3E50;flex:0 0 auto;">' + formatRankLabel(index + 1) + '</span>'
-    + '<span style="flex:1;min-width:0;"><span style="display:block;font-size:1.05em;color:#2C3E50;word-break:break-word;">' + escapeHtml(clan.name) + '</span>'
-    + '<span style="display:block;font-size:0.8em;color:#5a6570;">' + escapeHtml(clan.id) + '</span></span>'
-    + '<span style="margin-left:auto;border:3px solid #2C3E50;background:#FFCC00;padding:4px 8px;font-weight:900;white-space:nowrap;flex:0 0 auto;">' + Math.abs(clan.cl).toFixed(1) + ' cl</span>'
+  return '<li style="display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(44,62,80,0.08);padding:12px 0;font-weight:bold;">'
+    + '<span class="rank-badge rank-box" style="background:' + rankBadgeColor(index + 1) + ';">' + formatRankLabel(index + 1) + '</span>'
+    + '<div class="leaderboard-info leader-info"><span class="leader-name" style="font-size:1.05em;color:#2C3E50;">' + escapeHtml(clan.name) + '</span>'
+    + '<span class="leader-sub" style="font-size:0.8em;color:#5a6570;">' + escapeHtml(clan.id) + '</span></div>'
+    + '<div class="badge stat-pill"><span class="stat-value">' + Math.abs(clan.cl).toFixed(1) + '</span> cl</div>'
     + '</li>';
 }
 

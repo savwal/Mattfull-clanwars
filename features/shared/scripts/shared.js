@@ -16,6 +16,69 @@ if (isDarkMode) {
   else document.addEventListener('DOMContentLoaded', () => document.body.classList.add('dark-mode'));
 }
 
+// ---------------------------------------------------------------------------
+// Drink name translation map — Swedish/English stored names → Chinese.
+// Used at display time so historical logs, wrapped, etc. show Chinese names
+// when the user switches language to zh.
+// ---------------------------------------------------------------------------
+var DRINK_NAME_ZH = {
+  'Norrlands Guld': '诺兰德金牌',
+  'Pripps Blå': '普里普斯蓝',
+  'Brooklyn Lager': '布鲁克林拉格',
+  'Ey Bro': 'Ey Bro',
+  'Briska': '布里斯卡',
+  'Somersby': '萨默斯比',
+  'Melleruds': '梅勒鲁兹',
+  'Kopparberg': '科帕伯格',
+  'Falcon': '猎鹰',
+  'Mariestads': '玛丽斯塔德',
+  'Carlsberg Hof': '嘉士伯',
+  'Heineken': '喜力',
+  'The Bear': '熊牌',
+  'Gränges': '格兰格斯',
+  'Guinness': '健力士',
+  'Sofiero': '索菲艾洛',
+  '1664 Blanc': '1664 白啤',
+  'Staropramen': '捷克老城',
+  'Pilsner Urquell': '皮尔森欧颇',
+  'Paulaner': '柏龙',
+  'Ett glas vittvin': '一杯白葡萄酒',
+  'Ett glas rosé': '一杯玫瑰红酒',
+  'Ett glas rött': '一杯红葡萄酒',
+  'Snaps': '瑞典烈酒',
+  'Vodka (shot)': '伏特加 (一杯)',
+  'Tequila (shot)': '龙舌兰 (一杯)',
+  'Gin (shot)': '金酒 (一杯)',
+  'Whisky': '威士忌',
+  'Rom': '朗姆酒',
+  'Jägermeister': '野格',
+  'Bacardi (rum)': '百加得 (朗姆酒)',
+  'En Näve Kir': '一把基尔',
+  'Solbacka Kir': '索尔巴卡基尔',
+  'Champagne': '香槟',
+  'Cava': '卡瓦',
+  'Gin & Tonic': '金汤力',
+  'Vodka Cranberry': '伏特加蔓越莓',
+  'Red Bull Vodka': '红牛伏特加',
+  'Aperol Spritz': '阿贝罗喷趣',
+  'Ulta': 'Ulta',
+  // Manual entry drink type names (stored as drink_name via the dropdown)
+  'Öl': '啤酒/苹果酒',
+  'Öl/Cider': '啤酒/苹果酒',
+  'Rött vin': '红酒',
+  'Vitt vin': '白葡萄酒',
+  'Sprit': '烈酒',
+  'Drink': '鸡尾酒'
+};
+
+function translateDrinkName(name) {
+  var lang = window.i18n ? window.i18n.getLang() : 'sv';
+  if (lang === 'zh' && name && DRINK_NAME_ZH[name]) {
+    return DRINK_NAME_ZH[name];
+  }
+  return name;
+}
+
 const SUPABASE_URL = 'https://zynyfrqdrihrltdcbnfm.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_v9oyPX430I7TusN4mKFYIw_AO4r033c';
 
@@ -445,8 +508,10 @@ async function fetchDrinkLogsFromSupabase(profileId, sinceISO) {
       if (!Number.isFinite(grams) && Number.isFinite(vol) && Number.isFinite(abv)) {
         grams = parseFloat((vol * (abv / 100) * 0.789).toFixed(1));
       }
+      var lang = window.i18n ? window.i18n.getLang() : 'sv';
+      var rawName = d.drink_name || (lang === 'zh' ? '未知饮品' : (lang === 'en' ? 'Unknown drink' : 'Okänd dryck'));
       return {
-        name: d.drink_name || 'Okänd dryck',
+        name: translateDrinkName(rawName),
         volume: Number.isFinite(vol) ? vol : 0,
         abv: Number.isFinite(abv) ? abv : 0,
         grams: Number.isFinite(grams) ? grams : 0,

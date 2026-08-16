@@ -60,7 +60,7 @@ async function loadWrapped(playerHash, type) {
   }
 
   const history = (logs || []).map(item => ({
-    name: item.drink_name || (lang === 'zh' ? '未知饮品' : (lang === 'en' ? 'Unknown drink' : 'Okänd dryck')),
+    name: (typeof translateDrinkName === 'function' ? translateDrinkName(item.drink_name) : item.drink_name) || (lang === 'zh' ? '未知饮品' : (lang === 'en' ? 'Unknown drink' : 'Okänd dryck')),
     volume: Number(item.volume_ml) || 0,
     abv: Number(item.abv) || 0,
     grams: Number.isFinite(Number(item.grams_alcohol))
